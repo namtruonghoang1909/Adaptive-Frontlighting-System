@@ -1,6 +1,6 @@
 # Desired Finished Project File System
 
-This is the current target layout for the AFS/ADB prototype. It is still a planning document,
+This is the current target layout for the Adaptive Front-lighting System prototype. The two main lighting behaviors are low-beam AFS swivel and high-beam ADB beam dodging. It is still a planning document,
 but it now records the intended responsibility of each folder so future build work lands in
 the right place.
 
@@ -22,15 +22,14 @@ Adaptive-Frontlighting-System/
 |   |-- agents/
 |   |-- architecture/
 |   |   |-- overview.md
-|   |   |-- data-pipeline.md
-|   |   |-- workflow.md
-|   |   |-- control-law.md
-|   |   `-- components/
+|   |   |-- data-flow.md
+|   |   `-- components/           # MetaDrive, CAN Bridge, ECU, Dashboard, headlights, and runtime notes
 |   |-- can/
+|   |   |-- README.md              # CAN folder overview and message-spec index
+|   |   `-- messages/             # one Markdown spec per CAN frame
 |   |-- hardware/
 |   |   |-- hardware.md
 |   |   `-- visual.md
-|   |-- simulation/
 |   |-- temporary/
 |   |-- tools/
 |   `-- verification/
@@ -65,25 +64,25 @@ Adaptive-Frontlighting-System/
 |   `-- extraction_notes.md        # MetaDrive fields used by the bridge
 |-- tools/
 |   |-- README.md                  # host tools overview
-|   |-- metadrive_can_bridge/      # MetaDrive CAN Bridge: MetaDrive -> cantools -> python-can
+|   |-- can_bridge/                # CAN Bridge: Dashboard + MetaDrive -> cantools -> python-can
 |   |   |-- README.md
-|   |   |-- bridge.py              # main MetaDrive CAN Bridge entry point when implemented
+|   |   |-- bridge.py              # main CAN Bridge entry point when implemented
 |   |   |-- extractors.py          # MetaDrive ego/object extraction
 |   |   |-- can_tx.py              # cantools encoding and python-can transmit
 |   |   |-- config.yaml            # CAN interface, rates, field-of-view, thresholds
-|   |   `-- tests/                 # MetaDrive CAN Bridge unit tests with synthetic observations
+|   |   `-- tests/                 # CAN Bridge unit tests with synthetic observations
 |   |-- can_utils/                 # candump/cansend helpers, log decoders
 |   `-- calibration/               # host-side calibration helpers
 |-- tests/
 |   |-- README.md                  # test strategy and commands
 |   |-- dbc/                       # DBC encode/decode tests
-|   |-- can_bridge/                # MetaDrive CAN Bridge tests
+|   |-- can_bridge/                # CAN Bridge tests
 |   |-- firmware_logic/            # host-side control-law tests
 |   `-- hil/                       # hardware-in-loop test notes/scripts
 |-- logs/
 |   |-- README.md                  # what logs are worth keeping
 |   |-- can/                       # candump/SavvyCAN logs, usually ignored
-|   |-- can_bridge/                # MetaDrive CAN Bridge runtime logs, usually ignored
+|   |-- can_bridge/                # CAN Bridge runtime logs, usually ignored
 |   `-- dashboard/                 # Dashboard logs/screenshots, usually ignored
 `-- artifacts/
     |-- README.md                  # demo evidence index when needed
@@ -96,13 +95,13 @@ Adaptive-Frontlighting-System/
 
 | Folder | Responsibility |
 |---|---|
-| `can/` | Own the DBC. The MetaDrive CAN Bridge, Dashboard, firmware, tests, and logs must agree with it. |
-| `dashboard/` | Host UI for requested mode, decoded input signals, ECU status, and demo visibility. |
+| `can/` | Own the DBC. The CAN Bridge, Dashboard, firmware, tests, and logs must agree with it. |
+| `dashboard/` | Host UI for requested headlight power/mode and decoded status displays provided through the CAN Bridge. |
 | `docs/` | Orientation and architecture notes. Keep detailed implementation in source folders once build starts. |
 | `firmware/afs_ecu/` | STM32F407VE firmware for CAN receive/transmit, control logic, drivers, feedback checks, and faults. |
 | `hardware/` | Physical rig information: visual layout, BOM, wiring, power, mechanical files, calibration notes, and datasheets. |
 | `simulation/` | MetaDrive setup and repeatable scenarios. The upstream `simulation/metadrive/` tree stays ignored. |
-| `tools/metadrive_can_bridge/` | MetaDrive CAN Bridge that converts MetaDrive output into DBC-encoded CAN frames. |
+| `tools/can_bridge/` | CAN Bridge that converts Dashboard requests and MetaDrive output into DBC-encoded CAN frames. |
 | `tools/can_utils/` | Developer utilities for CAN logging, frame injection, and decode checks. |
 | `tools/calibration/` | Host-side helpers for servo feedback and LED zone calibration. |
 | `tests/` | Automated and semi-automated checks for DBC, bridge, firmware logic, and HIL behavior. |
@@ -113,9 +112,9 @@ Adaptive-Frontlighting-System/
 
 | Data | Owner |
 |---|---|
-| Raw MetaDrive state/observations | `simulation/` and MetaDrive CAN Bridge extraction code |
+| Raw MetaDrive state/observations | `simulation/` and CAN Bridge extraction code |
 | CAN signal names, scaling, enums, and packing | `can/afs.dbc` |
-| MetaDrive CAN Bridge filtering thresholds | `tools/metadrive_can_bridge/config.yaml` |
+| CAN Bridge filtering thresholds | `tools/can_bridge/config.yaml` |
 | Final lighting decision | `firmware/afs_ecu/afs/control/` |
 | Servo feedback and LED-zone calibration | `firmware/afs_ecu/afs/calibration/` plus `hardware/calibration.md` |
 | Dashboard display mapping | `dashboard/` |

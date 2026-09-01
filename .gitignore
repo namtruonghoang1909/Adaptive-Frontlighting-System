@@ -1,3 +1,4 @@
-# Heavy local MetaDrive simulator checkout/runtime tree.
-metadrive/
-simulation/metadrive/
+# Heavy local MetaDrive simulator checkout/runtime trees.
+# Keep these anchored so docs/simulation/metadrive/ remains trackable documentation.
+/metadrive/
+/simulation/metadrive/
