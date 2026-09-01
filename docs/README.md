@@ -1,68 +1,60 @@
 # Adaptive Front-lighting System Docs
 
 This folder gives guests, developers, and agents a brief orientation to the Adaptive
-Front-lighting System (AFS) and Adaptive Driving Beam (ADB) hardware-in-the-loop prototype.
-It is not the build work specification. Detailed firmware, MetaDrive CAN Bridge, Dashboard, and test build
-choices will be specified later when those parts are built.
+Front-lighting System prototype. The prototype has two lighting behaviors: low-beam AFS
+swivel and high-beam ADB beam dodging.
+It is not the build work specification. Detailed firmware, CAN Bridge, Dashboard, and test
+build choices will be specified later when those parts are built.
 
 The canonical project clone lives on the Linux runtime machine at
 `Adaptive-Frontlighting-System/`. A main-machine path such as
 `Z:\Adaptive-Frontlighting-System` is an SSHFS-mounted view of that same clone, not a second
-checkout. MetaDrive, SocketCAN, Dashboard, MetaDrive CAN Bridge, CAN tests, and hardware-facing workflows
-run from the Linux SSH session.
+checkout. MetaDrive, SocketCAN, Dashboard, CAN Bridge, CAN tests, and hardware-facing
+workflows run from the Linux SSH session.
 
 ## Read First
 
 1. [architecture/overview.md](architecture/overview.md) - whole-system overview.
-2. [architecture/data-pipeline.md](architecture/data-pipeline.md) - MetaDrive outputs, CAN bridge processing, CAN transfer, and MCU needs.
-3. [architecture/workflow.md](architecture/workflow.md) - how the runtime pieces fit together.
+2. [architecture/components/metadrive.md](architecture/components/metadrive.md) - simulator component role.
+3. [architecture/data-flow.md](architecture/data-flow.md) - data needed from MetaDrive/Dashboard, CAN transfer, and ECU behavior.
 4. [architecture/components/afs-ecu.md](architecture/components/afs-ecu.md) - physical ECU role.
-5. [architecture/components/dashboard.md](architecture/components/dashboard.md) - user/debug UI role.
-6. [architecture/control-law.md](architecture/control-law.md) - brief AFS and ADB behavior.
-7. [can/overview.md](can/overview.md) - CAN bus and DBC ownership.
-8. [can/messages.md](can/messages.md) - current CAN message list.
-9. [simulation/metadrive-can-bridge.md](simulation/metadrive-can-bridge.md) - simulator-to-CAN bridge role.
-10. [hardware/hardware.md](hardware/hardware.md) - bench hardware overview.
-11. [hardware/visual.md](hardware/visual.md) - intended physical layout and wiring.
-12. [tools/tools.md](tools/tools.md) - combined tools and environment notes.
-13. [verification/testing.md](verification/testing.md) - verification approach.
-14. [agents/working-context.md](agents/working-context.md) - Codex/agent operating context.
+5. [architecture/components/can-bridge.md](architecture/components/can-bridge.md) - host CAN Bridge role.
+6. [architecture/components/dashboard.md](architecture/components/dashboard.md) - user/debug UI role.
+7. [architecture/components/headlights.md](architecture/components/headlights.md) - headlight structure and AFS/ADB behavior.
+8. [can/README.md](can/README.md) - CAN bus, DBC ownership, and current message specs.
+9. [hardware/hardware.md](hardware/hardware.md) - bench hardware overview.
+10. [hardware/visual.md](hardware/visual.md) - intended physical layout and wiring.
+11. [tools/tools.md](tools/tools.md) - combined tools and environment notes.
+12. [verification/testing.md](verification/testing.md) - verification approach.
+13. [agents/working-context.md](agents/working-context.md) - Codex/agent operating context.
 
 ## System Snapshot
 
 ```text
 Linux runtime over SSH
-  MetaDrive simulation ----> MetaDrive CAN Bridge --------+
-       raw ego state          extraction + filtering         |
-       lidar/object info      cantools encode + python-can   |
-                                                            |
-  Dashboard mode UI ----------------------------------------+--> SocketCAN / CAN adapter
-                                                                 |
-                                                                 v
-                                                        AFS ECU on STM32F407VE
-                                                        - built-in CAN TX/RX
-                                                        - 3.3 V logic CAN transceiver
-                                                        - PCA9685 servo driver
-                                                        - separate LED zone drivers
-                                                        - two servo-swiveled headlight modules
+
+  MetaDrive -> CAN Bridge reads -> CAN bus -> AFS ECU
+  Dashboard -> CAN Bridge reads -> CAN bus -> AFS ECU
+  AFS ECU   -> CAN bus -> CAN Bridge reads -> Dashboard
 ```
 
-The core project chain is MetaDrive Simulation, MetaDrive CAN Bridge, and STM32F407VE ECU Firmware. The AFS ECU is the only physical ECU in the current build. MetaDrive provides raw simulator state. The MetaDrive CAN Bridge converts that state into compact CAN signals. The Dashboard provides the requested headlight mode. The STM32F407VE ECU performs the final lighting decision, reads servo feedback, and commands the visible headlight rig.
+MetaDrive provides simulator data. The Dashboard provides HMI command state and displays
+status. The CAN Bridge owns SocketCAN, DBC encode/decode, message timing, and receive
+filters. The STM32F407VE ECU performs the final lighting decision, reads servo feedback, and
+commands the visible headlight rig.
 
 ## Documentation Map
 
 | Document | Purpose |
 |---|---|
 | [architecture/overview.md](architecture/overview.md) | Brief system architecture |
-| [architecture/data-pipeline.md](architecture/data-pipeline.md) | End-to-end data ownership and signal flow |
-| [architecture/workflow.md](architecture/workflow.md) | Runtime workflow and workspace assumptions |
+| [architecture/components/metadrive.md](architecture/components/metadrive.md) | MetaDrive simulator component summary |
+| [architecture/data-flow.md](architecture/data-flow.md) | End-to-end data ownership and signal flow |
 | [architecture/components/afs-ecu.md](architecture/components/afs-ecu.md) | AFS ECU component summary |
+| [architecture/components/can-bridge.md](architecture/components/can-bridge.md) | CAN Bridge component summary |
 | [architecture/components/dashboard.md](architecture/components/dashboard.md) | Dashboard component summary |
-| [architecture/control-law.md](architecture/control-law.md) | Mode behavior summary |
-| [can/README.md](can/README.md) | CAN docs index |
-| [can/overview.md](can/overview.md) | CAN and DBC orientation |
-| [can/messages.md](can/messages.md) | CAN message list |
-| [simulation/metadrive-can-bridge.md](simulation/metadrive-can-bridge.md) | MetaDrive CAN Bridge orientation |
+| [architecture/components/headlights.md](architecture/components/headlights.md) | Headlight structure and AFS/ADB behavior |
+| [can/README.md](can/README.md) | CAN bus, DBC orientation, and message-spec index |
 | [hardware/hardware.md](hardware/hardware.md) | Hardware overview |
 | [hardware/visual.md](hardware/visual.md) | Intended physical layout and wiring |
 | [tools/tools.md](tools/tools.md) | Tools and runtime environment |
@@ -79,7 +71,7 @@ The core project chain is MetaDrive Simulation, MetaDrive CAN Bridge, and STM32F
 | DBC | Planned; expected as `can/afs.dbc` |
 | AFS/ADB firmware | Not present yet |
 | Dashboard | Not present yet |
-| MetaDrive CAN Bridge | Not present yet |
+| CAN Bridge | Not present yet |
 | Vendored MetaDrive | Local ignored tree under `simulation/metadrive/` |
 | Hardware rig | Planned |
 

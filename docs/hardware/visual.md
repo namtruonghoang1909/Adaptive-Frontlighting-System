@@ -1,6 +1,6 @@
 # Hardware Visual Plan
 
-This page describes the intended physical hardware layout for the AFS/ADB prototype. It is a
+This page describes the intended physical hardware layout for the Adaptive Front-lighting System prototype. It demonstrates low-beam AFS swivel and high-beam ADB beam dodging. It is a
 visual wiring and mechanical guide, not a pin-accurate schematic. Exact pin assignments,
 connector part numbers, fuse sizes, and calibration values belong in the later hardware and
 firmware build work.
@@ -10,9 +10,10 @@ firmware build work.
 ```text
                  Linux runtime machine
        +------------------------------------+
+       | Dashboard                          |
        | MetaDrive Simulation               |
-       | MetaDrive CAN Bridge               |
-       | Dashboard / candump / SavvyCAN     |
+       | CAN Bridge                         |
+       | candump / SavvyCAN                 |
        +------------------+-----------------+
                           |
                           | USB
@@ -27,8 +28,8 @@ firmware build work.
                           |                             |
                           v                             v
                  +----------------+              +----------------+
-                 | CAN transceiver|              | optional CAN   |
-                 | 3.3 V logic    |              | tool/node      |
+                 | MCP2551 CAN    |              | optional CAN   |
+                 | transceiver    |              | tool/node      |
                  +-------+--------+              +----------------+
                          |
                          | STM32 CAN TX/RX
@@ -56,16 +57,18 @@ firmware build work.
        LED platform    LED platform
 ```
 
-## Three Project Components
+## Main Project Flow
 
 | Component | Where it runs | Responsibility |
 |---|---|---|
+| Dashboard | Linux runtime | Provides HMI command state to the CAN Bridge and displays decoded ECU status |
 | MetaDrive Simulation | Linux runtime | Produces raw simulated ego and surrounding-vehicle data |
-| MetaDrive CAN Bridge | Linux runtime | Converts MetaDrive outputs into DBC-encoded CAN frames and sends them through SocketCAN |
+| CAN Bridge | Linux runtime | Reads Dashboard/MetaDrive state, sends DBC-encoded CAN frames, receives ECU status, and forwards decoded status |
 | STM32F407VE ECU Firmware | Physical STM32 board | Receives CAN, decides final lighting behavior, drives servos/LEDs, and reports status |
+| Headlight rig | Physical bench | Shows low-beam swivel and high-beam beam-zone dimming |
 
-The MetaDrive CAN Bridge is a host-side adapter, not the ECU. The STM32F407VE firmware owns
-the final actuator decisions.
+The CAN Bridge is a host-side adapter, not the ECU. The STM32F407VE firmware owns the final
+actuator decisions.
 
 ## One Headlight Design
 
@@ -152,8 +155,9 @@ STM32F407VE CAN_RX <---- RXD  CAN transceiver  CANL ---- bus CANL
 STM32 GND ------------------- transceiver GND ----- bus/reference GND
 ```
 
-Prefer a CAN transceiver with 3.3 V logic support. If a 5 V transceiver is used, check RX/TX
-logic compatibility before connecting it to the STM32.
+The current planned transceiver is MCP2551. Because many MCP2551 modules are 5 V parts,
+verify RX/TX logic compatibility before connecting them to the STM32. Use a 3.3 V-compatible
+transceiver or level shifting if the selected module cannot interface safely with STM32 pins.
 
 ## Servo Wiring
 
@@ -230,11 +234,12 @@ servo and LED supplies during bring-up if resets, flicker, or brownouts appear.
 
 | Mode | Servo behavior | LED behavior |
 |---|---|---|
-| Low Beam Static | Both headlights centered | Conservative low-beam pattern |
-| Low Beam AFS | Headlights swivel from steering/speed | Conservative low-beam pattern |
-| High Beam | Headlights centered for first build | High-beam zones bright |
-| High Beam ADB | Headlights centered for first build | Zones dim around detected vehicle angle |
-| Fault Safe | Center where possible | Conservative low-beam pattern |
+| `Off` | No active swivel command | Headlight output off or standby |
+| `LowBeam_NoSwivel` | Both headlights centered | Conservative low-beam pattern |
+| `LowBeam_Swivel` | Headlights swivel from steering/speed | Conservative low-beam pattern |
+| `HighBeam_NoDimming` | Headlights centered for first build | High-beam zones bright |
+| `HighBeam_Dimming` | Headlights centered for first build | Zones dim around detected vehicles |
+| `Safe_Default` | Center where possible | Conservative low-beam pattern |
 
 ## Bring-Up Order
 
@@ -245,4 +250,4 @@ servo and LED supplies during bring-up if resets, flicker, or brownouts appear.
 5. Bring up one LED-zone driver and dim each of the seven zones.
 6. Assemble one rotating headlight platform and test cable strain relief.
 7. Duplicate the module for the second headlight.
-8. Integrate CAN commands from the MetaDrive CAN Bridge.
+8. Integrate CAN commands from the CAN Bridge.
