@@ -1,6 +1,6 @@
 # 0x300 Vehicle_Speed
 
-`Vehicle_Speed` is transmitted by the CAN Bridge. It carries ego vehicle speed for low-beam swivel behavior, fallback decisions, and dashboard/log correlation.
+`Vehicle_Speed` is transmitted by the C++ bridge CAN module. It carries ego vehicle speed for low-beam swivel behavior, fallback decisions, and dashboard/log correlation.
 
 ## Frame
 
@@ -8,7 +8,7 @@
 |---|---|
 | CAN ID | `0x300` |
 | Name | `Vehicle_Speed` |
-| Producer | CAN Bridge |
+| Producer | C++ bridge CAN module |
 | Consumer | AFS ECU |
 | Direction | Host to ECU |
 | DLC | 8 |
@@ -22,7 +22,7 @@
 
 `SpeedSaturated` means the bridge clipped the speed or acceleration to the supported CAN signal range before transmission. A saturated value may still be usable if `SpeedValid = 1`, but it should be treated as diagnostic evidence that the simulator value exceeded the expected range.
 
-No source field is carried in this frame. The producer is already fixed as the CAN Bridge; if source diagnostics are needed later, they should be added to a separate bridge/status message.
+No source field is carried in this frame. The producer is already fixed as the C++ bridge CAN module; if source diagnostics are needed later, they should be added to a separate bridge/status message.
 
 ## Byte Layout
 

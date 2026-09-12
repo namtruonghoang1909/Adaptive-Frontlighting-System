@@ -29,10 +29,10 @@ message index file.
 | Identifier type | 11-bit standard ID |
 | Nominal bitrate | 500 kbit/s |
 | Host interface | SocketCAN `vcan0` for virtual tests, `can0` for hardware |
-| Host CAN owner | CAN Bridge |
-| Host encoding/decoding | CAN Bridge uses `cantools` with `can/afs.dbc` |
-| Host transmit/receive | CAN Bridge uses `python-can` on SocketCAN |
-| Dashboard role | HMI command source and decoded-status display through the CAN Bridge |
+| Host CAN owner | Proposed C++17 gateway |
+| Host encoding/decoding | Planned DBC-derived native codec; `cantools` is a generation/test tool |
+| Host transmit/receive | Raw Linux SocketCAN in the C++ gateway |
+| Dashboard role | Python HMI; requests and decoded status through gateway Unix socket IPC |
 | DLC | Message-specific and defined by the DBC; receivers reject frames whose DLC does not match the expected value |
 | Byte order | Little-endian for multi-byte integers |
 | Alive counter | 4-bit rolling counter in byte `0` bits `0..3`, increments by 1 modulo 16 |
@@ -47,13 +47,15 @@ enough for control.
 
 ## Current Messages
 
+The message specifications use "C++ bridge CAN module" for the native gateway's CAN boundary. The repository reorganization does not finalize or change the provisional signal values or byte layouts.
+
 | ID | Name | Bus producer | Bus consumer | Purpose | Detail |
 |---:|---|---|---|---|---|
-| `0x100` | `AFS_Status` | AFS ECU | CAN Bridge | ECU executed status decoded by the bridge and displayed by the Dashboard | [messages/0x100_AFS_Status.md](messages/0x100_AFS_Status.md) |
-| `0x200` | `Vehicle_Steering` | CAN Bridge | AFS ECU | Simulated steering input | [messages/0x200_Vehicle_Steering.md](messages/0x200_Vehicle_Steering.md) |
-| `0x300` | `Vehicle_Speed` | CAN Bridge | AFS ECU | Simulated speed input | [messages/0x300_Vehicle_Speed.md](messages/0x300_Vehicle_Speed.md) |
-| `0x310` | `Vehicle_Object` | CAN Bridge | AFS ECU | Two-frame nearest-distance sector grid for ADB beam dodging | [messages/0x310_Vehicle_Object.md](messages/0x310_Vehicle_Object.md) |
-| `0x400` | `Dashboard_Command` | CAN Bridge | AFS ECU | Dashboard HMI command encoded and sent by the bridge | [messages/0x400_Dashboard_Command.md](messages/0x400_Dashboard_Command.md) |
+| `0x100` | `AFS_Status` | AFS ECU | C++ bridge CAN module | ECU executed status decoded by the bridge and displayed by the Dashboard | [messages/0x100_AFS_Status.md](messages/0x100_AFS_Status.md) |
+| `0x200` | `Vehicle_Steering` | C++ bridge CAN module | AFS ECU | Simulated steering input | [messages/0x200_Vehicle_Steering.md](messages/0x200_Vehicle_Steering.md) |
+| `0x300` | `Vehicle_Speed` | C++ bridge CAN module | AFS ECU | Simulated speed input | [messages/0x300_Vehicle_Speed.md](messages/0x300_Vehicle_Speed.md) |
+| `0x310` | `Vehicle_Object` | C++ bridge CAN module | AFS ECU | Two-frame nearest-distance sector grid for ADB beam dodging | [messages/0x310_Vehicle_Object.md](messages/0x310_Vehicle_Object.md) |
+| `0x400` | `Dashboard_Command` | C++ bridge CAN module | AFS ECU | Dashboard HMI command encoded and sent by the bridge | [messages/0x400_Dashboard_Command.md](messages/0x400_Dashboard_Command.md) |
 
 ## Signal Intent
 
@@ -67,6 +69,8 @@ enough for control.
 
 ## DBC Ownership
 
-The DBC should be shared by the CAN Bridge, firmware, logs, and tests. The Dashboard should
-use decoded signal names and enums exposed by the CAN Bridge so its UI stays aligned with the
-same CAN contract without owning raw CAN I/O.
+A DBC is a text dictionary of CAN messages: it identifies each signal's bits, signedness, units, scaling, and enums. The planned `can/afs.dbc` is shared by the C++ gateway, firmware, logs, and tests. It is separate from the Python/C++ IPC message specification.
+
+The proposed workflow generates small C pack/unpack functions from the DBC and compiles them into both gateway and firmware. C++ still owns sockets, scheduling, validation, and lifecycle; Embedded C still owns AFS control. Timeouts, checksums/counter behavior, and multi-frame assembly need application logic alongside the DBC.
+
+The Dashboard consumes decoded values and enums from gateway IPC. It does not load a DBC to own raw CAN transport.

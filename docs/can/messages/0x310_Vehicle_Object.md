@@ -1,6 +1,6 @@
 # 0x310 Vehicle_Object
 
-`Vehicle_Object` is transmitted by the CAN Bridge. It is the ADB object-grid input to the AFS ECU. The message does not carry raw lidar rays and does not directly command LED segments. It carries nearest detected-vehicle distance per logical beam sector.
+`Vehicle_Object` is transmitted by the C++ bridge CAN module. It is the ADB object-grid input to the AFS ECU. The message does not carry raw lidar rays and does not directly command LED segments. It carries nearest detected-vehicle distance per logical beam sector.
 
 A complete 16-sector grid sample is sent as two `0x310` frames:
 
@@ -17,7 +17,7 @@ Both frames for the same grid sample use the same `GridSampleCounter`. The ECU a
 |---|---|
 | CAN ID | `0x310` |
 | Name | `Vehicle_Object` |
-| Producer | CAN Bridge |
+| Producer | C++ bridge CAN module |
 | Consumer | AFS ECU |
 | Direction | Host to ECU |
 | DLC | 8 |
