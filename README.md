@@ -1,58 +1,59 @@
 # Adaptive Front-lighting System
 
-Bench-scale Adaptive Front-lighting System prototype with two lighting behaviors:
-low-beam AFS swivel and high-beam ADB beam dodging.
-
-The project is planned as a hardware-in-the-loop system. A Linux runtime runs MetaDrive,
-Dashboard, CAN Bridge, and host-side CAN tools. A physical STM32F407VE AFS ECU receives
-compact CAN signals, decides the final lighting behavior, and drives the headlight rig.
+Bench-scale Adaptive Front-lighting System prototype with low-beam swivel and high-beam adaptive dimming. A Linux host runs the simulation, native communication bridge, and Dashboard; a physical STM32F407VE remains the AFS controller under test.
 
 ## System Shape
 
 ```text
-MetaDrive -> CAN Bridge reads -> CAN bus -> STM32F407VE AFS ECU
-Dashboard -> CAN Bridge reads -> CAN bus -> STM32F407VE AFS ECU
-STM32F407VE AFS ECU -> CAN bus -> CAN Bridge reads -> Dashboard
+Python simulation_runner                 Python dashboard
+MetaDrive + extraction + IPC adapter          |
+                  |                            |
+                  +------ Unix socket IPC -----+
+                               |
+                               v
+                     C++17 bridge / gateway
+                     IPC + state + SocketCAN
+                               |
+                          CAN bus / can0
+                               |
+                               v
+                       STM32 AFS ECU (C)
+                               |
+                               v
+                         headlight rig
 ```
 
-The CAN Bridge is the host-side bus owner. It reads MetaDrive data and Dashboard command
-state, publishes `0x200`, `0x300`, `0x310`, and `0x400`, receives `0x100`, and forwards
-decoded ECU status to the Dashboard.
+The C++ bridge is the only production host owner of project CAN traffic. The Dashboard sends requests and displays bridge/ECU status through IPC. STM32 validates inputs, decides the executed AFS/ADB behavior, drives the hardware, supervises feedback, and applies safe fallback.
 
-The Dashboard is the HMI. It lets the user request headlight power/mode and clear faults,
-then displays decoded status for observation. It does not pack CAN frames or own SocketCAN.
+See [the architecture flowchart](docs/architecture/overview.md#system-at-a-glance) and [gateway thread diagram](docs/architecture/data-flow.md#inside-the-gateway).
+
+## Components
+
+| Directory | Responsibility | Current status |
+|---|---|---|
+| `simulation_runner/` | Python MetaDrive lifecycle, controls, extraction, and future IPC publishing | Runner, controls, and ego extractor implemented; IPC and surrounding extraction planned |
+| `bridge/` | C++17/CMake IPC and CAN gateway | Organized module scaffold; runtime not implemented |
+| `dashboard/` | Python operator commands and system display through bridge IPC | Organized package scaffold; UI not implemented |
+| `firmware/` | STM32 Embedded C AFS/ADB control and hardware drivers | Not implemented |
+| `simulation/metadrive/` | Local ignored MetaDrive dependency | Runtime dependency, not project-owned source |
+| `docs/` | Architecture, CAN, hardware, verification, and agent context | Active design documentation |
+
+## Run The Implemented Simulation
+
+Runtime commands require Linux and are run from the repository root:
+
+```bash
+bash simulation_runner/scripts/check_metadrive.sh
+bash simulation_runner/scripts/start_metadrive_simulation.sh
+```
+
+Run the dependency-free Python tests with the configured MetaDrive environment:
+
+```bash
+PYTHONPATH=simulation_runner/src \
+simulation/metadrive/metadrive_venv/bin/python -m pytest simulation_runner/tests -v
+```
 
 ## Documentation
 
-Start with [docs/README.md](docs/README.md). It links the architecture, CAN, hardware, tools, and verification notes.
-
-Key docs:
-
-- [docs/architecture/overview.md](docs/architecture/overview.md) - system architecture.
-- [docs/architecture/data-flow.md](docs/architecture/data-flow.md) - host-to-ECU data flow.
-- [docs/architecture/components/metadrive.md](docs/architecture/components/metadrive.md) - simulator component role.
-- [docs/architecture/components/can-bridge.md](docs/architecture/components/can-bridge.md) - host CAN Bridge role and tools.
-- [docs/architecture/components/dashboard.md](docs/architecture/components/dashboard.md) - Dashboard command/status UI role and design.
-- [docs/architecture/components/headlights.md](docs/architecture/components/headlights.md) - headlight structure and AFS/ADB behavior.
-- [docs/can/README.md](docs/can/README.md) - CAN bus summary and message specs.
-- [docs/hardware/hardware.md](docs/hardware/hardware.md) - bench hardware overview.
-
-## Current Status
-
-The repository is in the orientation and planning phase.
-
-| Area | Status |
-|---|---|
-| Documentation | Orientation scaffold in progress |
-| DBC | Planned as `can/afs.dbc` |
-| CAN Bridge | Not present yet |
-| Dashboard | Not present yet |
-| STM32 firmware | Not present yet |
-| Hardware rig | Planned |
-
-## Runtime Note
-
-The canonical clone lives on the Linux runtime machine. A Windows path such as
-`Z:\Adaptive-Frontlighting-System` is an SSHFS-mounted view of the same checkout. Runtime
-work for MetaDrive, SocketCAN, CAN Bridge, Dashboard, and hardware-facing tools belongs in
-the Linux SSH session.
+Start with [docs/README.md](docs/README.md). CAN signal layouts remain provisional until `can/afs.dbc` is created. `vcan0` will support host integration tests; physical HIL will use `can0`, the CAN adapter/transceiver path, STM32, and the headlight rig.
