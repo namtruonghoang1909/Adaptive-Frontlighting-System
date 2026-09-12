@@ -107,7 +107,7 @@ circuitry because the PCA9685 is not an LED power driver by itself.
 
 ## Status Observability
 
-The Dashboard should be able to visualize the headlight state from decoded `0x100 AFS_Status` provided by the CAN Bridge:
+The Dashboard should be able to visualize the headlight state from decoded `0x100 AFS_Status` provided through the C++ bridge IPC interface:
 
 | Status data | Meaning |
 |---|---|

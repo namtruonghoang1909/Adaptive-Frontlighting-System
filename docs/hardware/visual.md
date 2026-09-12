@@ -12,7 +12,7 @@ firmware build work.
        +------------------------------------+
        | Dashboard                          |
        | MetaDrive Simulation               |
-       | CAN Bridge                         |
+       | C++ Bridge                          |
        | candump / SavvyCAN                 |
        +------------------+-----------------+
                           |
@@ -61,13 +61,13 @@ firmware build work.
 
 | Component | Where it runs | Responsibility |
 |---|---|---|
-| Dashboard | Linux runtime | Provides HMI command state to the CAN Bridge and displays decoded ECU status |
+| Dashboard | Linux runtime | Sends HMI requests to the C++ bridge and displays decoded ECU status received through bridge IPC |
 | MetaDrive Simulation | Linux runtime | Produces raw simulated ego and surrounding-vehicle data |
-| CAN Bridge | Linux runtime | Reads Dashboard/MetaDrive state, sends DBC-encoded CAN frames, receives ECU status, and forwards decoded status |
+| C++ Bridge | Linux runtime | Receives Dashboard/simulation IPC, sends DBC-encoded CAN frames, receives ECU status, and forwards decoded status |
 | STM32F407VE ECU Firmware | Physical STM32 board | Receives CAN, decides final lighting behavior, drives servos/LEDs, and reports status |
 | Headlight rig | Physical bench | Shows low-beam swivel and high-beam beam-zone dimming |
 
-The CAN Bridge is a host-side adapter, not the ECU. The STM32F407VE firmware owns the final
+The C++ bridge is a host-side communication gateway, not the ECU. The STM32F407VE firmware owns the final
 actuator decisions.
 
 ## One Headlight Design
@@ -250,4 +250,4 @@ servo and LED supplies during bring-up if resets, flicker, or brownouts appear.
 5. Bring up one LED-zone driver and dim each of the seven zones.
 6. Assemble one rotating headlight platform and test cable strain relief.
 7. Duplicate the module for the second headlight.
-8. Integrate CAN commands from the CAN Bridge.
+8. Integrate CAN commands from the C++ bridge.
