@@ -2,3 +2,13 @@
 # Keep these anchored so docs/simulation/metadrive/ remains trackable documentation.
 /metadrive/
 /simulation/metadrive/
+
+# Python-generated files.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Native out-of-source build trees.
+/bridge/build/
+/build/
