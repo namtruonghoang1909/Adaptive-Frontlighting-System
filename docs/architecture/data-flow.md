@@ -1,145 +1,89 @@
 # Data Flow
 
-This page describes the data the system needs, how it moves over CAN, and what the
-STM32F407VE ECU needs to control the physical headlights.
+The target runtime has three Linux application processes. Socket IPC carries observations, requests, and reported status between them. Only the C++ gateway opens SocketCAN for production AFS traffic. The repository now has separate `simulation_runner/`, `bridge/`, and `dashboard/` component trees, but the IPC and gateway runtime behavior described below is not implemented. See [overview.md](overview.md) for the whole-system flowchart.
 
-The project has three host-side runtime pieces: MetaDrive, Dashboard, and CAN Bridge. The CAN
-Bridge is the only host-side module that sends or receives CAN frames.
+## Inside The Gateway
 
-## End-To-End Flow
+```mermaid
+flowchart LR
+    SIM["Python simulation process<br/>MetaDrive + extractor + IPC publisher"]
+    DASH["Python Dashboard process<br/>Commands + status display"]
 
-```text
-MetaDrive -> CAN Bridge reads -> CAN bus -> STM32F407VE AFS ECU
-Dashboard -> CAN Bridge reads -> CAN bus -> STM32F407VE AFS ECU
-STM32F407VE AFS ECU -> CAN bus -> CAN Bridge reads -> Dashboard
+    subgraph CPP["C++ gateway process - shared address space"]
+        IPC["Thread A: main / IPC<br/>Accept clients, validate messages<br/>Reply with status, coordinate shutdown"]
+        INPUT["Latest input snapshots<br/>Vehicle, objects, requested command"]
+        STATUS["Latest output snapshots<br/>Decoded ECU status + gateway health"]
+        CAN["Thread B: CAN worker<br/>Schedule TX, receive RX<br/>Check source freshness"]
+
+        IPC -->|"Replace under mutex"| INPUT
+        INPUT -->|"Copy under mutex"| CAN
+        CAN -->|"Replace under mutex"| STATUS
+        STATUS -->|"Copy under mutex"| IPC
+    end
+
+    SIM -->|"Unix socket IPC: observations"| IPC
+    DASH -->|"Unix socket IPC: requests"| IPC
+    IPC -->|"Unix socket IPC: results + status"| DASH
+    CAN <-->|"SocketCAN: TX / RX"| BUS["can0: physical CAN<br/>or vcan0: virtual test bus"]
 ```
 
-## Source Data
+Thread A handles the local Python clients. Thread B owns CAN transmission and reception. Both use short locks to exchange whole snapshots inside the C++ process. The Python processes never share the C++ state object.
 
-| Source | Provides | Consumed by | CAN result |
+A single event loop could handle the initial traffic; the proposed two-thread split isolates IPC parsing and Dashboard activity from scheduled CAN work. It is not a hard real-time guarantee. Use `poll()` and monotonic deadlines for the CAN worker; a separate RX thread or condition variable is not required by this design.
+
+## Python Simulation Loop
+
+```text
+MetaDrive reset/step
+  -> extract ego and, later, surrounding objects
+  -> construct complete simulator-independent observation
+  -> publish through the adapter's IPC client
+  -> continue the simulation loop
+```
+
+These are calls within one Python application process. The existing `run_single_agent(..., on_snapshot=...)` callback is the publisher integration point. MetaDrive owns no CAN IDs or payload packing; its lifecycle and driving controls stay in Python.
+
+## Cross-Process Contract
+
+The proposed transport is Unix Domain Sockets, `SOCK_SEQPACKET`, with versioned JSON messages. Simulation and Dashboard use separate client connections to a gateway-owned server. Exact fields and message names remain draft design.
+
+| Message kind | Producer | Consumer | Meaning |
 |---|---|---|---|
-| MetaDrive | Ego steering state/input | CAN Bridge | `0x200 Vehicle_Steering` |
-| MetaDrive | Ego speed | CAN Bridge | `0x300 Vehicle_Speed` |
-| MetaDrive | Surrounding-vehicle position/presence | CAN Bridge | `0x310 Vehicle_Object` |
-| Dashboard | Requested headlight power and mode | CAN Bridge | `0x400 Dashboard_Command` |
-| Dashboard | Clear-fault request | CAN Bridge | `0x400 Dashboard_Command` |
-| AFS ECU | Executed mode, faults, feedback, applied dim mask | CAN Bridge | `0x100 AFS_Status`, decoded and forwarded to Dashboard |
+| Vehicle state | Python adapter | C++ gateway | Steering, speed, validity, sample identity, and simulation metadata |
+| Object state | Python adapter | C++ gateway | Ego-relative observed geometry, dimensions, validity, and sample identity |
+| Dashboard command | Python Dashboard | C++ gateway | Requested power/mode or an identified clear-fault action |
+| Command result | C++ gateway | Python Dashboard | Gateway accepted or rejected a request |
+| System status | C++ gateway | Python Dashboard | ECU-reported output/faults, current source state, freshness, and gateway health |
 
-Dashboard command data is local HMI state until the CAN Bridge encodes it. The Dashboard does
-not publish `0x400` directly.
+Gateway acceptance is not confirmation of physical execution. The Dashboard must distinguish the operator's request, gateway acceptance, and ECU-reported executed state.
 
-## CAN Bridge Responsibility
-
-Core bridge responsibilities:
-
-1. Read requested headlight power, requested mode, and clear-fault request from the Dashboard.
-2. Read required ego and surrounding-vehicle data from MetaDrive.
-3. Convert simulator units and coordinate conventions into project signal conventions.
-4. Publish steering and speed inputs for low-beam swivel.
-5. Publish compact surrounding-object input for high-beam beam dodging.
-6. Publish the Dashboard command frame.
-7. Listen for `0x100 AFS_Status` from the ECU.
-8. Decode accepted ECU status and update local status state for the Dashboard.
-
-The bridge should not command servos or LEDs directly. It publishes inputs; the AFS ECU owns
-the final lighting decision.
+Use complete current snapshots for continuous observations and persistent requests. Use identified, bounded pending actions for momentary commands so they are not silently overwritten. Keep outgoing status bounded and replaceable so a slow Dashboard cannot block CAN.
 
 ## CAN Transfer
 
-Only compact signals cross CAN. The DBC will define exact packing, scaling, enums, alive
-counters, and receiver validation rules.
+The existing IDs below remain provisional design values, not new constraints introduced by the refactor.
 
-| CAN ID | Message | Bus producer | Bus consumer | Dashboard visibility |
-|---:|---|---|---|---|
-| `0x200` | `Vehicle_Steering` | CAN Bridge | AFS ECU | Optional decoded bridge/log view |
-| `0x300` | `Vehicle_Speed` | CAN Bridge | AFS ECU | Optional decoded bridge/log view |
-| `0x310` | `Vehicle_Object` | CAN Bridge | AFS ECU | Optional decoded bridge/log view |
-| `0x400` | `Dashboard_Command` | CAN Bridge | AFS ECU | Dashboard is logical command source |
-| `0x100` | `AFS_Status` | AFS ECU | CAN Bridge | Main Dashboard status display |
+| CAN ID | Message | Bus producer | Bus consumer |
+|---:|---|---|---|
+| `0x200` | `Vehicle_Steering` | C++ gateway | AFS ECU |
+| `0x300` | `Vehicle_Speed` | C++ gateway | AFS ECU |
+| `0x310` | `Vehicle_Object` | C++ gateway | AFS ECU |
+| `0x400` | `Dashboard_Command` | C++ gateway | AFS ECU |
+| `0x100` | `AFS_Status` | AFS ECU | C++ gateway |
 
-`cantools` encodes signal dictionaries into CAN frame bytes. `python-can` sends and receives
-those bytes on SocketCAN. `cantools` does not transmit frames by itself.
+Python converts simulator-specific state into observations. C++ converts observations into the CAN representation, including object-grid compression where the contract requires it. STM32 performs the final swivel/dimming calculations and physical output selection.
 
-## CAN Receive Model
+The planned DBC defines CAN packing and signal meaning. Generated C pack/unpack functions can serve the C++ gateway and firmware; runtime transport is native SocketCAN. Counter handling, checksums, timeouts, and multi-frame assembly require explicit application behavior alongside the DBC.
 
-Each receiver should have its listener/filter ready for the desired CAN ID before normal
-traffic starts.
+## State, Timing, And Failures
 
-```text
-sender local data
-  -> encode CAN frame
-  -> transmit frame with ID, DLC, and data bytes
-  -> receiver listener/filter accepts the desired ID
-  -> receive_message validates ID, DLC, checksum, alive counter, reserved bits, and values
-  -> receive_message decodes signals
-  -> receive_message stores decoded values into local state variables
-  -> control or display logic reads local state and checks freshness
-```
+- Build and validate complete snapshots before taking the state mutex. Copy or replace under the lock, then release it before encoding, socket I/O, logging, or display.
+- Schedule CAN independently from the simulation update interval. Reuse a recent observation only while it satisfies the agreed source-freshness policy.
+- Keep source age distinct from CAN alive counters and IPC connection liveness. Receiving or transmitting another copy of an old sample must not make the observation fresh again.
+- Track sample/session identity and simulation time separately from host monotonic time. Define restart, reset, pause, backlog, and unpaced-simulation behavior before HIL integration.
+- Use bounded buffering; avoid replaying a queue of outdated vehicle states. Define queue-age checks as part of detailed IPC design.
+- Missing simulation updates invalidate source data. Dashboard disconnects follow an explicit command-lifetime policy. Missing ECU status makes the displayed status stale.
+- STM32 independently validates incoming CAN and handles stale/invalid data even if the gateway crashes.
+- Waking and joining the CAN worker, closing sockets, and releasing owned resources belong to coordinated gateway shutdown.
 
-The receive function stores data. It should not directly execute lighting behavior or UI
-behavior.
-
-## ECU Inputs
-
-The STM32F407VE should receive only the signals needed for final lighting behavior:
-
-| ECU input | Source message | Why the ECU needs it |
-|---|---|---|
-| Requested headlight power, requested mode, command validity, clear-fault request | `0x400 Dashboard_Command` | Turn headlights off/on, select requested behavior, and clear safe, clearable faults |
-| Steering angle and freshness | `0x200 Vehicle_Steering` | Compute low-beam swivel behavior when requested |
-| Vehicle speed and freshness | `0x300 Vehicle_Speed` | Gate behavior and scale swivel response |
-| Surrounding-object validity and freshness | `0x310 Vehicle_Object` | Decide whether high-beam dimming input is usable |
-| Surrounding-object data | `0x310 Vehicle_Object` | Support ADB behavior; detailed mapping logic is deferred to later implementation docs |
-| Servo feedback ADC | Hardware | Confirm physical servo position |
-
-## ECU Logic
-
-The ECU owns final behavior. It should not trust the CAN Bridge or Dashboard to command
-actuators directly.
-
-```text
-if Dashboard command is stale or invalid:
-    execute Safe_Default
-    center servos if controllable
-    apply conservative low-beam output
-
-else if requested headlight power is Off:
-    execute Off
-    command headlights off or standby
-
-else if required CAN input for the requested mode is stale or invalid:
-    execute Safe_Default
-    center servos if controllable
-    apply conservative low-beam output
-
-else if requested mode is LowBeam_NoSwivel:
-    center servos
-    apply low-beam output
-
-else if requested mode is LowBeam_Swivel:
-    compute servo target from steering and speed
-    command left/right swivel servos
-    apply low-beam output
-
-else if requested mode is HighBeam_NoDimming:
-    center servos for first build
-    apply high-beam output without adaptive dimming
-
-else if requested mode is HighBeam_Dimming:
-    center servos for first build
-    apply high-beam output
-    dim LED zones from accepted sector distances and glare thresholds
-
-read servo feedback
-report hardware/control faults and applied output on 0x100 AFS_Status
-```
-
-## Physical Outputs
-
-| Output | Driver path | Used for |
-|---|---|---|
-| Left swivel servo | STM32 I2C -> servo PCA9685 -> servo PWM | Low-beam left headlight yaw |
-| Right swivel servo | STM32 I2C -> servo PCA9685 -> servo PWM | Low-beam right headlight yaw |
-| Left LED beam zones | STM32 I2C -> left beam PCA9685 -> LED zone driver/current limiting | Left high-beam output and dimming |
-| Right LED beam zones | STM32 I2C -> right beam PCA9685 -> LED zone driver/current limiting | Right high-beam output and dimming |
-| Status CAN frame | STM32 CAN -> MCP2551 -> CAN bus | CAN Bridge decode and Dashboard/log feedback |
+These are proposed behaviors; no IPC or gateway runtime is implemented yet.

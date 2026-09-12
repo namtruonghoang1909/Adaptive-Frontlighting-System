@@ -1,8 +1,8 @@
 # 0x400 Dashboard_Command
 
-`Dashboard_Command` is transmitted by the CAN Bridge to the AFS ECU using the current Dashboard HMI command state as its source data. It carries the HMI command values that the ECU needs: requested headlight power, requested headlight mode, command validity, and a momentary clear-fault request.
+`Dashboard_Command` is transmitted by the C++ bridge CAN module to the AFS ECU using the current Dashboard HMI command state as its source data. It carries the HMI command values that the ECU needs: requested headlight power, requested headlight mode, command validity, and a momentary clear-fault request.
 
-The Dashboard is the logical command source. The CAN Bridge is the bus-facing CAN producer, so the Dashboard does not pack or transmit this CAN frame directly.
+The Dashboard is the logical command source. The C++ bridge CAN module is the bus-facing CAN producer, so the Dashboard does not pack or transmit this CAN frame directly.
 
 ## Frame
 
@@ -10,7 +10,7 @@ The Dashboard is the logical command source. The CAN Bridge is the bus-facing CA
 |---|---|
 | CAN ID | `0x400` |
 | Name | `Dashboard_Command` |
-| Producer | CAN Bridge |
+| Producer | C++ bridge CAN module |
 | Logical source | Dashboard HMI |
 | Consumer | AFS ECU |
 | Direction | Host to ECU |
@@ -23,7 +23,7 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 
 | Byte | Bits | Signal | Type / Scale | Meaning |
 |---:|---|---|---|---|
-| 0 | 0..3 | `AliveCounter` | uint4 | Rolling CAN Bridge counter, `0..15` |
+| 0 | 0..3 | `AliveCounter` | uint4 | Rolling bridge CAN-interface counter, `0..15` |
 | 0 | 4 | `CommandValid` | bool | Dashboard command is fresh and usable |
 | 0 | 5 | `ClearFaultRequest` | bool | Momentary request to clear safe, clearable latched faults |
 | 0 | 6..7 | `Reserved` | uint2 | Transmit `0` |

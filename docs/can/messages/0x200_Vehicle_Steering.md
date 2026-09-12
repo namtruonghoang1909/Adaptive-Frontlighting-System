@@ -1,6 +1,6 @@
 # 0x200 Vehicle_Steering
 
-`Vehicle_Steering` is transmitted by the CAN Bridge. It carries ego steering input converted from the simulator into a compact, ECU-friendly form for low-beam swivel.
+`Vehicle_Steering` is transmitted by the C++ bridge CAN module. It carries ego steering input converted from the simulator into a compact, ECU-friendly form for low-beam swivel.
 
 ## Frame
 
@@ -8,7 +8,7 @@
 |---|---|
 | CAN ID | `0x200` |
 | Name | `Vehicle_Steering` |
-| Producer | CAN Bridge |
+| Producer | C++ bridge CAN module |
 | Consumer | AFS ECU |
 | Direction | Host to ECU |
 | DLC | 8 |
@@ -26,7 +26,7 @@ Positive steering angle means the ego vehicle is steering left. Negative steerin
 
 `SteeringSaturated` means the bridge clipped the steering angle or rate to the supported CAN signal range before transmission. A saturated value may still be usable if `SteeringValid = 1`, but it should be treated as diagnostic evidence that the simulator value exceeded the expected range.
 
-No source field is carried in this frame. The producer is already fixed as the CAN Bridge; if source diagnostics are needed later, they should be added to a separate bridge/status message.
+No source field is carried in this frame. The producer is already fixed as the C++ bridge CAN module; if source diagnostics are needed later, they should be added to a separate bridge/status message.
 
 ## Byte Layout
 

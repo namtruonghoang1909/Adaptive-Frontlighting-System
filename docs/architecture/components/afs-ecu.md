@@ -31,7 +31,7 @@ The two main behaviors are low-beam AFS swivel and high-beam ADB beam dodging.
 
 | Output | Destination | Used for |
 |---|---|---|
-| `0x100 AFS_Status` | CAN Bridge; Dashboard and logs receive decoded status through CAN Bridge | Executed mode, health, faults, servo feedback, and applied dim mask |
+| `0x100 AFS_Status` | C++ bridge CAN module; Dashboard and logs receive it through the Dashboard interface | Executed mode, health, faults, servo feedback, and applied dim mask |
 | Servo PWM commands | Servo PCA9685 board | Left/right horizontal low-beam swivel |
 | LED-zone PWM commands | Left/right beam PCA9685 boards and LED driver stages | High-beam output and ADB dimming |
 | Safe fallback lighting | Headlight rig | Conservative visible output when behavior is not trusted |
@@ -63,7 +63,6 @@ The ECU should report hardware/control-path problems on `0x100 AFS_Status`:
 
 ## Ownership
 
-The AFS ECU owns the final executed behavior. The Dashboard provides requested state through the CAN Bridge, and the CAN
-Bridge provides host-side vehicle/object inputs, but the ECU decides whether those inputs are
+The AFS ECU owns the final executed behavior. The Dashboard provides requested state through the C++ bridge, and the bridge CAN module provides host-side vehicle/object inputs, but the ECU decides whether those inputs are
 fresh enough, which zones are actually dimmed, and what fallback output
 is used.

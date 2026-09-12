@@ -1,123 +1,70 @@
 # Dashboard Component
 
-The Dashboard is the user-facing HMI for the prototype. It runs in Linux and acts like a simple control and observation screen for headlight mode selection, CAN-derived status, and ECU feedback.
-
-The Dashboard is not the CAN owner. It provides command state to the CAN Bridge and receives decoded status from the CAN Bridge.
+The Dashboard is a separate Python application process for operator commands and system observation. Its organized package scaffold is under `dashboard/`; UI and gateway-client behavior are not implemented. It connects to the C++ bridge over Unix socket IPC on the same Linux system. The bridge owns CAN and exposes decoded data; the Dashboard never accesses SocketCAN or bridge state directly.
 
 ## Responsibilities
 
-- Let the user turn the headlights on or off and request a headlight mode.
-- Provide requested power, requested mode, and clear-fault action to the CAN Bridge.
-- Show requested state, executed state, and CAN freshness.
-- Show key simulator-derived inputs after the CAN Bridge exposes them.
-- Show ECU feedback, faults, and applied lighting output.
+- Provide controls for requesting headlight power and operating mode.
+- Send a momentary clear-fault request.
+- Show requested state, executed ECU state, input freshness, faults, servo feedback, and applied output.
+- Remain usable when bridge or ECU data is stale or unavailable.
 
-The Dashboard does not execute lighting behavior. It asks for a mode; the AFS ECU decides what is actually safe and reports the executed state back through `0x100 AFS_Status`.
+The Dashboard requests behavior; the AFS ECU decides what can actually execute.
 
-## Inputs
+## Gateway Connection
 
-| Input | Source | Used for |
-|---|---|---|
-| Requested headlight power | User UI control | Choose whether headlights should be off or on |
-| Requested headlight mode | User UI control | Choose low-beam static, low-beam swivel, high-beam, or high-beam dimming when power is on |
-| Clear-fault action | User UI control | Request a momentary safe fault clear |
-| Decoded `0x100 AFS_Status` | CAN Bridge | Display executed mode, freshness, faults, feedback, and applied dim mask |
-| Optional decoded `0x200 Vehicle_Steering` | CAN Bridge or logs | Display current steering input for debugging |
-| Optional decoded `0x300 Vehicle_Speed` | CAN Bridge or logs | Display current speed input for debugging |
-| Optional decoded `0x310 Vehicle_Object` | CAN Bridge or logs | Display object input state for debugging |
-| Scenario metadata, if provided | MetaDrive or CAN Bridge | Show active scenario name or test condition |
+The proposed transport is a gateway-owned Unix Domain Socket using `SOCK_SEQPACKET` and versioned JSON. The Dashboard is a client, separate from the simulation client.
 
-The Dashboard should not read raw SocketCAN traffic directly in the first design. CAN details belong in the CAN Bridge.
+```text
+Dashboard request -> Unix socket IPC -> C++ gateway -> CAN -> STM32
+Dashboard display <- Unix socket IPC <- C++ gateway <- CAN <- STM32 status
+```
 
-## Processing
+Gateway acceptance confirms receipt/validation of a request, not physical execution. The UI distinguishes requested state, gateway acceptance, and ECU-reported executed state. Clear-fault actions need request identities and explicit handling; they must not disappear when a newer state snapshot replaces an older one.
 
-Command state:
+A browser-based UI uses a Python backend to communicate with the gateway. HTTP/WebSocket may connect browser and backend, while the backend-to-gateway connection remains local Unix socket IPC.
 
-| Step | Meaning |
+The command-lifetime policy on disconnect remains detailed-design work. Display data must carry explicit freshness. A slow or disconnected Dashboard must not stall the gateway CAN worker.
+
+## Inputs And Outputs
+
+| Direction | Data |
 |---|---|
-| Read UI controls | Read requested headlight power, requested mode, and clear-fault button state |
-| Normalize command values | Convert UI labels into project enum values expected by the CAN Bridge |
-| Handle momentary actions | Treat clear-fault as a pulse or edge, not a latched continuous command |
-| Publish command state locally | Make the latest command state available for the CAN Bridge to read |
+| User to Dashboard | Requested power, requested mode, clear-fault action |
+| Dashboard to C++ gateway | Structured command request through Unix socket IPC |
+| C++ gateway to Dashboard | Command results, ego display data, decoded AFS status, source freshness, and gateway health |
+| Dashboard to user | Requested versus executed mode, faults, feedback, and output state |
 
-Display state:
-
-| Step | Meaning |
-|---|---|
-| Receive decoded status | Accept decoded `0x100 AFS_Status` values from the CAN Bridge |
-| Update local display model | Store latest executed mode, freshness, faults, servo feedback, and applied dim mask |
-| Render user observation | Show the current ECU state and explain visible fallback or dimming behavior |
-
-The Dashboard does not add alive counters, checksums, DLC, or CAN IDs. The CAN Bridge owns those CAN-frame details.
-
-## Outputs
-
-To CAN Bridge:
-
-| Output | Destination | CAN result |
-|---|---|---|
-| Requested headlight power | CAN Bridge | Encoded into `RequestedHeadlightPower` in `0x400 Dashboard_Command` |
-| Requested headlight mode | CAN Bridge | Encoded into `RequestedHeadlightMode` in `0x400 Dashboard_Command` |
-| Clear-fault request | CAN Bridge | Encoded into `ClearFaultRequest` in `0x400 Dashboard_Command` |
-
-The Dashboard output is local host-side state. The CAN Bridge reads it and sends the actual CAN frame.
-
-To user:
-
-| Display output | Meaning |
-|---|---|
-| Requested vs executed state | Shows whether the ECU accepted the request or changed behavior |
-| CAN freshness and health | Shows stale inputs, decode faults, and heartbeat state |
-| Steering and speed | Shows low-beam swivel inputs when available |
-| Object input and applied mask | Shows decoded object input and beam columns dimmed or suppressed by the ECU |
-| Servo feedback | Shows measured left/right headlight swivel position |
-| Fault and fallback state | Shows why the ECU degraded, rejected a mode, or forced safe fallback |
-
-Display updates should tolerate stale data. If the CAN Bridge reports stale or missing status, the Dashboard should show that as an observation issue instead of inventing an ECU state.
-
-## Expected Modes
-
-| Mode | Purpose |
-|---|---|
-| `Off` | User-requested headlights off or standby |
-| `LowBeam_NoSwivel` | Centered static low-beam output |
-| `LowBeam_Swivel` | Steering/speed-linked horizontal swivel |
-| `HighBeam_NoDimming` | Full high-beam LED zones without adaptive dimming |
-| `HighBeam_Dimming` | High beam with vehicle-aware beam-zone dimming |
-| `Safe_Default` | ECU fallback/default display state, not a normal user request |
+The Dashboard does not create CAN IDs, DLC, alive counters, checksums, or packed payloads.
 
 ## Design
 
-The Dashboard UI should be organized around two tabs so command entry and system observation stay separate.
+The UI has two primary tabs.
 
 | Tab | Purpose | Main content |
 |---|---|---|
-| User Commands | Receive operator intent and publish local command state for the CAN Bridge | Headlight power toggle, requested mode segmented control, clear-fault momentary action, command validity/freshness, and latest command preview |
-| AFS Status | Observe decoded ECU and bridge state | Requested vs executed mode, CAN freshness, fault state, servo feedback, object input summary, applied dim mask, and bridge health |
+| User Commands | Collect operator intent | Power toggle, requested-mode segmented control, clear-fault button, connection state, and latest accepted command |
+| AFS Status | Observe the running system | Requested versus executed mode, CAN freshness, faults, speed, steering, servo feedback, applied dim state, and bridge health |
 
-The command tab should be compact and deliberate: controls should map directly to fields in `0x400 Dashboard_Command`, with clear disabled/stale states when the CAN Bridge is unavailable. The clear-fault control should be momentary and visually distinct from persistent mode controls.
+The User Commands tab should be compact. Persistent values use toggles or segmented controls; clear-fault is a momentary action. Controls should clearly show disabled or disconnected states.
 
-The status tab should favor fast scanning over dense logs. Put current executed mode, health, and faults first; keep servo feedback, object input, applied mask, and timing/debug details in grouped status areas below that primary state.
+The AFS Status tab should put executed mode, health, and faults first. Simulation input, servo feedback, output state, and timing details follow in scan-friendly groups. Stale values must be marked stale rather than presented as current.
 
 ## Tools
 
 | Tool or interface | Role |
 |---|---|
-| Python | Main implementation language for the first Dashboard prototype |
-| Python UI library | Render the two-tab HMI; candidate libraries include Streamlit, NiceGUI, PySide, or PyQt depending on whether the prototype is browser-based or desktop-based |
-| CAN Bridge command API | Publish requested power, requested mode, and clear-fault command state to the bridge |
-| CAN Bridge status API | Receive decoded `0x100 AFS_Status`, bridge health, and optional decoded input-frame values |
-| Shared DBC/enums | Keep displayed modes, signal names, and fault labels aligned with CAN definitions |
-| Plotting/table widgets | Show servo feedback, object input values, dim masks, timing, and debug traces |
-| Scenario metadata API, if available | Show active simulation case, run state, and repeatability metadata |
-| Logging/debug tools | Capture UI actions, bridge connection state, stale status, and decode/display issues |
-
-## Runtime Boundary
-
-The Dashboard should run in the Linux SSH/runtime environment, but it should not own SocketCAN, CAN adapter hardware, CAN frame packing, or message timing. Those dependencies stay in the CAN Bridge.
+| Python | Dashboard implementation language |
+| Python UI library | Streamlit, NiceGUI, PySide, or PyQt; final choice remains open |
+| Gateway IPC client | Send commands and receive results/display snapshots |
+| Unix Domain Sockets | Dashboard backend to C++ gateway process boundary |
+| HTTP/WebSocket, if a browser UI is chosen | Browser to Python Dashboard backend only |
+| Shared DBC-derived enums | Keep displayed modes and faults aligned with the CAN contract |
+| Plotting and table widgets | Display feedback and timing histories |
+| Logging | Record user actions and connection or stale-data issues |
 
 ## Related Docs
 
-- [can-bridge.md](can-bridge.md) - local command and decoded-status interface owner.
-- [metadrive.md](metadrive.md) - scenario metadata source.
+- [bridge.md](bridge.md) - C++ gateway ownership and Dashboard boundary.
+- [metadrive.md](metadrive.md) - simulation source.
 - [../data-flow.md](../data-flow.md) - command and status flow.

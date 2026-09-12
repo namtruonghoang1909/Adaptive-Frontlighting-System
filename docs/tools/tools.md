@@ -1,50 +1,27 @@
 # Tools and Environment
 
-This single file covers the project tools and where they run.
-
 ## Runtime Rule
 
-The project runtime is Linux. The only canonical clone is on the Linux machine at
-`Adaptive-Frontlighting-System/`. A path like `Z:\Adaptive-Frontlighting-System` is an SSHFS
-view for editing.
-
-Run these from the Linux SSH session:
-
-- MetaDrive.
-- CAN Bridge.
-- Dashboard.
-- SocketCAN, `vcan0`, and `can0`.
-- `python-can`, `cantools`, `candump`, and `cansend`.
-- CAN tests and hardware-facing commands.
+The runtime platform is Linux. Run commands from the repository root and use repository-relative paths. MetaDrive, SocketCAN, the C++ bridge, Dashboard, CAN tests, and hardware-facing tools do not depend on a particular clone location or editor mount.
 
 ## Tool Summary
 
-| Area | Tool | Why it is used |
+| Area | Tool | Role |
 |---|---|---|
-| Runtime OS | Linux VM or Linux host over SSH | SocketCAN and simulator runtime |
-| Simulation | MetaDrive | Raw ego state and surrounding-vehicle source |
-| Bridge language | Python | Reads Dashboard/MetaDrive state, publishes CAN signals, and decodes ECU status |
-| CAN API | `python-can` | Host-side CAN send/receive over SocketCAN |
-| DBC handling | `cantools` | Encode/decode shared DBC messages |
-| CAN stack | SocketCAN | `vcan0` for virtual tests and `can0` for hardware |
-| CAN monitor | SavvyCAN or `candump` | Inspect bus traffic |
-| Dashboard UI | Python UI toolkit, exact choice later | User command state and decoded status display |
+| Runtime OS | Linux | Simulator and SocketCAN host |
+| Simulation | MetaDrive | Ego and surrounding-vehicle source |
+| Simulation adapter | Python | MetaDrive lifecycle, extraction, normalization, and IPC publishing |
+| Gateway | C++17 | Native communication service; proposed, not implemented |
+| Gateway build | CMake | Native executable and unit/integration test targets |
+| Snapshot types | Python frozen dataclasses / C++ value types | Complete observations with explicit validity/freshness |
+| Gateway concurrency | `std::thread`, `std::mutex`, monotonic clock, `poll()` | Proposed main/IPC thread plus CAN TX/RX worker |
+| Local IPC | Unix Domain Sockets, `SOCK_SEQPACKET`, versioned JSON | Simulation and Dashboard clients to C++ gateway |
+| CAN API | Native Linux SocketCAN | Gateway runtime transmit and receive |
+| DBC handling | `cantools` as a build/test tool | Proposed generation of C pack/unpack functions for gateway and firmware |
+| CAN stack | SocketCAN | `vcan0` for tests and `can0` for hardware |
+| CAN monitor | SavvyCAN, `candump`, `cansend` | Traffic inspection and injection |
+| Dashboard UI | Python UI toolkit | Command and status HMI |
 | Embedded target | STM32F407VE | Physical AFS/ADB ECU |
-| CAN transceiver | MCP2551 | STM32 CAN TX/RX to CANH/CANL physical bus |
-| Servo PWM | Servo PCA9685 board | 50 Hz PWM outputs for two feedback servos |
-| Beam PWM | Left/right beam PCA9685 boards plus LED current limiting/driver stages | Independent brightness for ADB zones |
-| Hardware debug | Logic analyzer, multimeter, ST-Link | Electrical and board bring-up |
+| Hardware debug | Logic analyzer, multimeter, ST-Link | Electrical and firmware bring-up |
 
-## MCU Note
-
-The STM32F407VE is the current target for the physical ECU. The STM32F103C6 Blue Pill is
-acceptable for small experiments, but it is not the preferred final ECU for this project.
-
-## Bridge Note
-
-The CAN Bridge should use `cantools` to encode DBC signal dictionaries and `python-can` to
-send frames. `cantools` does not transmit onto CAN by itself.
-
-## DBC
-
-The DBC is expected to live at `can/afs.dbc` once created. The CAN Bridge, firmware, SavvyCAN, and tests should all use that same file. The Dashboard should use decoded signal names and enums exposed by the CAN Bridge.
+The current Python runner, controls, and ego extractor are under `simulation_runner/`. The organized `bridge/` and `dashboard/` scaffolds do not yet provide runtime behavior. Runtime CAN transport will be native C++; Python DBC tooling runs during generation/testing, not inside the bridge's CAN loop. Dashboard and simulation clients exchange IPC messages, while the bridge's threads share mutex-protected state. A browser Dashboard may additionally use HTTP/WebSocket between browser and Python backend.

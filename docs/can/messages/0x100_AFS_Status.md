@@ -1,6 +1,6 @@
 # 0x100 AFS_Status
 
-`AFS_Status` is transmitted by the STM32F407VE AFS ECU to the CAN Bridge. The bridge decodes it and forwards status to the Dashboard and log tools. It reports what the ECU is actually executing, whether required inputs are fresh enough, which faults are active, the measured servo positions, and the beam dimming pattern actually applied by the ECU.
+`AFS_Status` is transmitted by the STM32F407VE AFS ECU to the C++ bridge CAN module. The CAN interface decodes it and stores a status snapshot that the Dashboard interface and log tools can expose. It reports what the ECU is actually executing, whether required inputs are fresh enough, which faults are active, the measured servo positions, and the beam dimming pattern actually applied by the ECU.
 
 ## Frame
 
@@ -9,8 +9,8 @@
 | CAN ID | `0x100` |
 | Name | `AFS_Status` |
 | Producer | AFS ECU |
-| Bus consumer | CAN Bridge |
-| Display consumers | Dashboard, logging tools, and verification tools through CAN Bridge |
+| Bus consumer | C++ bridge CAN module |
+| Display consumers | Dashboard, logging tools, and verification tools through the C++ bridge IPC interface |
 | Direction | ECU to host |
 | DLC | 8 |
 | Suggested period | 20 ms |
@@ -19,7 +19,7 @@
 
 ## Status Intent
 
-`0x100` is an executed-status frame, not a command frame. The Dashboard provides requested headlight power and mode to the CAN Bridge, the CAN Bridge publishes `0x400 Dashboard_Command`, and `ExecutedMode` reports the state or mode the ECU actually selected after checking input freshness, decoding validity, hardware health, and fallback rules.
+`0x100` is an executed-status frame, not a command frame. The Dashboard provides requested headlight power and mode through the C++ bridge IPC interface, the C++ bridge CAN module publishes `0x400 Dashboard_Command`, and `ExecutedMode` reports the state or mode the ECU actually selected after checking input freshness, decoding validity, hardware health, and fallback rules.
 
 `RequiredInputsValid` means the messages required for the requested behavior have fresh accepted data inside the configured timeout threshold. The ECU uses only fresh accepted inputs when deciding the current output action.
 
