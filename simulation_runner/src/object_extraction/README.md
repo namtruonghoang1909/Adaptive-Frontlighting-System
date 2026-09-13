@@ -1,6 +1,6 @@
-# Vehicle Extraction
+# Object Extraction
 
-`vehicle_extract` converts simulator-owned vehicle objects into immutable, project-owned snapshots. The current milestone implements only the single-agent ego vehicle.
+`object_extraction` converts simulator-owned state into three main immutable project datatypes: `EgoSnapshot`, `SurroundingSnapshot`, and `SceneSnapshot`.
 
 ## Ego Snapshot
 
@@ -59,4 +59,12 @@ Unavailable simulator values are represented by `None`. Snapshots are frozen dat
 
 ## Surrounding Objects
 
-Surrounding-object attributes and extraction will be added in a later milestone. The current `vehicle_extract/surrounding/` directory is only a placeholder; no surrounding-object datatype or extraction API is defined yet.
+`extract_surrounding(env, ego_snapshot, radius_m=100.0)` scans MetaDrive's public object registry after each reset or step. It includes vehicles, pedestrians, cyclists, traffic cones, barriers, and generic traffic objects whose centers fall within the radius. It excludes ego, roads, buildings, lights, and rendering objects.
+
+Each `SingleObjectSnapshot` contains identity and semantic type; world position, velocity, heading, and available dimensions; and ego-relative position, velocity, heading, distance, and bearing. Units are meters, seconds, and radians. Ego coordinates use x forward and y left. Results sort by distance and then object ID.
+
+A valid empty tuple means the scan succeeded and found no eligible objects. Registry or ego-pose failure makes the scan invalid. Eligible objects with unusable identity or position are skipped and make the scan degraded; optional missing or non-finite values remain `None`.
+
+`SceneSnapshot` can contain matching ego and surrounding snapshots. It rejects mismatched timestamp, seed, episode-step, or simulation-time metadata so later integrations cannot mistake data from different simulator states for one scene. The current runner does not yet construct, store, or publish this type.
+
+See [surrounding/README.md](surrounding/README.md) for the field contract. CAN sector conversion and lighting decisions are downstream responsibilities.

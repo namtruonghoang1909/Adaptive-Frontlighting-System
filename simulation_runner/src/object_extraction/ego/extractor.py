@@ -6,8 +6,8 @@ import time
 from collections.abc import Iterable, Mapping
 from typing import Any
 
-from vehicle_extract.common import freeze_json
-from vehicle_extract.ego.types import (
+from object_extraction.common import freeze_json
+from object_extraction.ego.types import (
     EgoActionSnapshot,
     EgoDiagnosticsSnapshot,
     EgoKinematicsSnapshot,

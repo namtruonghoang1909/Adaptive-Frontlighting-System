@@ -13,6 +13,37 @@ Future agents should read this file with the rest of `docs/agents/` before makin
 
 ## Entries
 
+### 2026-09-13 - Surrounding Extraction Branch Scope
+
+**User prompt**
+
+User limited this branch to surrounding extraction, deferred the runner's lock-protected snapshot interface, requested a commit plan, and authorized the scoped commits.
+
+**Agent changes**
+
+- Renamed `vehicle_extract` to `object_extraction` while preserving existing ego and runner behavior.
+- Added immutable `SingleObjectSnapshot`, `SurroundingSnapshot`, and the agreed `SceneSnapshot` datatype.
+- Added standalone public-registry surrounding extraction and focused fake-object coverage.
+- Kept runner publication, internal scene storage/getters, and CLI radius integration out of this branch.
+- Updated only extraction-related documentation and saved the deferred implementation in a named Git stash.
+
+**Files modified**
+
+- `simulation_runner/src/object_extraction/`
+- `simulation_runner/tests/`
+- `simulation_runner/README.md`
+- `simulation_runner/scripts/README.md`
+- `simulation_runner/src/metadrive_runner/README.md`
+- `docs/agents/`
+- `docs/architecture/components/metadrive.md`
+- `docs/temporary/desired_file_system.md`
+- `docs/verification/testing.md`
+
+**Verification**
+
+- All 27 scoped dependency-free tests passed directly, including the preserved 21-test baseline.
+- Python compilation, import checks, documentation checks, and a real MetaDrive surrounding-extraction smoke test passed. Pytest remains unavailable in the configured environment.
+
 ### 2026-09-12 - Component Repository Reorganization
 
 **User prompt**
@@ -310,30 +341,4 @@ User requested objective, portable directory wording throughout the documentatio
 - Checked active documentation for workstation-specific absolute paths and subjective current-status wording.
 - Cross-checked the FPS explanation against MetaDrive `ForceFPS` and `BaseEngine.step()`.
 - Confirmed prompt tracking retains exactly 10 entries.
-- Checked Markdown for literal newline artifacts and Git whitespace errors.
-
-### 2026-09-05 - Clarify Default Runner Timing
-
-**User prompt**
-
-After confirming how the runner behaves without an FPS argument, user asked to update the READMEs where needed.
-
-**Agent changes**
-
-- Added a runtime-mode table covering default rendered, unpaced rendered, default headless, and real-time headless execution.
-- Clarified that the runner does not configure a fixed render FPS and no longer accepts `--force-render-fps`.
-- Distinguished runner-owned environment-step pacing from Panda3D's unconstrained displayed/render throughput.
-- Documented that the default timing produces `50` physics ticks and `10` extracted states per simulated second without requiring the displayed FPS counter to match either value.
-- Synchronized the scripts guide with the same behavior.
-
-**Files modified**
-
-- `bridge/src/metadrive_runner/README.md`
-- `bridge/src/scripts/README.md`
-- `docs/agents/prompt-tracking.md`
-
-**Verification**
-
-- Cross-checked documented modes against `metadrive_runner.__main__`, runner pacing defaults, and `force_render_fps=None`.
-- Confirmed the prompt tracker still contains exactly 10 entries.
 - Checked Markdown for literal newline artifacts and Git whitespace errors.

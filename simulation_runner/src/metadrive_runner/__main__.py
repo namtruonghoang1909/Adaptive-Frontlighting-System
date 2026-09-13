@@ -12,7 +12,7 @@ from metadrive_runner import (
     format_snapshot,
     run_single_agent,
 )
-from vehicle_extract.ego import EgoSnapshot
+from object_extraction.ego import EgoSnapshot
 
 
 def build_parser() -> argparse.ArgumentParser:

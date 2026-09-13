@@ -2,15 +2,15 @@
 
 MetaDrive is the host-side driving simulator used by the prototype. It creates virtual road scenes, ego vehicle motion, and surrounding vehicles for AFS/ADB demonstrations.
 
-The project treats MetaDrive as a simulation dependency and data source, not as a lighting controller. `simulation_runner/` currently implements ego steering, speed, motion, and diagnostics extraction. Surrounding-object extraction and bridge IPC publishing come later.
+The project treats MetaDrive as a simulation dependency and data source, not as a lighting controller. `simulation_runner/` implements ego extraction and a standalone surrounding-object extractor. Connecting surrounding extraction to the runner and bridge IPC comes later.
 
 ## Flow
 
 ```text
-scenario configuration -> simulation runner -> MetaDrive runtime -> vehicle extractor -> immutable snapshot
+scenario configuration -> MetaDrive runtime -> object extraction -> immutable snapshots
 ```
 
-The implemented MetaDrive runner owns the environment lifecycle. The proposed adapter combines extraction and an IPC publisher in that same Python process. Its publisher will send selected, simulator-independent observations through a Unix Domain Socket to the separate C++ gateway. The gateway converts accepted observations into CAN messages. IPC publishing is not implemented yet.
+The implemented MetaDrive runner owns the environment lifecycle and currently calls only ego extraction. `extract_surrounding()` is available independently and returns a complete registry scan. The proposed adapter and runner integration will later publish selected, simulator-independent data through a Unix Domain Socket to the separate C++ gateway.
 
 ## Responsibilities
 

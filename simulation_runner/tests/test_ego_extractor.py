@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 
-from vehicle_extract.ego import extract_ego
+from object_extraction.ego import extract_ego
 
 
 class FakeEgo:
