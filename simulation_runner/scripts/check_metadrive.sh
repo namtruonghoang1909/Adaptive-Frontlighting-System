@@ -18,11 +18,11 @@ import sys
 
 import metadrive
 import metadrive_runner
-import vehicle_extract
+import object_extraction
 
 print("Python:", sys.executable)
 print("MetaDrive:", metadrive.__file__)
 print("MetaDrive runner:", metadrive_runner.__file__)
-print("Vehicle extractor:", vehicle_extract.__file__)
+print("Object extraction:", object_extraction.__file__)
 print("MetaDrive libraries are available.")
 '

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from metadrive_runner.config import build_env_config
-from vehicle_extract.ego import EgoSnapshot, extract_ego
+from object_extraction.ego import EgoSnapshot, extract_ego
 
 SnapshotHandler = Callable[[EgoSnapshot], None]
 EnvironmentFactory = Callable[[dict[str, Any]], Any]

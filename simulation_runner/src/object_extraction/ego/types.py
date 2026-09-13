@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
-from vehicle_extract.common import FrozenJSON, freeze_json_mapping, thaw_json
+from object_extraction.common import FrozenJSON, freeze_json_mapping, thaw_json
 
 
 @dataclass(frozen=True, slots=True)

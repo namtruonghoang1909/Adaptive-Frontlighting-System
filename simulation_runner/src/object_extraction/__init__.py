@@ -1,11 +1,11 @@
-"""Single-agent ego snapshot types and extraction."""
+"""Project-owned simulator object extraction."""
 
-from vehicle_extract.ego.extractor import extract_ego
-from vehicle_extract.ego.types import (
+from object_extraction.ego import (
     EgoActionSnapshot,
     EgoDiagnosticsSnapshot,
     EgoKinematicsSnapshot,
     EgoSnapshot,
+    extract_ego,
 )
 
 __all__ = [
