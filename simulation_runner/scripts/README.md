@@ -15,13 +15,13 @@ simulation/metadrive/metadrive_venv/bin/python
 
 ## Check Libraries
 
-Verify that MetaDrive, the project runner, and the vehicle extractor can be imported:
+Verify that MetaDrive, the project runner, and the object-extraction package can be imported:
 
 ```bash
 bash simulation_runner/scripts/check_metadrive.sh
 ```
 
-A successful check prints the Python executable and the loaded paths for `metadrive`, `metadrive_runner`, and `vehicle_extract`. A missing interpreter or failed import returns a non-zero exit code.
+A successful check prints the Python executable and the loaded paths for `metadrive`, `metadrive_runner`, and `object_extraction`. A missing interpreter or failed import returns a non-zero exit code.
 
 ## Start Single-Agent MetaDrive
 

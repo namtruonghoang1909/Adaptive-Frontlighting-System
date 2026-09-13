@@ -6,7 +6,7 @@ Implement the first simulation-runner extraction module around the single MetaDr
 
 ## Location
 
-`simulation_runner/src/vehicle_extract/ego/`
+`simulation_runner/src/object_extraction/ego/`
 
 - `types.py` defines immutable ego snapshot dataclasses.
 - `extractor.py` defines `extract_ego(env, step_info=None) -> EgoSnapshot`.

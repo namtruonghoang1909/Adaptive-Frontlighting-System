@@ -11,7 +11,7 @@ Read [AGENTS.md](AGENTS.md), this file, and [prompt-tracking.md](prompt-tracking
 
 ## Current Refactor Design
 
-- Latest task: reorganize the repository into `simulation_runner/`, `bridge/`, `dashboard/`, and `firmware/` components without implementing new runtime behavior. The reorganization is complete; further IPC, CAN, UI, or firmware implementation was not requested.
+- Latest task: implement only surrounding extraction on `feat/sim/surrounding-extractor`. Runner publication, lock-protected internal state, and snapshot getter interfaces are explicitly deferred to a later branch.
 - The user confirmed that MetaDrive and the gateway run on the same Linux system, and that the Dashboard also communicates through the gateway.
 - There are three application processes: Python MetaDrive plus adapter, native C++ gateway, and Python Dashboard.
 - The adapter owns extraction and IPC publishing inside the simulation process. Python keeps lifecycle, driving controls, and simulator coordinate normalization.
@@ -26,9 +26,11 @@ Read [AGENTS.md](AGENTS.md), this file, and [prompt-tracking.md](prompt-tracking
 
 ## Actual Implementation
 
-- Existing source remains in `simulation_runner/src/metadrive_runner/`, its `controls/` package, and `simulation_runner/src/vehicle_extract/ego/`.
+- Existing runner source remains in `simulation_runner/src/metadrive_runner/` and its `controls/` package.
+- Extraction is now under `simulation_runner/src/object_extraction/`. It contains the preserved ego extractor, `SingleObjectSnapshot`, `SurroundingSnapshot`, `SceneSnapshot`, and the standalone `extract_surrounding()` API.
+- Surrounding extraction reads MetaDrive's public registry, filters supported traffic objects within a configurable `100 m` center radius, and produces deterministic world and x-forward/y-left ego-relative measurements.
 - The runner emits immutable `EgoSnapshot` objects through `on_snapshot`; the callback is the planned IPC publishing seam.
-- `simulation_runner/src/ipc_adapter/` and `simulation_runner/src/vehicle_extract/surrounding/` are organized placeholders with no runtime behavior.
+- The runner does not yet call the surrounding extractor or construct/publish `SceneSnapshot`. `simulation_runner/src/ipc_adapter/` remains an organized placeholder.
 - `bridge/` now contains a C++17/CMake scaffold split into `app`, `ipc`, `state`, `can`, and `diagnostics`; it has no executable source yet.
 - `dashboard/` now contains a Python package scaffold split into `app`, `gateway_client`, and `models`; it has no UI or IPC implementation yet.
 - Native gateway behavior, Dashboard behavior, DBC, and STM32 firmware are not implemented. `firmware/` was not changed by the reorganization.
@@ -45,7 +47,7 @@ Read [AGENTS.md](AGENTS.md), this file, and [prompt-tracking.md](prompt-tracking
 
 - Before the architecture refactor discussion, the session paused after the MetaDrive timing model and old `F` behavior were reviewed and understood.
 - Last source implementation: restored time-based automatic steering centering while preserving responsive steering/braking and the latched speed target.
-- Implemented runtime code is limited to `simulation_runner/src/vehicle_extract/ego/` and `simulation_runner/src/metadrive_runner/`; the new IPC, C++ bridge, and Dashboard modules remain placeholders.
+- Implemented runtime code is limited to `simulation_runner/src/object_extraction/` and `simulation_runner/src/metadrive_runner/`; the new IPC, C++ bridge, and Dashboard modules remain placeholders.
 - Visual validation found project-owned environment-step pacing more representative than MetaDrive's per-physics-tick FPS limiting.
 - Current timing model: `0.02 s` per physics tick, three ticks per environment step, `0.06 s` simulated per step, and approximately 16.7 paced steps/50 physics ticks per wall-clock second.
 - The physics tick remains `0.02 s`; `--decision-repeat` can change the number of ticks grouped into each step when testing rendering and throughput, with `3` currently configured as the default.
@@ -54,9 +56,10 @@ Read [AGENTS.md](AGENTS.md), this file, and [prompt-tracking.md](prompt-tracking
 - Rendered mode injects `TargetSpeedKeyboardPolicy`, starts in expert mode, and switches with `T` to manual target-speed mode.
 - In manual mode, `W/S` changes and latches target speed, `A/D` changes steering while held and returns automatically toward center after release, `C` centers steering immediately, and `Space` performs an emergency stop.
 - A simulator-independent PI controller regulates throttle/brake, target changes are scaled by simulation `dt`, and expert-to-manual takeover synchronizes current vehicle state.
-- The previous implementation session reported 21 direct ego, runner, and controller tests passing in Windows Python. Those tests were not rerun for this documentation task. The custom keyboard policy, steering centering, responsive control tuning, and non-terminal crash behavior still need rendered Linux validation.
+- All 27 current dependency-free tests pass directly: the original 21 ego/runner/controller tests plus five surrounding-extractor tests and one `SceneSnapshot` test. Pytest is absent from the configured environment.
+- A real MetaDrive 0.4.3 headless smoke check extracted a valid, non-degraded surrounding scan containing two objects after one step.
 - Resume by running `bash simulation_runner/scripts/start_metadrive_simulation.sh`, pressing `T`, and checking latched speed, automatic steering return, speed convergence, increased steering/brake sensitivity, emergency stop, and continued operation after a crash or road departure.
-- When implementation is authorized, preserve and validate this existing simulation baseline before adding IPC, gateway, surrounding extraction, or Dashboard behavior.
+- The next simulation branch can integrate extraction into the runner and add protected latest-scene access. IPC, gateway, Dashboard, and firmware behavior remain separate later work.
 
 ## Read Order
 

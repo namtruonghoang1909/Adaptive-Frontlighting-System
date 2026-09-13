@@ -13,9 +13,10 @@ Adaptive-Frontlighting-System/
 |   |-- scripts/
 |   |-- src/
 |   |   |-- metadrive_runner/       # implemented lifecycle, pacing, controls, CLI
-|   |   |-- vehicle_extract/
+|   |   |-- object_extraction/
 |   |   |   |-- ego/                # implemented immutable ego extraction
-|   |   |   `-- surrounding/        # planned object extraction
+|   |   |   |-- surrounding/        # implemented registry extraction
+|   |   |   `-- scene.py            # matching ego/surrounding datatype
 |   |   `-- ipc_adapter/             # planned simulation-to-bridge client
 |   `-- tests/                       # implemented runner/control/extractor tests
 |-- bridge/

@@ -5,6 +5,7 @@
 | Area | What to verify |
 |---|---|
 | Ego extractor | MetaDrive-like state becomes a complete, correctly converted immutable snapshot |
+| Surrounding extractor | Eligible registry objects become deterministic world and ego-relative immutable snapshots |
 | Adapter IPC | Selected observations cross the Python/C++ boundary with defined units, validity, and sample identity |
 | Gateway state | C++ threads exchange whole snapshots without mixed-step fields or unbounded backlogs |
 | CAN interface | Native conversion, scheduling, validation, and DBC-derived encoding/decoding are correct |
@@ -27,4 +28,4 @@
 
 Planned gateway integration checks include both startup orders, client disconnects/restarts, malformed messages, source timeout despite continuing CAN TX, slow Dashboard readers, CAN errors, command acceptance versus ECU execution, and clean shutdown. `vcan0` alone tests transport; full SIL needs an ECU implementation, while physical HIL needs `can0` and STM32.
 
-The current tests use fake MetaDrive-like objects and a pure controller model. They cover ego extraction, runner lifecycle behavior, runtime decision-repeat configuration, monotonic real-time deadlines, disabling MetaDrive's competing per-tick FPS limiter, latched speed targets, automatic steering centering, time-based sensitivity, PI response, and emergency stop. Later evidence should include DBC revisions, CAN logs, Dashboard captures, firmware versions, calibration notes, and observed physical behavior.
+The current tests use fake MetaDrive-like objects and a pure controller model. They cover ego extraction, runner lifecycle behavior, controls, supported surrounding types, radius boundaries, ego exclusion, coordinate and velocity rotation, deterministic ordering, missing and non-finite fields, disappearing objects, valid empty scans, invalid registry/ego pose handling, and snapshot immutability. Later evidence should include DBC revisions, CAN logs, Dashboard captures, firmware versions, calibration notes, and observed physical behavior.

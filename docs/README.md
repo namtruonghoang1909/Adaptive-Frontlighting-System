@@ -53,8 +53,8 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 | Area | Status |
 |---|---|
 | Documentation | Proposed C++ gateway architecture, process flowchart, and thread diagram |
-| Python simulation | Runner, controls, and ego extractor implemented under `simulation_runner/` |
-| Adapter IPC and surrounding extraction | Organized placeholders; behavior not implemented |
+| Python simulation | Runner, controls, ego/surrounding extraction, and snapshot datatypes implemented under `simulation_runner/` |
+| Runner surrounding integration and adapter IPC | Not implemented |
 | C++ bridge | C++17/CMake module scaffold; runtime not implemented |
 | DBC | Planned as `can/afs.dbc` |
 | Dashboard | Python package scaffold; UI and IPC behavior not implemented |

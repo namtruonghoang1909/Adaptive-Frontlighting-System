@@ -2,7 +2,7 @@
 
 Project-owned single-agent MetaDrive lifecycle for running the simulator and validating the ego extractor.
 
-This currently starts the MetaDrive, driving controls, and ego-extraction part of the project. Surrounding-object extraction and IPC publishing to the C++ bridge are not started.
+This currently starts MetaDrive, driving controls, and ego extraction. The surrounding extractor is available as a separate API; runner integration and IPC publishing to the C++ bridge are not implemented.
 
 ## Data Flow
 
@@ -35,13 +35,13 @@ Verify that MetaDrive and the project extraction libraries are available:
 bash simulation_runner/scripts/check_metadrive.sh
 ```
 
-If the check reports that `metadrive_runner` or `vehicle_extract` is missing, install the simulation runner and its test dependency into that virtual environment once:
+If the check reports that `metadrive_runner` or `object_extraction` is missing, install the simulation runner and its test dependency into that virtual environment once:
 
 ```bash
 simulation/metadrive/metadrive_venv/bin/python -m pip install -e "./simulation_runner[dev]"
 ```
 
-Editable installation makes `metadrive_runner` and `vehicle_extract` importable while source changes remain immediately visible. The two helper commands are described in the [scripts README](../../scripts/README.md).
+Editable installation makes `metadrive_runner` and `object_extraction` importable while source changes remain immediately visible. The two helper commands are described in the [scripts README](../../scripts/README.md).
 
 Installation is optional. Every command below also works without it by prefixing the command with `PYTHONPATH=simulation_runner/src`.
 
