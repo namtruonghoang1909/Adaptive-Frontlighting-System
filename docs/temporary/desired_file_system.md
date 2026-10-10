@@ -5,18 +5,29 @@ The component-level structure below is now established. Implemented Python simul
 ```text
 Adaptive-Frontlighting-System/
 |-- README.md
+|-- AGENTS.md                          # auto-discovery pointer to agents/README.md
+|-- agents/                            # main agent guide, context, history, and plans
+|   |-- README.md                      # canonical working entry point
+|   |-- rules/                         # category-specific instructions
+|   |-- code_visualize.md             # code-map maintenance workflow
+|   |-- working-context.md            # current handoff and resume point
+|   |-- prompt-tracking.md            # recent context-changing requests
+|   |-- roadmap.md                    # proposed order and open decisions
+|   `-- plans/                         # component plans
 |-- simulation_runner/
 |   |-- README.md
+|   |-- runner.md                     # requirements, scripts, arguments, run examples
 |   |-- pyproject.toml
 |   |-- assets/screenshots/           # captured simulation evidence
 |   |-- scenarios/                    # future repeatable AFS/ADB cases
-|   |-- scripts/
+|   |-- scripts/                      # requirement checker and launcher
 |   |-- src/
-|   |   |-- metadrive_runner/       # implemented lifecycle, pacing, controls, CLI
+|   |   |-- metadrive_runner/       # implemented lifecycle, controls, CLI, scene store
 |   |   |-- object_extraction/
 |   |   |   |-- ego/                # implemented immutable ego extraction
 |   |   |   |-- surrounding/        # implemented registry extraction
 |   |   |   `-- scene.py            # matching ego/surrounding datatype
+|   |   |-- scene_display/          # optional development browser observer
 |   |   `-- ipc_adapter/             # planned simulation-to-bridge client
 |   `-- tests/                       # implemented runner/control/extractor tests
 |-- bridge/
@@ -56,7 +67,8 @@ Adaptive-Frontlighting-System/
 |   `-- ipc/                         # future Python/C++ message specification
 |-- docs/
 |-- tests/                           # cross-component SIL/HIL integration
-|-- tools/                           # CAN, diagnostics, and calibration helpers
+|-- tools/                           # development helpers and detailed tool guidance
+|   `-- system_visualization/        # interactive class interaction graph
 |-- hardware/                        # wiring, parts, mechanics, and calibration
 |-- logs/                            # ignored runtime evidence unless curated
 `-- artifacts/                       # selected demo and verification evidence
@@ -73,5 +85,6 @@ Adaptive-Frontlighting-System/
 | CAN signal packing, units, scaling, and enums | Future `can/afs.dbc` |
 | Operator requests and presentation | `dashboard/` |
 | Final lighting decision and hardware control | `firmware/afs_ecu/` |
+| Development helper implementations | `tools/` |
 
 Do not place project code in the ignored `simulation/metadrive/` dependency. Add deeper implementation files only with their milestone instead of creating empty source trees in advance.
