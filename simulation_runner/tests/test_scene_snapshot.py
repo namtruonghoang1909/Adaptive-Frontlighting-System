@@ -29,6 +29,7 @@ def test_scene_snapshot_requires_matching_components_and_is_immutable() -> None:
 
     for changed in (
         replace(scene.surrounding, timestamp_monotonic_s=13.0),
+        replace(scene.surrounding, source="other-simulator"),
         replace(scene.surrounding, seed=22),
         replace(scene.surrounding, episode_step=5),
         replace(scene.surrounding, sim_time_s=0.30),
