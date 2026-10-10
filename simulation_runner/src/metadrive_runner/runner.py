@@ -1,7 +1,8 @@
-"""Single-agent MetaDrive lifecycle and ego extraction loop."""
+"""Single-agent MetaDrive lifecycle and complete scene extraction loop."""
 
 from __future__ import annotations
 
+import math
 import time
 from collections.abc import Callable, Mapping
 from copy import deepcopy
@@ -9,7 +10,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from metadrive_runner.config import build_env_config
-from object_extraction.ego import EgoSnapshot, extract_ego
+from metadrive_runner.snapshot_store import _clear_scene_snapshot, _write_scene_snapshot
+from object_extraction import EgoSnapshot, SceneSnapshot, extract_ego, extract_surrounding
 
 SnapshotHandler = Callable[[EgoSnapshot], None]
 EnvironmentFactory = Callable[[dict[str, Any]], Any]
@@ -34,20 +36,28 @@ def run_single_agent(
     seed: int = 21,
     max_steps: int | None = None,
     on_snapshot: SnapshotHandler | None = None,
+    surrounding_radius_m: float = 100.0,
     env_factory: EnvironmentFactory | None = None,
     realtime: bool | None = None,
     clock: Clock = time.monotonic,
     sleeper: Sleeper = time.sleep,
 ) -> RunnerSummary:
-    """Run MetaDrive and emit an ego snapshot after every reset and simulation step."""
+    """Run MetaDrive and publish a complete scene after reset and each step."""
     if max_steps is not None and max_steps < 0:
         raise ValueError("max_steps must be non-negative or None")
+    try:
+        radius_m = float(surrounding_radius_m)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("surrounding_radius_m must be finite and non-negative") from exc
+    if not math.isfinite(radius_m) or radius_m < 0:
+        raise ValueError("surrounding_radius_m must be finite and non-negative")
 
     config = deepcopy(dict(env_config)) if env_config is not None else build_env_config()
     pace_realtime = bool(config.get("use_render", False)) if realtime is None else realtime
     step_duration_s = _simulation_step_duration_s(config)
     current_seed = int(seed)
     factory = env_factory or _create_metadrive_env
+    _clear_scene_snapshot()
     env = factory(config)
 
     steps_completed = 0
@@ -55,20 +65,30 @@ def run_single_agent(
     snapshots_emitted = 0
     invalid_snapshots = 0
 
-    def emit(snapshot: EgoSnapshot) -> None:
+    def publish_scene(step_info: Mapping[str, Any]) -> EgoSnapshot:
         nonlocal snapshots_emitted, invalid_snapshots
+        timestamp = clock()
+        snapshot = extract_ego(
+            env,
+            step_info=step_info,
+            timestamp_monotonic_s=timestamp,
+        )
+        surrounding = extract_surrounding(env, snapshot, radius_m=radius_m)
+        scene = SceneSnapshot(ego=snapshot, surrounding=surrounding)
+        _write_scene_snapshot(scene)
         snapshots_emitted += 1
-        if not snapshot.valid:
+        if not scene.valid:
             invalid_snapshots += 1
         if on_snapshot is not None:
             on_snapshot(snapshot)
+        return snapshot
 
+    ### SIMULATION ENTRY ###
     try:
         reset_info = _reset(env, current_seed)
         _disable_metadrive_fps_control(env)
         _enable_expert_takeover(env, config)
-        snapshot = extract_ego(env, step_info=reset_info)
-        emit(snapshot)
+        snapshot = publish_scene(reset_info)
         _render(env, config, snapshot)
         next_step_deadline = clock()
 
@@ -81,8 +101,7 @@ def run_single_agent(
             steps_completed += 1
 
             step_info = info if isinstance(info, Mapping) else {}
-            snapshot = extract_ego(env, step_info=step_info)
-            emit(snapshot)
+            snapshot = publish_scene(step_info)
             _render(env, config, snapshot)
 
             if bool(terminated) or bool(truncated):
@@ -93,8 +112,7 @@ def run_single_agent(
                 reset_info = _reset(env, current_seed)
                 episodes_started += 1
                 _enable_expert_takeover(env, config)
-                snapshot = extract_ego(env, step_info=reset_info)
-                emit(snapshot)
+                snapshot = publish_scene(reset_info)
                 _render(env, config, snapshot)
                 next_step_deadline = clock()
     finally:

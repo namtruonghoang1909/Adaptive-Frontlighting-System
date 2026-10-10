@@ -8,6 +8,9 @@ from metadrive_runner import (
     build_env_config,
     build_render_text,
     format_snapshot,
+    get_ego_snapshot,
+    get_scene_snapshot,
+    get_surrounding_snapshot,
     run_single_agent,
 )
 from metadrive_runner.__main__ import _build_env_config, build_parser
@@ -66,9 +69,13 @@ class FakeEngine:
     def __init__(self) -> None:
         self.force_fps = FakeForceFPS()
         self.ignored_events: list[str] = []
+        self.objects: dict[str, object] = {}
 
     def ignore(self, event: str) -> None:
         self.ignored_events.append(event)
+
+    def get_objects(self) -> dict[str, object]:
+        return self.objects
 
 
 class FakeClock:
@@ -195,7 +202,18 @@ def test_build_env_config_isolated_and_mode_specific() -> None:
 def test_cli_configures_decision_repeat() -> None:
     default_args = build_parser().parse_args([])
     configured_args = build_parser().parse_args(
-        ["--headless", "--decision-repeat", "2"]
+        [
+            "--headless",
+            "--map", "3",
+            "--traffic-density", "0.6",
+            "--decision-repeat",
+            "2",
+            "--surrounding-radius-m",
+            "40.5",
+            "--visualize",
+            "--scene-display-port",
+            "9000",
+        ]
     )
 
     default_config = _build_env_config(default_args)
@@ -204,6 +222,13 @@ def test_cli_configures_decision_repeat() -> None:
     assert default_config["decision_repeat"] == DEFAULT_ENV_CONFIG["decision_repeat"]
     assert configured["use_render"] is False
     assert configured["decision_repeat"] == 2
+    assert configured["map"] == 3
+    assert configured["traffic_density"] == 0.6
+    assert default_args.surrounding_radius_m == 100.0
+    assert configured_args.surrounding_radius_m == 40.5
+    assert default_args.scene_display is False
+    assert configured_args.scene_display is True
+    assert configured_args.scene_display_port == 9000
 
 
 def test_building_collision_does_not_end_episode() -> None:
@@ -382,3 +407,127 @@ def test_snapshot_terminal_and_render_formatting() -> None:
     assert overlay["Target Speed"] == "25.0 km/h"
     assert overlay["Target Steering"] == "0.100"
     assert overlay["Snapshot"] == "seed=21 step=1 valid=True"
+
+
+def test_runner_publishes_matching_scenes_before_callback_across_resets() -> None:
+    config = build_env_config()
+    env = FakeEnv(config, terminate_on_steps={1})
+    snapshots = []
+    scenes = []
+
+    def capture_after_publish(snapshot: object) -> None:
+        snapshots.append(snapshot)
+        current = get_scene_snapshot()
+        assert current is not None
+        scenes.append(current)
+
+    summary = run_single_agent(
+        env_config=config,
+        max_steps=2,
+        on_snapshot=capture_after_publish,
+        env_factory=lambda received: env,
+        realtime=False,
+        surrounding_radius_m=40.5,
+    )
+
+    assert len(snapshots) == 4
+    assert len(scenes) == 4
+    assert [item.ego.episode_step for item in scenes] == [0, 1, 0, 1]
+    assert [item.ego.seed for item in scenes] == [21, 21, 22, 22]
+    assert all(item.ego is snapshots[index] for index, item in enumerate(scenes))
+    assert all(item.surrounding.radius_m == 40.5 for item in scenes)
+    assert all(
+        item.ego.timestamp_monotonic_s == item.surrounding.timestamp_monotonic_s
+        and item.ego.seed == item.surrounding.seed
+        and item.ego.episode_step == item.surrounding.episode_step
+        and item.ego.sim_time_s == item.surrounding.sim_time_s
+        for item in scenes
+    )
+
+    final = get_scene_snapshot()
+    assert final is scenes[-1]
+    assert get_ego_snapshot() is final.ego
+    assert get_surrounding_snapshot() is final.surrounding
+    assert summary.invalid_snapshots == 0
+
+
+def test_runner_counts_invalid_surrounding_scenes() -> None:
+    config = build_env_config(headless=True)
+    env = FakeEnv(config)
+    del env.engine
+
+    summary = run_single_agent(
+        env_config=config,
+        max_steps=1,
+        env_factory=lambda received: env,
+        realtime=False,
+    )
+
+    scene = get_scene_snapshot()
+    assert scene is not None
+    assert scene.ego.valid is True
+    assert scene.surrounding.valid is False
+    assert scene.valid is False
+    assert summary.invalid_snapshots == 2
+
+
+def test_runner_rejects_invalid_surrounding_radius_before_environment_creation() -> None:
+    factory_calls = []
+
+    for radius in (-1.0, float("nan"), float("inf"), "invalid"):
+        try:
+            run_single_agent(
+                max_steps=0,
+                surrounding_radius_m=radius,  # type: ignore[arg-type]
+                env_factory=lambda config: factory_calls.append(config),
+            )
+        except ValueError as exc:
+            assert "surrounding_radius_m" in str(exc)
+        else:
+            raise AssertionError("expected invalid radius rejection")
+
+    assert factory_calls == []
+
+
+def test_runner_keeps_final_scene_until_the_next_valid_invocation_starts() -> None:
+    config = build_env_config(headless=True)
+    first_env = FakeEnv(config)
+
+    run_single_agent(
+        env_config=config,
+        max_steps=0,
+        env_factory=lambda received: first_env,
+        realtime=False,
+    )
+    retained = get_scene_snapshot()
+    assert retained is not None
+    assert first_env.close_calls == 1
+
+    try:
+        run_single_agent(
+            env_config=config,
+            max_steps=-1,
+            env_factory=lambda received: None,
+        )
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected invalid invocation to fail")
+    assert get_scene_snapshot() is retained
+
+    def fail_after_clear(received: dict[str, Any]) -> object:
+        assert get_scene_snapshot() is None
+        raise RuntimeError("environment construction failed")
+
+    try:
+        run_single_agent(
+            env_config=config,
+            max_steps=0,
+            env_factory=fail_after_clear,
+            realtime=False,
+        )
+    except RuntimeError as exc:
+        assert str(exc) == "environment construction failed"
+    else:
+        raise AssertionError("expected environment construction failure")
+    assert get_scene_snapshot() is None

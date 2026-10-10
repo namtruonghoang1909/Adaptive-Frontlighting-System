@@ -2,15 +2,21 @@
 
 MetaDrive is the host-side driving simulator used by the prototype. It creates virtual road scenes, ego vehicle motion, and surrounding vehicles for AFS/ADB demonstrations.
 
-The project treats MetaDrive as a simulation dependency and data source, not as a lighting controller. `simulation_runner/` implements ego extraction and a standalone surrounding-object extractor. Connecting surrounding extraction to the runner and bridge IPC comes later.
+The project treats MetaDrive as a simulation dependency and data source, not as a lighting controller. `simulation_runner/` implements ego and surrounding-object extraction, matching scene snapshots, a process-local latest-scene interface, and an optional development browser observer. Bridge IPC comes later.
 
 ## Flow
 
 ```text
-scenario configuration -> MetaDrive runtime -> object extraction -> immutable snapshots
+scenario configuration
+  -> MetaDrive reset/step
+  -> ego + surrounding extraction
+  -> matching immutable SceneSnapshot
+  -> lock-protected latest-scene replacement
+  -> optional scene_display read and local browser rendering
+  -> future IPC adapter
 ```
 
-The implemented MetaDrive runner owns the environment lifecycle and currently calls only ego extraction. `extract_surrounding()` is available independently and returns a complete registry scan. The proposed adapter and runner integration will later publish selected, simulator-independent data through a Unix Domain Socket to the separate C++ gateway.
+The implemented runner takes one timestamp after every reset and step, extracts the ego and complete surrounding registry scan, builds a matching `SceneSnapshot`, and replaces the latest scene under a short lock. Public getters expose the full scene or either component inside the same Python process. `scene_display` uses the complete-scene getter to serve a live development view. The proposed adapter will later project selected simulator-independent data and publish it through a Unix Domain Socket to the separate C++ gateway.
 
 ## Responsibilities
 
@@ -43,6 +49,8 @@ MetaDrive processes the driving scene. It should not process headlight control l
 | Run road scene | Simulate road geometry, lanes, traffic, and ego vehicle movement |
 | Update ego state | Produce steering, speed, heading, and position-like state as available |
 | Update surrounding vehicles | Produce relative or world positions for lead and oncoming vehicles |
+| Publish current scene | Replace one immutable matching ego and ground-truth surrounding sample without accumulating a history queue |
+| Observe extracted data | Optionally serve a local FastAPI/Canvas object view without modifying simulator or snapshot state |
 | Support repeatable manual driving | Use a persistent target speed with time-based steering input and automatic steering centering |
 | Maintain timing | Advance three `0.02 s` physics ticks per environment step and let the project runner pace each complete `0.06 s` step against wall time |
 | Support scenario replay | Let the same curve, lead-vehicle, or oncoming-vehicle case be repeated |
@@ -60,7 +68,9 @@ The Python adapter filters simulator observations and normalizes coordinates. Th
 | Surrounding-vehicle presence/type, if available | Python adapter | Filtering, diagnostics, and scenario validation |
 | Scenario name/state | Bridge or Dashboard | Logs and user observation |
 
-Raw simulator objects, raw lidar arrays, camera frames, lane navigation, and route internals should stay inside the host simulation layer unless a later feature explicitly needs them. For the first build, the useful contract is compact steering, speed, and surrounding-vehicle geometry.
+Raw simulator objects, camera frames, lane navigation, and route internals should stay inside the host simulation layer unless a later feature explicitly needs them. For the first build, the proposed gateway contract remains compact steering, speed, and surrounding-vehicle geometry.
+
+The in-process scene interface is not IPC. It remains readable after runner shutdown, clears at the start of the next valid invocation, and retains only the newest complete scene. Consumers needing a consistent sample use `get_scene_snapshot()` rather than separate component reads.
 
 ## First Scenarios
 
