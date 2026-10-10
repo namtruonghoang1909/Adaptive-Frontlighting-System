@@ -2,7 +2,7 @@
 
 ## Status
 
-The former Python Dashboard-interface plan is superseded by the C++ gateway's IPC interface. `bridge/src/ipc/` and `dashboard/src/afs_dashboard/gateway_client/` now define the module boundaries, but no IPC behavior is implemented. See [dashboard.md](../../../architecture/components/dashboard.md).
+The former Python Dashboard-interface plan is superseded by the C++ gateway's IPC interface. `bridge/src/ipc/` and `dashboard/src/afs_dashboard/gateway_client/` now define the module boundaries, but no IPC behavior is implemented. See [dashboard.md](../../../docs/architecture/components/dashboard.md).
 
 ## Proposed Work After Implementation Is Authorized
 
