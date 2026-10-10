@@ -17,7 +17,7 @@ All documented paths are relative to the repository root unless explicitly state
 9. [hardware/hardware.md](hardware/hardware.md) - bench hardware.
 10. [tools/tools.md](tools/tools.md) - tools and runtime environment.
 11. [verification/testing.md](verification/testing.md) - verification approach.
-12. [agents/working-context.md](agents/working-context.md) - agent operating context.
+12. [agents/README.md](../agents/README.md) - agent working guide and handoff entry point.
 
 ## System Snapshot
 
@@ -28,12 +28,13 @@ Python: Dashboard          <-> Unix socket <-> gateway <--- ECU status
 
 The [system flowchart](architecture/overview.md#system-at-a-glance) shows the proposed refactor: three application processes on the same Linux host. MetaDrive and its adapter share one Python process; the C++ gateway and Python Dashboard are separate processes connected through Unix socket IPC. The [gateway thread diagram](architecture/data-flow.md#inside-the-gateway) shows its internal mutex-protected state.
 
-The gateway owns host CAN transport; STM32 owns final lighting decisions. This is a design, not implemented end-to-end behavior. Agents should read [AGENTS.md](AGENTS.md) and [agents/AGENTS.md](agents/AGENTS.md).
+The gateway owns host CAN transport; STM32 owns final lighting decisions. This is a design, not implemented end-to-end behavior. Agents should start with the root [agent guide](../agents/README.md).
 
 ## Documentation Map
 
 | Document | Purpose |
 |---|---|
+| [../simulation_runner/runner.md](../simulation_runner/runner.md) | Simulation requirements, scripts, arguments, and run examples |
 | [architecture/overview.md](architecture/overview.md) | System architecture |
 | [architecture/components/bridge.md](architecture/components/bridge.md) | C++ vehicle/CAN bridge |
 | [architecture/components/metadrive.md](architecture/components/metadrive.md) | MetaDrive dependency |
@@ -45,16 +46,17 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 | [hardware/hardware.md](hardware/hardware.md) | Hardware |
 | [tools/tools.md](tools/tools.md) | Tools |
 | [verification/testing.md](verification/testing.md) | Testing |
+| [../tools/system_visualization/README.md](../tools/system_visualization/README.md) | Interactive Code graph and functionality paths |
 | [temporary/desired_file_system.md](temporary/desired_file_system.md) | Target repository layout |
-| [agents/working-context.md](agents/working-context.md) | Agent context |
+| [Agent guide](../agents/README.md) | Agent rules, working context, and plans |
 
 ## Current Status
 
 | Area | Status |
 |---|---|
-| Documentation | Proposed C++ gateway architecture, process flowchart, and thread diagram |
-| Python simulation | Runner, controls, ego/surrounding extraction, and snapshot datatypes implemented under `simulation_runner/` |
-| Runner surrounding integration and adapter IPC | Not implemented |
+| Documentation | Architecture guides plus a class interaction Code graph with implemented functionality paths under `tools/system_visualization/` |
+| Python simulation | Runner, controls, ego/surrounding extraction, latest-scene access, and optional development browser display implemented under `simulation_runner/` |
+| Simulation adapter IPC | Not implemented |
 | C++ bridge | C++17/CMake module scaffold; runtime not implemented |
 | DBC | Planned as `can/afs.dbc` |
 | Dashboard | Python package scaffold; UI and IPC behavior not implemented |
@@ -66,5 +68,5 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 
 - Keep architecture files concise and explanatory.
 - Keep CAN details under [can/](can/README.md); the DBC becomes the source of truth.
-- Keep agent planning under [agents/](agents/).
+- Keep agent rules, context, and planning under the root [agents/](../agents/README.md).
 - Add source skeletons incrementally with their implementation milestones.

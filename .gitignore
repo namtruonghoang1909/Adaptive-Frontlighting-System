@@ -12,3 +12,7 @@ __pycache__/
 # Native out-of-source build trees.
 /bridge/build/
 /build/
+
+# Workstation-specific editor settings and optional external MCP integrations.
+/.vscode/
+/.mcp.json
