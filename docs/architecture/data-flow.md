@@ -35,13 +35,17 @@ A single event loop could handle the initial traffic; the proposed two-thread sp
 
 ```text
 MetaDrive reset/step
-  -> extract ego and, later, surrounding objects
-  -> construct complete simulator-independent observation
-  -> publish through the adapter's IPC client
+  -> take one monotonic timestamp
+  -> extract EgoSnapshot and SurroundingSnapshot
+  -> construct matching immutable SceneSnapshot
+  -> replace the latest in-process scene under a short lock
+  -> invoke the preserved ego-only callback
+  -> optional scene_display reads the latest scene from its HTTP thread
+  -> later: project and publish through the adapter's IPC client
   -> continue the simulation loop
 ```
 
-These are calls within one Python application process. The existing `run_single_agent(..., on_snapshot=...)` callback is the publisher integration point. MetaDrive owns no CAN IDs or payload packing; its lifecycle and driving controls stay in Python.
+The extraction and scene-store operations are implemented calls within one Python application process. `get_scene_snapshot()` returns the complete current ego and surrounding sample; component getters are available for consumers that need only one part. The store retains only the newest scene, so slow readers do not create a backlog. The optional `scene_display` reads that interface and serves normalized JSON to a local browser at 10 Hz without blocking simulation ingestion. It is a development observer and is separate from the planned production Dashboard. Unix-socket publication remains planned. MetaDrive owns no CAN IDs or payload packing; its lifecycle and driving controls stay in Python.
 
 ## Cross-Process Contract
 

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>AFS · Code graph</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="graph-data.js"></script>
+    <script defer src="code-index.js"></script>
+    <script defer src="functionality-data.js"></script>
+    <script defer src="viewer.js"></script>
+    <script defer src="functionality-overlay.js"></script>
+  </head>
+  <body>
+    <div id="workspace">
+      <header class="topbar">
+        <a class="brand" href="../../README.md" title="Repository README"><span class="brand-mark">✳</span> AFS <span class="brand-divider">/</span> Code graph</a>
+        <span class="topbar-hint">Classes and their interactions</span>
+        <div class="search-wrap">
+          <label class="search-box"><span aria-hidden="true">⌕</span><input id="graphSearch" type="search" aria-label="Search class or component name" placeholder="Search class or component…" autocomplete="off"><kbd>/</kbd></label>
+        </div>
+        <label class="layer-filter">Layer <select id="layerFilter" aria-label="Filter by folder or layer"><option value="all">All layers</option></select></label>
+        <button id="resetGraph" class="top-button" type="button">Reset map</button>
+      </header>
+
+      <div class="layout">
+        <main class="graph-panel">
+          <svg id="codeGraph" role="group" aria-label="Interactive class and function graph">
+            <defs>
+              <marker id="arrowHead" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M 0 0 L 8 4 L 0 8 Z" fill="context-stroke"></path></marker>
+              <marker id="flowArrowHead" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="strokeWidth"><path d="M 0 0 L 9 4.5 L 0 9 Z" fill="#f9d886"></path></marker>
+            </defs>
+            <g id="graphViewport">
+              <g id="clusterLayer"></g>
+              <g id="treeEdges"></g>
+              <g id="functionalityEdges"></g>
+              <g id="nodeLayer"></g>
+              <g id="functionalityBadges"></g>
+            </g>
+          </svg>
+          <footer class="bottom-bar">
+            <span id="mapStatus" role="status">Click a circle to focus and expand it.</span>
+            <div class="map-controls">
+              <button id="zoomOut" type="button" aria-label="Zoom out">−</button>
+              <span id="zoomLevel" aria-label="Zoom level">100%</span>
+              <button id="zoomIn" type="button" aria-label="Zoom in">+</button>
+              <button id="fitGraph" type="button">Fit</button>
+            </div>
+          </footer>
+        </main>
+        <aside class="details-panel" aria-label="Functionalities and node description">
+          <section class="functionality-panel" aria-labelledby="functionalityHeading">
+            <div class="functionality-heading-row">
+              <h2 id="functionalityHeading">Functionalities</h2>
+              <button id="clearFunctionality" type="button" hidden>Clear</button>
+            </div>
+            <p class="functionality-hint">Select a path to highlight its ordered actions.</p>
+            <div id="functionalityList" class="functionality-list"></div>
+            <div id="functionalityDetail" class="functionality-detail" hidden aria-live="polite">
+              <h3 id="functionalityTitle"></h3>
+              <p id="functionalitySummary"></p>
+              <ol id="functionalitySteps"></ol>
+            </div>
+          </section>
+          <section class="node-detail-panel" aria-label="Node description" aria-live="polite">
+          <p class="eyebrow">Node details</p>
+          <p id="detailEmpty" class="detail-empty">Click a node to see what it does.</p>
+          <div id="detailContent" hidden>
+            <p id="detailKind" class="detail-kind"></p>
+            <h1 id="detailTitle"></h1>
+            <p id="detailDescription"></p>
+            <div id="detailConnections"></div>
+            <div id="detailSources"></div>
+          </div>
+          </section>
+        </aside>
+      </div>
+      <noscript>Enable JavaScript to explore the class graph.</noscript>
+    </div>
+  </body>
+</html>

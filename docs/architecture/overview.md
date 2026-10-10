@@ -2,7 +2,14 @@
 
 Simulated driving and operator requests feed a physical STM32 controller, which swivels low-beam headlights and dims high-beam zones around other vehicles. The Dashboard displays the ECU's reported output and faults.
 
-This flowchart shows the target runtime after the component reorganization. The Python runner, controls, and ego extractor are implemented. The IPC adapter, C++ bridge runtime, Dashboard runtime, and firmware remain planned.
+This flowchart shows the target runtime after the component reorganization. The Python runner, controls, ego/surrounding extraction, in-process latest-scene interface, and optional development display are implemented. The IPC adapter, C++ bridge runtime, Dashboard runtime, and firmware remain planned.
+
+Use the [interactive code map](../../tools/system_visualization/index.html) to
+explore implemented classes and their interactions. Nodes are clustered by
+layer; clicking one highlights its direct connections and expands smaller
+member circles. The right panel describes the selected node and links to source.
+Its Functionalities section highlights ordered, implemented paths such as ego
+extraction, surrounding extraction, and browser display on the same graph.
 
 ## System At A Glance
 
@@ -11,8 +18,12 @@ flowchart LR
     subgraph HOST["Same Ubuntu / Linux system - three application processes"]
         subgraph SIM["Process 1: Python simulation + adapter"]
             MD["MetaDrive<br/>Road, ego vehicle, surrounding traffic"]
-            AD["Simulation adapter<br/>Extract state + publish IPC messages"]
-            MD -->|"Function calls and snapshots"| AD
+            STORE["Latest SceneSnapshot<br/>Lock-protected replacement"]
+            SD["scene_display<br/>Optional development HTTP thread"]
+            AD["Simulation adapter<br/>Future IPC publisher"]
+            MD -->|"Extract after reset / step"| STORE
+            STORE -->|"Read latest scene"| SD
+            STORE -->|"Future in-process read"| AD
         end
 
         subgraph GATEWAY["Process 2: C++17 gateway"]
@@ -40,7 +51,7 @@ flowchart LR
     classDef python fill:#e8f1ff,stroke:#265d97,color:#142b45
     classDef native fill:#e7f5ed,stroke:#28704a,color:#173e2a
     classDef hardware fill:#fff2dc,stroke:#97621a,color:#4f3510
-    class MD,AD,UI python
+    class MD,STORE,SD,AD,UI python
     class GW native
     class BUS,ECU,RIG hardware
 ```
@@ -53,7 +64,7 @@ A process is a separately running program with its own memory. Threads are execu
 
 | Application process | Application work | Communication |
 |---|---|---|
-| Python simulation + adapter | Run MetaDrive, extract state, publish observations in the simulation loop | Local function calls inside the process; Unix socket IPC to the gateway |
+| Python simulation + adapter | Run MetaDrive, extract and retain the latest scene, optionally serve the development display, later publish observations | Lock-protected local scene access; local HTTP for the optional observer; future Unix socket IPC to the gateway |
 | C++ gateway | Main/IPC thread plus a CAN TX/RX worker thread | Mutex-protected snapshots internally; Unix sockets to Python clients; SocketCAN to the bus |
 | Python Dashboard | UI interaction and gateway client | Unix socket IPC to the gateway |
 
@@ -73,10 +84,10 @@ See [data-flow.md](data-flow.md) for the gateway thread diagram and the distinct
 
 ## Current Implementation And Design Status
 
-- The Python implementation is under `simulation_runner/`. Its runner emits `EgoSnapshot` through a callback that will connect to `ipc_adapter/`.
+- The Python implementation is under `simulation_runner/`. Its runner constructs a matching ego and ground-truth surrounding `SceneSnapshot` after every reset and step, atomically replaces a process-local latest value, preserves the existing ego-only callback, and can serve the read-only `scene_display` development observer.
 - `bridge/` now contains the C++17/CMake gateway module scaffold; no executable, IPC, or CAN behavior exists yet.
 - `dashboard/` now contains the Python package scaffold; no UI or gateway-client behavior exists yet.
-- Surrounding extraction, DBC, and STM32 firmware are not implemented.
+- DBC and STM32 firmware are not implemented. The Python IPC adapter is still a placeholder and the latest-scene store does not cross process boundaries.
 - The proposed baseline is C++17/CMake and Unix Domain Sockets with `SOCK_SEQPACKET` carrying versioned JSON. Message fields, timing, and recovery policies remain detailed-design work.
 - The established component layout and future deeper structure are documented in [desired_file_system.md](../temporary/desired_file_system.md).
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-The former Python shared-memory design is superseded and was never implemented. `bridge/src/state/` now documents the C++ in-process state boundary. See [data-flow.md](../../../architecture/data-flow.md) for the proposed process and thread boundaries.
+The former Python shared-memory design is superseded and was never implemented. `bridge/src/state/` now documents the C++ in-process state boundary. See [data-flow.md](../../../docs/architecture/data-flow.md) for the proposed process and thread boundaries.
 
 ## Proposed State Ownership
 

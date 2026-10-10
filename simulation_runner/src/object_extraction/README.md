@@ -1,6 +1,6 @@
 # Object Extraction
 
-`object_extraction` converts simulator-owned state into three main immutable project datatypes: `EgoSnapshot`, `SurroundingSnapshot`, and `SceneSnapshot`.
+`object_extraction` converts simulator-owned state into immutable `EgoSnapshot`, `SurroundingSnapshot`, and `SceneSnapshot` datatypes.
 
 ## Ego Snapshot
 
@@ -65,6 +65,8 @@ Each `SingleObjectSnapshot` contains identity and semantic type; world position,
 
 A valid empty tuple means the scan succeeded and found no eligible objects. Registry or ego-pose failure makes the scan invalid. Eligible objects with unusable identity or position are skipped and make the scan degraded; optional missing or non-finite values remain `None`.
 
-`SceneSnapshot` can contain matching ego and surrounding snapshots. It rejects mismatched timestamp, seed, episode-step, or simulation-time metadata so later integrations cannot mistake data from different simulator states for one scene. The current runner does not yet construct, store, or publish this type.
+`SceneSnapshot` contains matching ego and surrounding snapshots. It rejects mismatched timestamp, source, seed, episode-step, or simulation-time metadata so consumers cannot mistake data from different simulator states for one scene. The runner constructs and stores one after every reset and step; public read access belongs to `metadrive_runner`.
+
+The development-only `scene_display` is a read-only consumer of that public scene interface. Extraction remains independent from FastAPI, browser rendering, IPC, CAN conversion, and lighting behavior.
 
 See [surrounding/README.md](surrounding/README.md) for the field contract. CAN sector conversion and lighting decisions are downstream responsibilities.

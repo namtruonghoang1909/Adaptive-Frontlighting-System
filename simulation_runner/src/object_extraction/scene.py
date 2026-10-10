@@ -10,7 +10,7 @@ from object_extraction.surrounding import SurroundingSnapshot
 
 @dataclass(frozen=True, slots=True)
 class SceneSnapshot:
-    """Ego and surrounding snapshots captured for the same simulator state."""
+    """Ego and surrounding objects from the same simulator state."""
 
     ego: EgoSnapshot
     surrounding: SurroundingSnapshot
@@ -18,7 +18,7 @@ class SceneSnapshot:
     def __post_init__(self) -> None:
         if self.ego.timestamp_monotonic_s != self.surrounding.timestamp_monotonic_s:
             raise ValueError("ego and surrounding timestamps must match")
-        for field_name in ("seed", "episode_step", "sim_time_s"):
+        for field_name in ("source", "seed", "episode_step", "sim_time_s"):
             if getattr(self.ego, field_name) != getattr(self.surrounding, field_name):
                 raise ValueError(f"ego and surrounding {field_name} values must match")
 

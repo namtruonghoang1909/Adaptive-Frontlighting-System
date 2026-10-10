@@ -8,6 +8,9 @@ readonly METADRIVE_PYTHON="${METADRIVE_PYTHON:-$REPO_ROOT/simulation/metadrive/m
 
 if [[ ! -x "$METADRIVE_PYTHON" ]]; then
     printf 'MetaDrive Python was not found or is not executable: %s\n' "$METADRIVE_PYTHON" >&2
+    printf 'Run the requirement checker for setup details:\n' >&2
+    printf '  bash simulation_runner/scripts/check_simulation_requirements.sh --headless\n' >&2
+    printf 'See simulation_runner/runner.md for requirements and run examples.\n' >&2
     exit 1
 fi
 

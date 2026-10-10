@@ -2,7 +2,7 @@
 
 ## Status
 
-The former Python CAN-interface plan is superseded by the [C++ gateway design](../../../architecture/components/bridge.md). The reorganized `bridge/src/can/` directory documents the native module boundary, but no CAN runtime is implemented.
+The former Python CAN-interface plan is superseded by the [C++ gateway design](../../../docs/architecture/components/bridge.md). The reorganized `bridge/src/can/` directory documents the native module boundary, but no CAN runtime is implemented.
 
 ## Proposed Work After Implementation Is Authorized
 

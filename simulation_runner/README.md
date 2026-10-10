@@ -1,64 +1,75 @@
 # Simulation Runner
 
-Python application for MetaDrive lifecycle, driving controls, object extraction, and the future IPC adapter to the C++ bridge.
+This Python application owns MetaDrive lifecycle, driving controls, ego and surrounding-object extraction, and the latest in-process scene snapshot. Future IPC publishing will connect this process to the separate C++ gateway.
 
-## Source Layout
+## Current Implementation
 
 ```text
-assets/screenshots/            # captured MetaDrive validation evidence
-scripts/                       # MetaDrive checks and launchers
 src/
-|-- metadrive_runner/          # lifecycle, pacing, controls, CLI, callback
+|-- metadrive_runner/          # lifecycle, controls, CLI, pacing, scene storage
 |-- object_extraction/
-|   |-- ego/                   # implemented immutable ego snapshots
-|   |-- surrounding/           # implemented nearby-object extraction
-|   `-- scene.py               # matching ego/surrounding datatype
-`-- ipc_adapter/               # planned local IPC client and wire conversion
-tests/                         # runner, controls, and extractor tests
+|   |-- ego/                   # EgoSnapshot extraction
+|   |-- surrounding/           # SingleObjectSnapshot and complete scans
+|   `-- scene.py               # matching ego + surrounding samples
+|-- scene_display/             # optional live browser observer
+`-- ipc_adapter/               # future cross-process publishing boundary
+tests/                         # dependency-free unit tests with MetaDrive-like fakes
+scripts/                       # runtime checker and launcher
 ```
 
-MetaDrive, extraction, and IPC publishing belong to one Python process. The adapter will select simulator-independent values from complete snapshots and publish them to the separate C++ bridge. It will not open SocketCAN or pack CAN frames.
+After every reset and step, the runner:
 
-The runner, controls, ego extractor, surrounding extractor, and snapshot datatypes are implemented. Runner integration for surrounding extraction and IPC publishing remain future work.
+1. takes one monotonic timestamp;
+2. extracts `EgoSnapshot` and `SurroundingSnapshot` for that simulator state;
+3. constructs `SceneSnapshot`;
+4. atomically replaces the latest scene under a short lock;
+5. invokes the existing ego-only `on_snapshot` callback.
 
-## Extraction Datatypes
-
-`EgoSnapshot` stores one ego sample. `SingleObjectSnapshot` stores one eligible nearby object's world and ego-relative measurements. `SurroundingSnapshot` stores a complete immutable scan, including its radius, objects, validity, and collection diagnostics. `SceneSnapshot` can combine matching ego and surrounding snapshots without publishing or storing them.
-
-Use the surrounding extractor directly:
+The final scene remains readable after the runner closes. A later valid runner invocation clears the old scene before it creates the environment. Consumers that need a consistent ego and surrounding sample should call `get_scene_snapshot()` rather than making separate component reads.
 
 ```python
-from object_extraction import extract_ego, extract_surrounding
+from metadrive_runner import (
+    get_ego_snapshot,
+    get_scene_snapshot,
+    get_surrounding_snapshot,
+)
 
-ego = extract_ego(env)
-surrounding = extract_surrounding(env, ego, radius_m=100.0)
+scene = get_scene_snapshot()
 ```
 
-The extractor scans MetaDrive's public object registry in every direction. It does not simulate sensors or occlusion, spawn traffic, convert geometry into CAN sectors, or decide lighting behavior.
+The public getters return immutable snapshot objects or `None` before the first publication. The store is process-local and keeps only the newest complete scene, so a slow reader cannot create a sample backlog.
 
-## Run MetaDrive
+The optional development `scene_display` calls `get_scene_snapshot()`, converts only typed fields to normalized JSON, and serves a bundled Canvas UI from a background thread. It remains a read-only consumer of extraction data.
 
-From the repository root on Linux:
+## Run The Simulation
 
-```bash
-bash simulation_runner/scripts/check_metadrive.sh
-bash simulation_runner/scripts/start_metadrive_simulation.sh
-```
-
-For a finite headless run:
+Check headless readiness and run a finite smoke test:
 
 ```bash
+bash simulation_runner/scripts/check_simulation_requirements.sh --headless
 bash simulation_runner/scripts/start_metadrive_simulation.sh \
   --headless --max-steps 100 --print-every 10
 ```
 
-See [scripts/README.md](scripts/README.md) for launcher details and [src/metadrive_runner/README.md](src/metadrive_runner/README.md) for runner behavior.
+Start a rendered interactive run with the browser scene display:
+
+```bash
+bash simulation_runner/scripts/start_metadrive_simulation.sh --scene-display
+```
+
+See [runner.md](runner.md) for requirements, scripts, runner arguments, and run examples. See [src/metadrive_runner/README.md](src/metadrive_runner/README.md) for implementation details, [src/object_extraction/README.md](src/object_extraction/README.md) for datatype contracts, and [src/scene_display/README.md](src/scene_display/README.md) for the observer boundary.
+
+## Ownership Boundary
+
+Python extracts simulator ground truth and normalizes coordinates. It does not pack CAN frames or decide lighting behavior. Those responsibilities belong to the C++ gateway and STM32 ECU respectively. `simulation/metadrive/` is an ignored local upstream dependency and must not be modified by project changes.
 
 ## Tests
+
+When pytest is installed:
 
 ```bash
 PYTHONPATH=simulation_runner/src \
 simulation/metadrive/metadrive_venv/bin/python -m pytest simulation_runner/tests -v
 ```
 
-The tests use fake MetaDrive-like environments and do not require Panda3D. Surrounding tests cover supported types, radius boundaries, ego exclusion, coordinate transforms, missing data, ordering, empty scans, and immutability.
+The configured environment may not contain pytest. The dependency-free fallback is documented in [docs/verification/testing.md](../docs/verification/testing.md).
