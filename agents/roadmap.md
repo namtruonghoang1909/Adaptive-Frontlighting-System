@@ -1,13 +1,13 @@
 # Agent Roadmap Notes
 
-This file records future work, not authorization to implement it. The component trees have been reorganized; runtime IPC, CAN, Dashboard, and firmware work still requires an explicit implementation task. Follow the [agent guide](README.md) and [working-context.md](working-context.md).
+This file records future work, not authorization to implement it. Runner-to-bridge observation IPC is implemented; CAN, Dashboard, and firmware work still needs a scoped implementation task. Follow the [agent guide](README.md) and [working-context.md](working-context.md).
 
 ## Proposed Migration Order
 
 1. Preserve and validate the Python runner, controls, ego/surrounding extraction, and latest-scene interface under `simulation_runner/`. (Implemented; rendered manual validation remains.)
 2. Use MetaDrive's object registry for the surrounding snapshot. (Implemented.) A former LiDAR extraction and browser comparison were removed; the [LiDAR input investigation](plans/simulation_runner/lidar-input.md) remains historical research if sensor-based detection is revisited.
-3. Specify the simulator-independent IPC messages, validity, sample/session identity, and reconnect/freshness behavior.
-4. Add an optional Python publisher and a C++17/CMake IPC receiver while retaining standalone simulation use.
+3. Complete cross-process integration verification for the runner publisher and C++ receiver using the [runner–bridge communication contract](../docs/architecture/runner-bridge-communication.md).
+4. Add bridge-to-CAN conversion, scheduling, SocketCAN RX/TX, and freshness handling.
 5. Define the DBC and native CAN conversion, then test pure packing/validation/scheduling.
 6. Integrate SocketCAN on `vcan0` with synthetic inputs and injected ECU status.
 7. Connect the separate Python Dashboard through gateway IPC and verify acceptance/results/freshness.

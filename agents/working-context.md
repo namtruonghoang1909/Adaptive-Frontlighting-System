@@ -1,10 +1,11 @@
 # Agent Working Context
 
-Read the [agent guide](README.md), relevant files in [rules/](rules/README.md), this file, and [prompt-tracking.md](prompt-tracking.md) before changing source or architecture.
+Read the [agent guide](README.md), relevant files in [rules/](rules/rules.md), this file, and [prompt-tracking.md](prompt-tracking.md) before changing source or architecture.
 
 ## Workspace
 
 - Commands and documentation paths are relative to the repository root.
+- [docs/development.md](../docs/development.md) indexes runnable scripts and the primary simulation, bridge, test, and viewer commands.
 - Root `AGENTS.md` is an automatic-discovery pointer to the canonical [agent guide](README.md).
   Agent rules, working context, prompt history, roadmap, and plans now live together under
   the root `agents/` directory; the former `docs/agents/` tree has been removed.
@@ -19,28 +20,41 @@ Read the [agent guide](README.md), relevant files in [rules/](rules/README.md), 
 
 ## Current Task And Review State
 
-- Work is paused after clarifying the process boundary: `simulation_runner` and the C++ bridge are separate processes, while the bridge's proposed IPC and CAN workers are threads within its own process. The existing design proposes a Unix `SOCK_SEQPACKET` connection from a Python IPC adapter to the bridge, then mutex-protected latest-state replacement between bridge threads. Cross-process shared memory was discussed but not selected or implemented. When work resumes, define the complete observation message, sample identity, freshness, bounded delivery, and reconnect behavior before coding IPC. See [data-flow.md](../docs/architecture/data-flow.md).
-- On 2026-10-07, the runner's cached LiDAR extraction, `LidarSnapshot`, browser comparison, and dedicated launcher were removed. `SceneSnapshot` now contains only ego and registry-derived surrounding objects. The working tree remains unstaged and uncommitted for review.
+- The high/low beam road map has 10 logical sectors. It retains exactly the old
+  16-sector preview's central `03–12` far-field boundaries and widths, then
+  renumbers them `00–09`. The far edges are about ±14.223°; the two edge cells
+  extend to ±18° through 30 m for close-range lamp spill and blend by 50 m.
+  The yellow near-field guide and LEFT/EGO/RIGHT and X FORWARD map labels
+  remain removed. The revised provisional `0x310` contract uses eight codes in
+  group 0 and two codes plus six zero padding slots in group 1. `0x100` reports
+  the 10-sector applied mask in a 16-bit container. The final geometry still
+  needs physical lamp calibration before bridge/ECU implementation.
+- The shared [High beam visual](../tools/system_visualization/beam-segments.html) and [Low beam visual](../tools/system_visualization/beam-segments.html?mode=low) tabs render two 8×8 MAX7219-style matrices to the left of the road grid. High beam centers both platforms, keeps rows 5–8 on, and enables rows 1–4 with distance-based ADB pixel masking. Example distances 30/50/70/100 m mask 4/3/2/1 top rows in affected columns; the transition cutoffs are 40/60/85 m. Low beam turns rows 1–4 off and keeps rows 5–8 on. During turns, the outside matrix swivels three times farther than the inside matrix; the inside target is one third of the outside target, with left turns moving the left matrix less and right turns mirrored. The outside target is `(wheel / 90°) × 6° × (1 − 0.75 × speed / 120)` for clamped ±90° wheel input and 0–120 km/h. At full wheel input, outside/inside aim is 6°/2° at 0 km/h, 3.75°/1.25° at 60 km/h, and 1.5°/0.5° at 120 km/h. The car stays fixed. Default visual spans are 100 m / ±10° for high beam and 40 m / ±18° for low beam. These are visualization values pending physical calibration; `0x310` has distance but no object-height bounds.
+- The logical-sector geometry projects road masks to eight selectable horizontal columns per lamp; sector numbers are not wired directly to column numbers. The high-beam scene defaults to one visible left-lane vehicle and a partial ADB mask. The low-beam view shows the shorter, wider footprint and keeps ADB inactive. Its default viewport zooms to the first 60 m while the 40 m beam and up to ±6° outside-matrix swivel stay within frame. Each visualization tab shows a **Code updated** timestamp beside the tabs, based on the newest server modification time for its page and local CSS/JavaScript files. Center- and right-lane vehicles remain available through their controls; those beyond the close-up leave the visible map. The preview has no live simulator connection. Current checks are in the latest prompt-tracking entry.
+- On branch `feat/ipc/runner-bridge-socket`, System Visualization has four tabs: Code graph, static [System in Action](../tools/system_visualization/system-in-action.html), High beam visual, and Low beam visual. The common road grid has three lanes, 10 logical sectors, 11 straight divider rays, 10 m bands, and a 100 m maximum range. The two visual tabs share the road grid, vehicle controls, and matrix column selection. Angle spans and light patterns are design assumptions, not published Audi specifications. See the [ADB mapping design](../docs/architecture/adb-grid-and-lamps.md). These changes and docs are uncommitted pending review.
+- The [runner–bridge communication contract](../docs/architecture/runner-bridge-communication.md) is implemented for runner publication and C++ reception using `SOCK_SEQPACKET`/JSON, session and sequence identity, source monotonic timestamps, bounded publication, validation, and reconnect behavior. The publisher starts automatically on every runner invocation and retries until the receiver is available. Both processes share the `AFS_BRIDGE_SOCKET` override and the XDG or private per-user `/tmp` default. The receiver prints each accepted JSON packet to stdout and rejected packets to stderr for live inspection. Candidate limits are 20 Hz, 250 ms, 64 KiB, and 128 objects. CAN conversion, Dashboard IPC, and MCU lighting behavior remain future implementation. The runner publisher runs in a Python worker thread; the bridge retains a mutex-protected latest scene in its process. See [data-flow.md](../docs/architecture/data-flow.md).
+- On 2026-10-07, the runner's cached LiDAR extraction, `LidarSnapshot`, browser comparison, and dedicated launcher were removed. `SceneSnapshot` now contains only ego and registry-derived surrounding objects. Those extraction changes were committed on the object extraction branch and merged before this task.
+- The initial visitor tab's timeline tests and browser checks passed before the static revision. That revision removed playback controls, story modules, and their tests. The earlier tabletop artwork was reviewed in headless Firefox at desktop and phone widths; the current matrix artwork was inspected directly. Current verification is recorded in the latest prompt-tracking entry; no simulation runtime behavior changed.
 - `SceneSnapshot` validates matching timestamp, source, seed, episode step, and simulation time. The browser scene payload uses schema version 2 because the LiDAR field was removed. MetaDrive's own LiDAR sensor and rendered overlay configuration remain in its environment setup; no project extractor consumes those rays.
-- The latest verification passed 39 dependency-free test functions, a real one-step headless MetaDrive run (2 valid published scenes), a one-step run with the optional local scene server, Code graph inventory and graph validation (104 inventory nodes, 39 visible nodes, 35 interactions, six paths), updated temporary DOM interaction checks, JavaScript syntax, 61 Markdown link/fence/whitespace checks, and Git whitespace validation. The scene server needs local bind permission outside the sandbox; its startup succeeded when rerun with that permission. A graphical browser view was not inspected.
+- The previous object-extraction verification passed 39 dependency-free test functions, a real one-step headless MetaDrive run (2 valid published scenes), a one-step run with the optional local scene server, Code graph validation, DOM interaction checks, JavaScript syntax, Markdown checks, and Git whitespace validation. The scene server needed local bind permission outside the sandbox.
 - The code map is a development aid for understanding the codebase, not an AFS project component,
   runtime feature, or milestone. Report tooling work separately from project progress. Every code
   change requires map synchronization in the same task against the current working tree, following
   [code_visualize.md](code_visualize.md).
-- The working tree contains the completed runner latest-scene interface, surrounding extraction integration, configurable radius, sibling `scene_display` development package, Linux runtime scripts, concise `simulation_runner/runner.md`, tests, aligned documentation, and the interactive architecture explorer under `tools/system_visualization/`.
-- `tools/system_visualization/` now has a class interaction graph. Implemented classes and selected entry functions are grouped into MetaDrive runner, object extraction, and scene display layer panels. Click a parent to expand or collapse methods/fields at 2/3 of the parent radius, with the same color tone. Direct upstream/downstream interactions highlight while unrelated nodes dim. Search, layer/folder filtering, pan/zoom, and a right-hand description and connection panel are available. CAN bridge, Dashboard, and firmware panels explicitly have no implemented runtime classes. Source files are linked from details, not shown as graph nodes.
-- The Code graph has a Functionalities section in the right panel. Six implemented paths highlight ordered arrows for ego extraction, surrounding extraction, scene publication, browser display, manual driving, and runner startup. Selection expands required members and focuses the path start; clearing removes the overlay. Parent spacing and child offset keep arrows readable. Existing graph click, search, filter, and camera controls remain available.
+- The merged object-extraction work contains the runner latest-scene interface, surrounding extraction integration, configurable radius, sibling `scene_display` development package, Linux runtime scripts, `simulation_runner/runner.md`, tests, aligned documentation, and the interactive architecture explorer under `tools/system_visualization/`.
+- `tools/system_visualization/` has a class interaction graph. Implemented classes and selected entry functions are grouped into MetaDrive runner, runner IPC adapter, object extraction, scene display, and bridge receiver layers. Click a parent to expand or collapse methods/fields at 2/3 of the parent radius, with the same color tone. Direct upstream/downstream interactions highlight while unrelated nodes dim. Search, layer/folder filtering, pan/zoom, and a right-hand description and connection panel are available. CAN conversion, Dashboard, and firmware runtime classes remain unimplemented. Source files are linked from details, not shown as graph nodes.
+- The Code graph has a Functionalities section in the right panel. Seven implemented paths highlight ordered arrows for ego extraction, surrounding extraction, scene publication, browser display, manual driving, runner startup, and runner-to-bridge IPC. Selection expands required members and focuses the path start; clearing removes the overlay. Parent spacing and child offset keep arrows readable. Existing graph click, search, filter, and camera controls remain available.
 - The viewer now starts and resets at 90% zoom near the first visible class. Node, layer, interaction, and functionality labels are larger. Search and layer filters return to a readable close view; selecting a long functionality path focuses its first node at readable scale, with panning and action clicks available to follow the rest. **Fit** remains the whole-map overview.
 - Parent class/function positions are curated in `graph-data.js` so the runner entry, manual control, extraction branches, scene storage, and browser rendering read in a logical order within their layer panels. Search and layer filters compact visible positions without losing their relative order. Expanded children still orbit each parent.
 - Parent circles have radius 54 and child circles radius 36, preserving the 1.5:1 ratio. Ordinary interaction captions appear only after selecting a node, on its direct connections. The later node enlargement and always-visible captions were rolled back at the user's request; the logical node arrangement remains.
-- `bash tools/system_visualization/start_code_graph.sh` serves the viewer and repository source links at `http://127.0.0.1:8000/tools/system_visualization/`; pass a port number to change it. The local HTTP smoke check returned 200 for the viewer, generated index, and a source file.
+- `bash tools/system_visualization/start_system_visualization.sh` serves all System Visualization pages and repository source links at `http://127.0.0.1:8000/tools/system_visualization/`; pass a port number to change it. The local HTTP smoke check returned 200 for the viewer, generated index, and a source file.
 - The standalone `tools/lidar_demo.py` PNG helper and later browser LiDAR comparison were removed at the user's request.
 - `graph-data.js` is the authoritative curated class, member, layer, interaction, and parent-position model. Each node has a source inventory ID and each edge has evidence. `build_index.py` generates the bundled `code-index.js` from repository-owned application/tool sources; regenerate it when source paths, indexed Python symbols, or definition lines change. See `agents/code_visualize.md` for the maintenance workflow.
 - `functionality-data.js` is the authoritative list of ordered implemented paths, separate from the base graph model. `functionality-overlay.js` highlights them; the only integration added to `viewer.js` is a path reveal/framing method.
-- The root README explains how to open the Code graph and what its six functionality paths show. Agent rules require every implementation and fix to review the generated inventory, class interactions, and ordered paths in the same task; affected models are updated, validated, and reported before handoff.
-- The code graph is development tooling and ready for user review. The previous simulation work and agent-folder consolidation remain unstaged and uncommitted. Inspect the existing status and diff before further changes; wait for the user's explicit request before staging or committing. Follow [committing.md](rules/committing.md).
-- The rendered scene display in [runner.md](../simulation_runner/runner.md) still needs graphical inspection. The next implementation discussion is the registry-derived observation contract and IPC boundary. The [LiDAR input investigation](plans/simulation_runner/lidar-input.md) is retained as historical research, not current implementation guidance.
-- Recording, replay, named scenarios, IPC, gateway runtime, Dashboard runtime, CAN behavior, and firmware behavior are outside this implementation.
+- The root README explains all four System Visualization views. Agent rules require every implementation and fix to review the generated inventory, class interactions, and ordered paths in the same task; affected models are updated, validated, and reported before handoff. The curated graph and functionality paths include the implemented runner-to-bridge observation path. CAN, Dashboard IPC, and firmware remain planned.
+- The Code graph, System in Action, High beam visual, and Low beam visual tabs are development tooling and ready for user review. Inspect the existing status and diff before further changes; wait for the user's explicit request before staging or committing. Follow [committing.md](rules/committing.md).
+- The rendered scene display in [runner.md](../simulation_runner/runner.md) still needs graphical inspection. The next runtime milestone is exercising the runner and C++ receiver together, then continuing with CAN gateway work. The [LiDAR input investigation](plans/simulation_runner/lidar-input.md) is retained as historical research, not current implementation guidance.
+- Recording, scenario replay, named scenarios, CAN behavior, and firmware behavior are outside this visualization work. The high/low visual tabs are interactive geometry and headlight previews only; they have no connection to simulator objects or runtime messages.
 - An older stash named `deferred scene snapshot interface and broader docs` exists from the earlier surrounding-extractor branch. Do not apply it wholesale because it contains obsolete viewer and broad-documentation work.
 
 ## Implemented Simulation Flow
@@ -59,6 +73,11 @@ Read the [agent guide](README.md), relevant files in [rules/](rules/README.md), 
 - The empty stale `observation_viewer/` and `vehicle_extract/` directories and their generated metadata were removed locally; active source uses `scene_display/` and `object_extraction/`.
 
 ## Run And Verification Commands
+
+The [development guide](../docs/development.md) is the concise index of the
+repository launch scripts and their component workflows. The simulation
+launcher runs the matching requirements check automatically before startup;
+run the checker by itself only to check readiness without launching MetaDrive.
 
 Check runtime requirements without starting MetaDrive:
 
@@ -87,7 +106,7 @@ All runner arguments and example modes are documented in [simulation_runner/runn
 Validate the interactive architecture explorer:
 
 ```bash
-bash tools/system_visualization/start_code_graph.sh
+bash tools/system_visualization/start_system_visualization.sh
 python3 tools/system_visualization/build_index.py --check
 node tools/system_visualization/validate.mjs
 node --check tools/system_visualization/graph-data.js
@@ -141,7 +160,7 @@ nodes, 40 implemented interactions, and six layer panels. A temporary DOM
 smoke check passed expansion/collapse, the exact 1.5-to-1 parent/child radius,
 color inheritance, direct-connection focus, details, layer filter, search,
 zoom, and reset. Source inventory freshness, graph validation, JavaScript
-syntax, and Git whitespace checks passed. The local Code graph server returned
+syntax, and Git whitespace checks passed. The local System Visualization server returned
 HTTP 200 for the viewer and its key assets. A graphical screenshot remains
 unavailable in this shell.
 
@@ -163,15 +182,15 @@ browser screenshot remains unavailable in this shell.
 ## System Boundaries
 
 - There are three planned application processes: Python MetaDrive plus adapter, native C++ gateway, and Python Dashboard.
-- Python owns lifecycle, driving controls, extraction, coordinate normalization, and future IPC publication.
+- Python owns lifecycle, driving controls, extraction, coordinate normalization, and automatic runner socket publication.
 - C++ owns IPC reception, current gateway state, CAN conversion/scheduling, SocketCAN, decoded ECU status, and communication diagnostics.
 - STM32 owns AFS/ADB decisions, actuator commands, feedback monitoring, and independent faults/timeouts.
-- The proposed cross-process baseline remains C++17/CMake and Unix Domain Sockets with `SOCK_SEQPACKET` carrying versioned JSON. Exact IPC fields and freshness policy remain design work.
+- Runner observation IPC uses Unix Domain Sockets with `SOCK_SEQPACKET` carrying versioned JSON. Dashboard IPC remains design work.
 - CAN geometry compression and lighting decisions do not belong in Python extraction.
 
 ## Other Component Status
 
-- `bridge/` is a C++17/CMake scaffold split into `app`, `ipc`, `state`, `can`, and `diagnostics`; no runtime executable exists.
+- `bridge/` contains a C++17/CMake runner socket receiver, a dependency-free Unix socket integration test, and the `bridge/scripts/run_runner_bridge.sh` build-and-run launcher; CAN, Dashboard IPC, and diagnostics runtime remain unimplemented.
 - `dashboard/` is a Python package scaffold split into `app`, `gateway_client`, and `models`; no UI or IPC implementation exists.
 - DBC and STM32 firmware behavior are not implemented. `firmware/` remains unchanged.
 
@@ -183,6 +202,7 @@ browser screenshot remains unavailable in this shell.
 | Simulation implementation | [../simulation_runner/README.md](../simulation_runner/README.md) |
 | Development scene display | [../simulation_runner/src/scene_display/README.md](../simulation_runner/src/scene_display/README.md) |
 | Interactive architecture explorer | [../tools/system_visualization/README.md](../tools/system_visualization/README.md) |
+| Visitor walkthrough plan | [plans/tools/system-in-action.md](plans/tools/system-in-action.md) |
 | Recent prompt/change history | [prompt-tracking.md](prompt-tracking.md) |
 | Python simulation architecture | [../docs/architecture/components/metadrive.md](../docs/architecture/components/metadrive.md) |
 | System data flow | [../docs/architecture/data-flow.md](../docs/architecture/data-flow.md) |
