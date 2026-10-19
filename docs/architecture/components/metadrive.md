@@ -2,7 +2,7 @@
 
 MetaDrive is the host-side driving simulator used by the prototype. It creates virtual road scenes, ego vehicle motion, and surrounding vehicles for AFS/ADB demonstrations.
 
-The project treats MetaDrive as a simulation dependency and data source, not as a lighting controller. `simulation_runner/` implements ego and surrounding-object extraction, matching scene snapshots, a process-local latest-scene interface, and an optional development browser observer. Bridge IPC comes later.
+The project treats MetaDrive as a simulation dependency and data source, not as a lighting controller. `simulation_runner/` implements ego and surrounding-object extraction, matching scene snapshots, a process-local latest-scene interface, an optional development browser observer, and a publisher that starts with every runner invocation to connect to the C++ bridge.
 
 ## Flow
 
@@ -13,10 +13,10 @@ scenario configuration
   -> matching immutable SceneSnapshot
   -> lock-protected latest-scene replacement
   -> optional scene_display read and local browser rendering
-  -> future IPC adapter
+  -> automatic IPC publisher -> C++ bridge receiver
 ```
 
-The implemented runner takes one timestamp after every reset and step, extracts the ego and complete surrounding registry scan, builds a matching `SceneSnapshot`, and replaces the latest scene under a short lock. Public getters expose the full scene or either component inside the same Python process. `scene_display` uses the complete-scene getter to serve a live development view. The proposed adapter will later project selected simulator-independent data and publish it through a Unix Domain Socket to the separate C++ gateway.
+The implemented runner takes one timestamp after every reset and step, extracts the ego and complete surrounding registry scan, builds a matching `SceneSnapshot`, and replaces the latest scene under a short lock. The IPC worker reads that complete scene and publishes a versioned Unix socket message to the separate C++ gateway. The contract and bench defaults are in [runner-bridge-communication.md](../runner-bridge-communication.md).
 
 ## Responsibilities
 
@@ -68,7 +68,7 @@ The Python adapter filters simulator observations and normalizes coordinates. Th
 | Surrounding-vehicle presence/type, if available | Python adapter | Filtering, diagnostics, and scenario validation |
 | Scenario name/state | Bridge or Dashboard | Logs and user observation |
 
-Raw simulator objects, camera frames, lane navigation, and route internals should stay inside the host simulation layer unless a later feature explicitly needs them. For the first build, the proposed gateway contract remains compact steering, speed, and surrounding-vehicle geometry.
+Raw simulator objects, camera frames, lane navigation, and route internals stay inside the host simulation layer. The implemented runner contract carries steering, longitudinal speed, and surrounding-object geometry.
 
 The in-process scene interface is not IPC. It remains readable after runner shutdown, clears at the start of the next valid invocation, and retains only the newest complete scene. Consumers needing a consistent sample use `get_scene_snapshot()` rather than separate component reads.
 

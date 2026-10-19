@@ -1,6 +1,6 @@
 # C++ Bridge Component
 
-The bridge is the native Linux gateway between the Python simulation runner, Python Dashboard, and CAN network. Its organized scaffold is under `bridge/`; runtime behavior is not implemented yet.
+The bridge is the native Linux gateway between the Python simulation runner, Python Dashboard, and CAN network. Its runner-facing Unix socket receiver and latest source-state retention are implemented; Dashboard IPC and CAN runtime remain planned.
 
 ## Position In The System
 
@@ -17,20 +17,21 @@ All three host applications run on the same Linux system as separate processes. 
 
 | Location | Responsibility |
 |---|---|
-| `bridge/CMakeLists.txt` | C++17 project baseline and future targets |
+| `bridge/CMakeLists.txt` | C++17 runner receiver library and executable |
 | `bridge/include/afs_bridge/` | Public interfaces and value types |
 | `bridge/src/app/` | Composition, configuration, startup, shutdown, and resource ownership |
 | `bridge/src/ipc/` | Unix-socket clients, framing, parsing, validation, and replies |
 | `bridge/src/state/` | Complete current input/status snapshots and synchronization |
 | `bridge/src/can/` | CAN conversion, scheduling, raw SocketCAN TX/RX, and status decoding |
 | `bridge/src/diagnostics/` | Freshness, communication health, counters, and logging |
-| `simulation_runner/tests/` | Native unit and Linux IPC/SocketCAN integration tests |
+| `bridge/tests/` | Native unit and Linux IPC/SocketCAN integration tests |
 
-The directories currently contain responsibility notes only. There is no gateway executable yet.
+`afs_runner_bridge` accepts the Python runner's versioned scene stream. The CAN,
+Dashboard, and diagnostics modules remain scaffolds without runtime behavior.
 
 ## IPC Clients
 
-The simulation runner and Dashboard connect separately through Unix Domain Socket IPC. The proposed contract uses `SOCK_SEQPACKET` with versioned JSON messages.
+The simulation runner and Dashboard connect separately through Unix Domain Socket IPC. The runner boundary uses `SOCK_SEQPACKET` with versioned JSON messages. The [runner–bridge communication contract](../runner-bridge-communication.md) documents the implementation and current limits.
 
 - Simulation sends complete vehicle and surrounding-object observations.
 - Dashboard sends persistent requested state and identified momentary actions.

@@ -23,9 +23,12 @@ The launchers add `simulation_runner/src` to `PYTHONPATH` automatically.
 | Script | Purpose |
 |---|---|
 | `simulation_runner/scripts/check_simulation_requirements.sh` | Check the selected mode's Python packages, MetaDrive assets, display environment, and optional scene-display packages without starting MetaDrive. |
-| `simulation_runner/scripts/start_metadrive_simulation.sh` | Start the simulation and forward all runner arguments. |
+| `simulation_runner/scripts/start_metadrive_simulation.sh` | Check the selected mode's requirements, start the simulation, and forward all runner arguments. |
 
-Check the required resources:
+The start script runs the requirements check automatically. It uses rendered
+mode unless `--headless` is passed, and checks FastAPI/Uvicorn when
+`--scene-display` or `--visualize` is passed. Run the checker by itself only
+when you want to verify readiness without launching MetaDrive. For example:
 
 ```bash
 bash simulation_runner/scripts/check_simulation_requirements.sh --rendered
@@ -58,6 +61,7 @@ bash simulation_runner/scripts/start_metadrive_simulation.sh --help
 | `--surrounding-radius-m NUMBER` | `100` | Set the surrounding-object center-to-center extraction radius in meters. |
 | `--scene-display`, `--visualize` | off | Start the browser scene display. |
 | `--scene-display-port INTEGER` | `8765` | Set the local scene-display port from 1 through 65535. |
+| `--bridge-socket PATH` | `$XDG_RUNTIME_DIR/afs/runner-bridge.sock`, or `/tmp/afs-<uid>/runner-bridge.sock` when unset | Override the bridge socket path. `AFS_BRIDGE_SOCKET` also sets the path. Publishing starts automatically. |
 
 ## Run Examples
 
@@ -118,3 +122,10 @@ METADRIVE_PYTHON=/path/to/python \
   bash simulation_runner/scripts/start_metadrive_simulation.sh \
   --headless --max-steps 10
 ```
+
+Run the C++ receiver in another terminal with `build/bridge/afs_runner_bridge`,
+then start the runner normally. The publisher retries until the receiver is
+available and always sends the newest scene. Both programs use the same default
+socket path; set `AFS_BRIDGE_SOCKET` or pass `--bridge-socket PATH` to change it.
+The receiver creates the private socket directory with mode `0700`; the socket
+uses mode `0600` and accepts same-UID peers.

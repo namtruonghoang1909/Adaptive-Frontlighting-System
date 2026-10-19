@@ -26,7 +26,7 @@ globalThis.CODE_INDEX = [
     "parent": "simulation_runner",
     "kind": "module",
     "path": "simulation_runner/src/ipc_adapter",
-    "status": "planned",
+    "status": "implemented",
     "color": "#73b8f4",
     "description": ""
   },
@@ -36,9 +36,74 @@ globalThis.CODE_INDEX = [
     "parent": "simulation_runner/src/ipc_adapter",
     "kind": "file",
     "path": "simulation_runner/src/ipc_adapter/__init__.py",
-    "status": "planned",
+    "status": "implemented",
     "color": "#73b8f4",
     "description": ""
+  },
+  {
+    "id": "simulation_runner/src/ipc_adapter/publisher.py",
+    "label": "publisher.py",
+    "parent": "simulation_runner/src/ipc_adapter",
+    "kind": "file",
+    "path": "simulation_runner/src/ipc_adapter/publisher.py",
+    "status": "implemented",
+    "color": "#73b8f4",
+    "description": ""
+  },
+  {
+    "id": "simulation_runner/src/ipc_adapter/publisher.py#default_socket_path",
+    "label": "default_socket_path",
+    "parent": "simulation_runner/src/ipc_adapter/publisher.py",
+    "kind": "function",
+    "path": "simulation_runner/src/ipc_adapter/publisher.py",
+    "status": "implemented",
+    "color": "#73b8f4",
+    "description": "Return the configured socket path or the shared per-user bridge path.",
+    "line": 23
+  },
+  {
+    "id": "simulation_runner/src/ipc_adapter/publisher.py#RunnerPublisher",
+    "label": "RunnerPublisher",
+    "parent": "simulation_runner/src/ipc_adapter/publisher.py",
+    "kind": "class",
+    "path": "simulation_runner/src/ipc_adapter/publisher.py",
+    "status": "implemented",
+    "color": "#73b8f4",
+    "description": "Reconnectable, bounded-rate IPC client that always publishes the newest scene.",
+    "line": 34
+  },
+  {
+    "id": "simulation_runner/src/ipc_adapter/publisher.py#RunnerPublisher.start",
+    "label": "start",
+    "parent": "simulation_runner/src/ipc_adapter/publisher.py#RunnerPublisher",
+    "kind": "method",
+    "path": "simulation_runner/src/ipc_adapter/publisher.py",
+    "status": "implemented",
+    "color": "#73b8f4",
+    "description": "",
+    "line": 47
+  },
+  {
+    "id": "simulation_runner/src/ipc_adapter/publisher.py#RunnerPublisher.stop",
+    "label": "stop",
+    "parent": "simulation_runner/src/ipc_adapter/publisher.py#RunnerPublisher",
+    "kind": "method",
+    "path": "simulation_runner/src/ipc_adapter/publisher.py",
+    "status": "implemented",
+    "color": "#73b8f4",
+    "description": "",
+    "line": 53
+  },
+  {
+    "id": "simulation_runner/src/ipc_adapter/publisher.py#scene_message",
+    "label": "scene_message",
+    "parent": "simulation_runner/src/ipc_adapter/publisher.py",
+    "kind": "function",
+    "path": "simulation_runner/src/ipc_adapter/publisher.py",
+    "status": "implemented",
+    "color": "#73b8f4",
+    "description": "",
+    "line": 101
   },
   {
     "id": "simulation_runner/src/metadrive_runner",
@@ -273,7 +338,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#73b8f4",
     "description": "",
-    "line": 84
+    "line": 89
   },
   {
     "id": "simulation_runner/src/metadrive_runner/config.py",
@@ -839,7 +904,7 @@ globalThis.CODE_INDEX = [
     "parent": "repository",
     "kind": "component",
     "path": "bridge",
-    "status": "planned",
+    "status": "implemented",
     "color": "#82c6a0",
     "description": ""
   },
@@ -849,7 +914,17 @@ globalThis.CODE_INDEX = [
     "parent": "bridge",
     "kind": "module",
     "path": "bridge/src/app",
-    "status": "planned",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/app/runner_bridge_main.cpp",
+    "label": "runner_bridge_main.cpp",
+    "parent": "bridge/src/app",
+    "kind": "file",
+    "path": "bridge/src/app/runner_bridge_main.cpp",
+    "status": "implemented",
     "color": "#82c6a0",
     "description": ""
   },
@@ -859,7 +934,7 @@ globalThis.CODE_INDEX = [
     "parent": "bridge",
     "kind": "module",
     "path": "bridge/src/can",
-    "status": "planned",
+    "status": "implemented",
     "color": "#82c6a0",
     "description": ""
   },
@@ -869,7 +944,7 @@ globalThis.CODE_INDEX = [
     "parent": "bridge",
     "kind": "module",
     "path": "bridge/src/diagnostics",
-    "status": "planned",
+    "status": "implemented",
     "color": "#82c6a0",
     "description": ""
   },
@@ -879,7 +954,17 @@ globalThis.CODE_INDEX = [
     "parent": "bridge",
     "kind": "module",
     "path": "bridge/src/ipc",
-    "status": "planned",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/ipc/runner_ipc.cpp",
+    "label": "runner_ipc.cpp",
+    "parent": "bridge/src/ipc",
+    "kind": "file",
+    "path": "bridge/src/ipc/runner_ipc.cpp",
+    "status": "implemented",
     "color": "#82c6a0",
     "description": ""
   },
@@ -889,7 +974,47 @@ globalThis.CODE_INDEX = [
     "parent": "bridge",
     "kind": "module",
     "path": "bridge/src/state",
-    "status": "planned",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/runner_ipc.hpp",
+    "label": "runner_ipc.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/runner_ipc.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/runner_ipc.hpp#RunnerObject",
+    "label": "RunnerObject",
+    "parent": "bridge/include/afs_bridge/runner_ipc.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/runner_ipc.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/runner_ipc.hpp#RunnerScene",
+    "label": "RunnerScene",
+    "parent": "bridge/include/afs_bridge/runner_ipc.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/runner_ipc.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/runner_ipc.hpp#RunnerIpcServer",
+    "label": "RunnerIpcServer",
+    "parent": "bridge/include/afs_bridge/runner_ipc.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/runner_ipc.hpp",
+    "status": "implemented",
     "color": "#82c6a0",
     "description": ""
   },
@@ -974,6 +1099,66 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "tools/system_visualization/assets",
+    "label": "assets",
+    "parent": "tools/system_visualization",
+    "kind": "module",
+    "path": "tools/system_visualization/assets",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/assets/system-in-action",
+    "label": "system-in-action",
+    "parent": "tools/system_visualization/assets",
+    "kind": "module",
+    "path": "tools/system_visualization/assets/system-in-action",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/beam-model.js",
+    "label": "beam-model.js",
+    "parent": "tools/system_visualization",
+    "kind": "file",
+    "path": "tools/system_visualization/beam-model.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/beam-segments.css",
+    "label": "beam-segments.css",
+    "parent": "tools/system_visualization",
+    "kind": "file",
+    "path": "tools/system_visualization/beam-segments.css",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/beam-segments.html",
+    "label": "beam-segments.html",
+    "parent": "tools/system_visualization",
+    "kind": "file",
+    "path": "tools/system_visualization/beam-segments.html",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/beam-segments.js",
+    "label": "beam-segments.js",
+    "parent": "tools/system_visualization",
+    "kind": "file",
+    "path": "tools/system_visualization/beam-segments.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
     "id": "tools/system_visualization/build_index.py",
     "label": "build_index.py",
     "parent": "tools/system_visualization",
@@ -992,7 +1177,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#dc93ae",
     "description": "",
-    "line": 23
+    "line": 24
   },
   {
     "id": "tools/system_visualization/build_index.py#main",
@@ -1003,7 +1188,17 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#dc93ae",
     "description": "",
-    "line": 89
+    "line": 96
+  },
+  {
+    "id": "tools/system_visualization/code-timestamp.js",
+    "label": "code-timestamp.js",
+    "parent": "tools/system_visualization",
+    "kind": "file",
+    "path": "tools/system_visualization/code-timestamp.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
   },
   {
     "id": "tools/system_visualization/functionality-data.js",
@@ -1046,11 +1241,11 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
-    "id": "tools/system_visualization/start_code_graph.sh",
-    "label": "start_code_graph.sh",
+    "id": "tools/system_visualization/start_system_visualization.sh",
+    "label": "start_system_visualization.sh",
     "parent": "tools/system_visualization",
     "kind": "file",
-    "path": "tools/system_visualization/start_code_graph.sh",
+    "path": "tools/system_visualization/start_system_visualization.sh",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
@@ -1061,6 +1256,26 @@ globalThis.CODE_INDEX = [
     "parent": "tools/system_visualization",
     "kind": "file",
     "path": "tools/system_visualization/styles.css",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/system-in-action.css",
+    "label": "system-in-action.css",
+    "parent": "tools/system_visualization",
+    "kind": "file",
+    "path": "tools/system_visualization/system-in-action.css",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/system-in-action.html",
+    "label": "system-in-action.html",
+    "parent": "tools/system_visualization",
+    "kind": "file",
+    "path": "tools/system_visualization/system-in-action.html",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""

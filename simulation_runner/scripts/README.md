@@ -5,13 +5,18 @@ Run these Linux helpers from the repository root.
 | Script | Purpose |
 |---|---|
 | `check_simulation_requirements.sh` | Check Python, imports, MetaDrive assets, selected-mode display readiness, and optional scene-display dependencies without starting MetaDrive. |
-| `start_metadrive_simulation.sh` | Start the runner and forward all command-line arguments unchanged. |
+| `start_metadrive_simulation.sh` | Run the matching requirements check, then start the runner and forward all command-line arguments unchanged. |
 
 The scripts use `simulation/metadrive/metadrive_venv/bin/python` by default and add `simulation_runner/src` to `PYTHONPATH`.
 
+Starting the runner runs the requirements check automatically. The launcher
+selects rendered or headless mode from the runner arguments and includes
+scene-display dependencies when `--scene-display` or `--visualize` is present.
+Run the checker directly only when you want to check readiness without starting
+the simulation:
+
 ```bash
 bash simulation_runner/scripts/check_simulation_requirements.sh --rendered
-bash simulation_runner/scripts/start_metadrive_simulation.sh
 ```
 
 Run rendered MetaDrive with the live browser scene display:
@@ -27,7 +32,6 @@ Pass runner arguments after the script name to change the defaults, for example
 For headless execution:
 
 ```bash
-bash simulation_runner/scripts/check_simulation_requirements.sh --headless
 bash simulation_runner/scripts/start_metadrive_simulation.sh \
   --headless --max-steps 100
 ```
@@ -35,13 +39,10 @@ bash simulation_runner/scripts/start_metadrive_simulation.sh \
 Check and run the browser scene display:
 
 ```bash
-bash simulation_runner/scripts/check_simulation_requirements.sh \
-  --headless --scene-display
 bash simulation_runner/scripts/start_metadrive_simulation.sh \
   --headless --realtime --scene-display
 ```
 
-Set `METADRIVE_PYTHON=/path/to/python` to use another environment. Run the
-checker separately before starting a rendered or browser-display session.
+Set `METADRIVE_PYTHON=/path/to/python` to use another environment.
 
 See [../runner.md](../runner.md) for requirements, runner arguments, and run examples.

@@ -78,6 +78,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=8765,
         help="Local scene display TCP port (default: 8765).",
     )
+    parser.add_argument(
+        "--bridge-socket",
+        default=None,
+        help="Override the runner-to-bridge Unix socket path (publishing is always enabled).",
+    )
     return parser
 
 
@@ -85,6 +90,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     env_config = _build_env_config(args)
     display_server: Any | None = None
+    publisher: Any | None = None
     summary = None
     exit_code = 0
 
@@ -94,6 +100,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(format_snapshot(snapshot), flush=True)
 
     try:
+        from ipc_adapter import RunnerPublisher
+
+        publisher = RunnerPublisher(path=args.bridge_socket)
+        publisher.start()
+        print(f"runner IPC: {publisher.path}", flush=True)
         if args.scene_display:
             from scene_display import SceneDisplayServer
 
@@ -111,10 +122,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("\nMetaDrive runner stopped by user.", file=sys.stderr)
         exit_code = 130
-    except RuntimeError as exc:
+    except (RuntimeError, ValueError) as exc:
         print(f"MetaDrive runner error: {exc}", file=sys.stderr)
         exit_code = 1
     finally:
+        if publisher is not None:
+            publisher.stop()
         if display_server is not None:
             try:
                 display_server.stop()
