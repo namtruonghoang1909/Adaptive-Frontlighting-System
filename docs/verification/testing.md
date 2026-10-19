@@ -9,7 +9,7 @@
 | Runner scene store | Each reset/step atomically replaces one matching ego/surrounding scene without mixed metadata or a backlog |
 | Scene display | Normalized typed JSON, current-state replacement, display states, bundled assets, HTTP lifecycle, and clean shutdown |
 | Architecture explorer | Source-index freshness, containment integrity, architecture mappings, repository links, JavaScript syntax, and browser interactions |
-| Adapter IPC | Selected observations cross the Python/C++ boundary with defined units, validity, and sample identity |
+| Adapter IPC | Scene projection, packet limits and validity, Python-to-C++ delivery, source identity, reconnects, and full-scene replacement |
 | Gateway state | C++ threads exchange whole snapshots without mixed-step fields or unbounded backlogs |
 | CAN interface | Native conversion, scheduling, validation, and DBC-derived encoding/decoding are correct |
 | Dashboard IPC | Requests, acceptance results, and ECU status cross the process boundary with explicit freshness |
@@ -24,12 +24,14 @@
 | Unit | Host or firmware test environment | Isolated extractor, snapshot, conversion, and control checks |
 | Virtual CAN | Linux `vcan0` | CAN integration without hardware |
 | Synthetic adapter input | C++ gateway with a small IPC test client | Known source values without MetaDrive |
+| Process IPC | Python runner publisher and C++ bridge executable with synthetic snapshots | Exercise the real Unix socket clients, startup retry, packet projection, and bridge restart without MetaDrive |
+| Live runner IPC | Headless MetaDrive runner and C++ bridge processes | Confirm actual extracted scenes cross the IPC boundary without CAN hardware |
 | SIL, later | Software ECU and `vcan0` | Exercise portable firmware C control logic without hardware |
 | Board bring-up | STM32F407VE bench | Peripheral and electrical checks |
 | HIL | Real CAN and headlight rig | End-to-end behavior |
 | Demo acceptance | Full setup | Repeatable project demonstration |
 
-Planned gateway integration checks include both startup orders, client disconnects/restarts, malformed messages, source timeout despite continuing CAN TX, slow Dashboard readers, CAN errors, command acceptance versus ECU execution, and clean shutdown. `vcan0` alone tests transport; full SIL needs an ECU implementation, while physical HIL needs `can0` and STM32.
+The current IPC tests cover the C++ receiver protocol, Python publisher projection, publisher-first retry, and publisher reconnection after bridge restart. The optional live smoke test runs a finite headless MetaDrive session through both processes. Remaining gateway checks include invalid/stale input policy through CAN, source timeout despite continuing CAN TX, slow Dashboard readers, CAN errors, command acceptance versus ECU execution, and clean shutdown. `vcan0` alone tests CAN transport; full SIL needs an ECU implementation, while physical HIL needs `can0` and STM32.
 
 The current tests use fake MetaDrive-like objects and a pure controller model. They cover ego extraction, runner lifecycle behavior, controls, supported surrounding types, radius boundaries, ego exclusion, coordinate and velocity rotation, deterministic ordering, missing and non-finite fields, disappearing objects, valid empty scans, invalid registry/ego pose handling, scene sample matching, snapshot immutability, latest-value replacement, concurrent store access, retention, callback compatibility, invalid-scene counting, scene-display normalization, state classification, provider replacement, error reporting, assets, and port validation. Later evidence should include DBC revisions, CAN logs, Dashboard captures, firmware versions, calibration notes, and observed physical behavior.
 

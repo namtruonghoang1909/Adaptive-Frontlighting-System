@@ -65,15 +65,24 @@ See [bridge/README.md](../bridge/README.md) for bridge details.
 
 ## Check The Receiver
 
-The receiver integration test starts the real C++ receiver and creates a small
-synthetic Unix socket publisher. It verifies accepted scene data, reconnects,
-socket permissions, competing publishers, and invalid or stale messages. It
-does not require MetaDrive or CAN hardware.
+CTest runs the C++ receiver protocol cases and, when Python 3 is available, a
+process-level check that runs the real Python publisher against the C++ bridge
+with synthetic scenes. Together they cover accepted data, reconnects, socket
+permissions, competing publishers, and invalid or stale messages. They do not
+require MetaDrive or CAN hardware.
 
 ```bash
 cmake -S bridge -B build/bridge
-cmake --build build/bridge --target afs_runner_ipc_integration_test
+cmake --build build/bridge
 ctest --test-dir build/bridge --output-on-failure
+```
+
+For a short run using the actual MetaDrive runner and C++ bridge processes, use
+the optional live smoke test. It checks that valid MetaDrive scenes reach the
+receiver; it does not require CAN hardware:
+
+```bash
+bash bridge/tests/runner_ipc_live_smoke.sh
 ```
 
 See [bridge/tests/README.md](../bridge/tests/README.md) for coverage and

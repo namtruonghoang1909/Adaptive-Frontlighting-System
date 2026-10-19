@@ -13,6 +13,44 @@ Future agents should read this file with the rest of `agents/` before making cha
 
 ## Entries
 
+### 2026-10-19 - Add Runner-to-Bridge IPC Tests
+
+**User prompt**
+
+User asked for test scripts or test cases for IPC.
+
+**Agent changes**
+
+- Added five dependency-free tests for Python scene projection, nearest-object
+  truncation, invalid versus valid empty scans, packet limits, and socket path
+  selection.
+- Added a CTest process test that runs the real Python publisher against the
+  C++ bridge with synthetic scenes. It checks publisher-first retry, decoded
+  ego and surrounding fields, full replacement by an empty scan, and sequence
+  continuity after restarting the bridge.
+- Added an optional script for a short real MetaDrive-to-bridge smoke run and
+  documented all three IPC test levels.
+
+**Files modified**
+
+- `bridge/CMakeLists.txt`, `bridge/tests/README.md`,
+  `bridge/tests/runner_ipc_end_to_end.py`,
+  `bridge/tests/runner_ipc_live_smoke.sh`,
+  `simulation_runner/tests/test_ipc_publisher.py`,
+  `simulation_runner/src/ipc_adapter/README.md`, `docs/development.md`,
+  `docs/verification/testing.md`, `agents/working-context.md`,
+  `agents/prompt-tracking.md`
+
+**Verification**
+
+- CTest passes both receiver and Python-to-C++ process tests. All five Python
+  publisher cases pass, along with Python compilation, shell syntax, Code
+  inventory freshness, graph validation, JavaScript syntax, and Git whitespace
+  checks.
+- The optional MetaDrive live smoke passes with 11 accepted scenes over 10
+  headless steps. Local AF_UNIX tests needed execution outside the sandbox;
+  CTest passes both cases there.
+
 ### 2026-10-19 - Rename The System Visualization Launcher
 
 **User prompt**
@@ -303,52 +341,3 @@ little of the 100 m road map.
   visible nodes, 40 interactions, seven layers, and seven functionality paths.
   JavaScript syntax and Git whitespace checks pass. Graphical browser review
   remains unavailable in this shell; DOM geometry tests cover the close-up.
-
-### 2026-10-18 - Split High And Low Beam Visuals With Swivel
-
-**User prompt**
-
-User asked to move the MAX7219 matrix display left of the road grid, rename
-Beam Segments to High beam visual, add a Low beam visual with shorter and wider
-light that swivels, and make the two-tab architecture explicit in the docs.
-High mode centers both matrices and lights rows 1–4 above the always-on low
-rows 5–8; low mode lights only rows 5–8 and permits swivel.
-
-**Agent changes**
-
-- Moved both matrix displays into the road card's left column and added High
-  beam visual and Low beam visual navigation. The shared map now draws a
-  100 m / ±10° high beam and 40 m / ±18° low beam with a steering slider for
-  up to ±12° of low-beam swivel.
-- Kept rows 5–8 lit in both tabs; rows 1–4 and ADB masking are active only in
-  high mode. Both matrix platforms stay centered in high mode. Updated the
-  project, tool, architecture, hardware, CAN, and agent context documents to
-  describe these mode rules and distinguish preview values from firmware.
-- Regenerated the Code graph inventory. Its curated graph and functionality
-  paths remain unchanged because the visual tabs are explanatory tooling,
-  not an implemented AFS runtime path.
-
-**Files modified**
-
-- `tools/system_visualization/beam-segments.html`, `beam-segments.css`,
-  `beam-segments.js`, `beam-segments.test.cjs`, `index.html`,
-  `system-in-action.html`, `styles.css`, `code-index.js`,
-  `tools/system_visualization/README.md`, `tools/README.md`
-- `README.md`, `docs/tools/tools.md`, `docs/development.md`,
-  `docs/architecture/overview.md`, `docs/architecture/adb-grid-and-lamps.md`,
-  `docs/architecture/components/headlights.md`,
-  `docs/architecture/components/afs-ecu.md`,
-  `docs/hardware/hardware.md`, `docs/hardware/visual.md`,
-  `docs/can/messages/0x100_AFS_Status.md`,
-  `docs/can/messages/0x310_Vehicle_Object.md`,
-  `agents/working-context.md`, `agents/prompt-tracking.md`
-
-**Verification**
-
-- Nine page interaction tests and nine lamp geometry tests pass. JavaScript
-  syntax and Git whitespace checks pass. Markdown links and fences pass for
-  45 files; IDs are unique across three viewer pages.
-- Inventory freshness passes at 124 nodes. Graph validation passes with 43
-  visible nodes, 40 interactions, seven layers, and seven functionality paths.
-  A graphical screenshot was unavailable in this shell; page interaction tests
-  cover DOM geometry and control behavior.

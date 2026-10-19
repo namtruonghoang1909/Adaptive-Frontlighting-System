@@ -15,3 +15,8 @@ endpoint. Otherwise both programs use
 Protocol projection, packet-size enforcement, and object truncation live in
 `publisher.py`. The adapter owns no CAN IDs, DBC packing, SocketCAN, Dashboard
 state, or AFS control.
+
+Dependency-free projection and packet-boundary cases are in
+`simulation_runner/tests/test_ipc_publisher.py`. The C++ bridge's process-level
+test runs the real publisher against the receiver; see
+[`bridge/tests/README.md`](../../../bridge/tests/README.md).
