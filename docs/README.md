@@ -34,11 +34,13 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 
 | Document | Purpose |
 |---|---|
+| [development.md](development.md) | Script index and commands for running project components and tests |
 | [../simulation_runner/runner.md](../simulation_runner/runner.md) | Simulation requirements, scripts, arguments, and run examples |
 | [architecture/overview.md](architecture/overview.md) | System architecture |
 | [architecture/components/bridge.md](architecture/components/bridge.md) | C++ vehicle/CAN bridge |
 | [architecture/components/metadrive.md](architecture/components/metadrive.md) | MetaDrive dependency |
 | [architecture/data-flow.md](architecture/data-flow.md) | End-to-end ownership |
+| [architecture/adb-grid-and-lamps.md](architecture/adb-grid-and-lamps.md) | Proposed ADB grid types and two-lamp mapping |
 | [architecture/components/dashboard.md](architecture/components/dashboard.md) | Dashboard component |
 | [architecture/components/afs-ecu.md](architecture/components/afs-ecu.md) | AFS ECU component |
 | [architecture/components/headlights.md](architecture/components/headlights.md) | Headlight rig |
@@ -55,9 +57,9 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 | Area | Status |
 |---|---|
 | Documentation | Architecture guides plus a class interaction Code graph with implemented functionality paths under `tools/system_visualization/` |
-| Python simulation | Runner, controls, ego/surrounding extraction, latest-scene access, and optional development browser display implemented under `simulation_runner/` |
-| Simulation adapter IPC | Not implemented |
-| C++ bridge | C++17/CMake module scaffold; runtime not implemented |
+| Python simulation | Runner, controls, ego/surrounding extraction, latest-scene access, optional development browser display, and automatic bridge publishing implemented under `simulation_runner/` |
+| Simulation adapter IPC | Versioned local Unix socket publisher implemented; starts with every runner invocation |
+| C++ bridge | C++17/CMake runner socket receiver and latest source-scene retention implemented; CAN runtime remains planned |
 | DBC | Planned as `can/afs.dbc` |
 | Dashboard | Python package scaffold; UI and IPC behavior not implemented |
 | AFS/ADB firmware | Not implemented |

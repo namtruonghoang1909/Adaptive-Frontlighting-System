@@ -25,8 +25,8 @@ left/right feedback swivel servos |
         v
 rotating headlight platforms
         |
-        +-- left beam PCA9685 -> left LED zones
-        +-- right beam PCA9685 -> right LED zones
+        +-- SPI -> left 8x8 MAX7219 matrix
+        `-- SPI -> right 8x8 MAX7219 matrix
 ```
 
 The STM32F407VE provides the CAN controller. The MCP2551 provides the electrical interface
@@ -42,13 +42,20 @@ feedback servo
   |
 rotating platform
   |
-  +-- low-beam output
-  +-- high-beam LED zones: [Z0][Z1][Z2][Z3][Z4][Z5][Z6]
-  +-- beam PCA9685 PWM input path
+  +-- one 8x8 LED matrix for both beam modes
+      +-- upper four rows: high-beam extension and ADB masking
+      `-- lower four rows: low-beam base
 ```
 
-The servo swivels the whole platform for low-beam AFS. The LED zones dim independently for
-high-beam ADB.
+In normal low-beam swivel mode, rows 1–4 are off, rows 5–8 are on, and the two
+servos turn the whole matrix platforms by different angles with steering. The
+outside matrix turns farther than the inside one; right turns mirror left
+turns. In high-beam modes, the servos return to center, rows 5–8 stay on, and
+rows 1–4 add the longer beam after centered feedback is confirmed. ADB switches
+off affected upper pixels. The preview illustrates a 40 m, ±18° low beam with
+±6° maximum outside-matrix swivel and a centered 100 m, ±10° high beam. The
+outside matrix swivels three times farther than the inside matrix. These
+values and row optics need bench calibration.
 
 ## Main Parts
 
@@ -58,19 +65,22 @@ high-beam ADB.
 | MCP2551 CAN transceiver | CAN physical layer transceiver |
 | CAN-to-USB adapter | Linux host connection to the real CAN bus |
 | Servo PCA9685 board | Shared servo PWM driver over I2C at servo frequency |
-| Left beam PCA9685 board | PWM control for left headlight LED zones |
-| Right beam PCA9685 board | PWM control for right headlight LED zones |
-| LED current limiting / driver stages | Electrical protection and current handling for LED zones |
+| Left 8x8 MAX7219 matrix module | Left low/high beam pixel output and ADB masking |
+| Right 8x8 MAX7219 matrix module | Right low/high beam pixel output and ADB masking |
+| Matrix LED modules | Small-signal display LEDs and their MAX7219 drivers for a bench demonstration |
 | Two feedback-capable servos | Left/right horizontal swivel with measured position |
 | Two rotating headlight platforms | Lightweight mechanical headlight bodies |
-| Fourteen LED zones | Seven simulated beam zones per headlight |
+| Two 8x8 LED matrices | One proposed matrix per headlight; 128 pixels total |
 | 5-6 V servo supply | Dedicated servo power |
 | LED supply | Dedicated LED power sized to the selected LED modules |
 | Projection surface | White board or wall for visual beam behavior |
 
-The CAN ADB input is a 16-sector logical grid. The first bench has fourteen physical LED zones,
-so firmware calibration must map logical sectors to the available left/right LED channels.
-That mapping is intentionally not fixed until the physical zone angles are measured.
+The provisional CAN ADB input is a 10-sector horizontal grid. Firmware maps
+those sectors to eight horizontal columns on each matrix. The High beam visual
+preview uses distance as a coarse vertical heuristic, switching off 4/3/2/1
+top high-beam rows at example distances of 30/50/70/100 m; the lower four
+low-beam rows stay active. Accurate vehicle-shaped shadows require vertical
+object bounds and optical calibration.
 
 ## Important Constraints
 
@@ -81,7 +91,9 @@ That mapping is intentionally not fixed until the physical zone angles are measu
 - MCP2551 wiring and STM32 logic-level compatibility should be checked during hardware bring-up.
 - Servo position feedback needs to return directly to STM32 ADC inputs.
 - Analog feedback must stay within STM32 ADC limits; 0-3.3 V feedback servos are preferred.
-- The servo PCA9685 board and beam PCA9685 boards should be separate because they use different output roles.
-- PCA9685 beam boards do not replace LED current limiting; LEDs still need resistors, MOSFET stages, or constant-current drivers as appropriate.
+- The servo PCA9685 remains on I2C at servo frequency. The two MAX7219 modules use the STM32 SPI interface, with shared clock/data and separate chip-select/load signals or a supported daisy chain.
+- A MAX7219 provides on/off pixels plus a global 16-step matrix brightness setting. It cannot set a separate brightness level for each pixel. [Check the MAX7219 datasheet](https://www.analog.com/media/en/technical-documentation/data-sheets/MAX7219-MAX7221.pdf).
+- The MAX7219 operates from 4.0–5.5 V and specifies a 3.5 V logic-high input at a 5 V supply. STM32 3.3 V SPI outputs may need level shifting; confirm the exact module before wiring it directly.
+- The matrix modules are display hardware for a bench demonstration. Their brightness and optics need evaluation before treating them as headlight emitters.
 - Moving-platform wiring needs strain relief and bounded yaw travel to avoid twisting wires.
-- Servo calibration, mechanical limits, LED zone angles, and ADB shadow margins are hardware bring-up details, not fixed in docs yet.
+- Servo calibration, mechanical limits, matrix pixel angles, low-beam cutoff, high-beam reach, and ADB shadow margins require hardware bring-up calibration.

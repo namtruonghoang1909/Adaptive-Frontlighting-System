@@ -12,10 +12,11 @@
 
   globalThis.CLASS_GRAPH = {
     layers: [
-      { id: "runner", label: "MetaDrive runner", folder: "simulation_runner/src/metadrive_runner", color: "#71b5ee", status: "implemented", description: "Simulation lifecycle, keyboard policy, control, and the latest-scene store." },
+      { id: "runner", label: "MetaDrive runner", folder: "simulation_runner/src/metadrive_runner", color: "#71b5ee", status: "implemented", description: "Simulation lifecycle, keyboard policy, control, latest-scene store, and automatically started bridge publisher." },
+      { id: "ipc_adapter", label: "Runner IPC adapter", folder: "simulation_runner/src/ipc_adapter", color: "#78c9e8", status: "implemented", description: "Projects the latest complete scene into bounded versioned packets and reconnects to the local bridge." },
       { id: "extraction", label: "Object extraction", folder: "simulation_runner/src/object_extraction", color: "#6ed3b1", status: "implemented", description: "Typed ego, surrounding, and combined scene snapshots." },
       { id: "display", label: "Scene display", folder: "simulation_runner/src/scene_display", color: "#e6ad75", status: "implemented", description: "Optional local API and browser canvas for the live scene." },
-      { id: "bridge", label: "CAN bridge", folder: "bridge", color: "#c49be8", status: "planned", description: "Runtime classes are not implemented yet." },
+      { id: "bridge", label: "CAN bridge", folder: "bridge", color: "#c49be8", status: "implemented", description: "Runner-facing Unix socket receiver validates, logs accepted JSON packets, and retains the latest source state; CAN and Dashboard runtime remain planned." },
       { id: "dashboard", label: "Dashboard", folder: "dashboard", color: "#e9a5c6", status: "planned", description: "Runtime classes are not implemented yet." },
       { id: "firmware", label: "Firmware", folder: "firmware", color: "#e4d37b", status: "planned", description: "Runtime classes are not implemented yet." },
     ],
@@ -25,6 +26,8 @@
       policy: [200, 950], keyboard: [600, 1100], input: [1000, 1240],
       tuning: [600, 1400], controller: [600, 1730], command: [200, 2100],
       read: [600, 2100], write: [1000, 2400],
+      publisher: [1500, 570], scene_message: [1900, 680],
+      bridge_server: [2550, 650], runner_scene: [3000, 850],
 
       ego_extract: [200, 280], ego: [600, 340], kinematics: [1000, 260],
       action: [1000, 740], diagnostics: [1000, 1100],
@@ -46,6 +49,10 @@
       top("command", "ControlCommand", "runner", "class", R + "controls/controller.py#ControlCommand", "Steering, throttle or brake, and persistent targets returned by the controller."),
       top("write", "_write_scene_snapshot()", "runner", "function", R + "snapshot_store.py#_write_scene_snapshot", "Atomically replaces the latest in-process scene under a lock."),
       top("read", "get_scene_snapshot()", "runner", "function", R + "snapshot_store.py#get_scene_snapshot", "Reads the latest complete scene for in-process consumers."),
+      top("publisher", "RunnerPublisher", "ipc_adapter", "class", "simulation_runner/src/ipc_adapter/publisher.py#RunnerPublisher", "Reconnectable publisher thread that sends the newest complete scene to the bridge at up to 20 Hz."),
+      top("scene_message", "scene_message()", "ipc_adapter", "function", "simulation_runner/src/ipc_adapter/publisher.py#scene_message", "Projects typed extraction snapshots into the versioned, bounded protocol scene."),
+      top("bridge_server", "RunnerIpcServer", "bridge", "class", "bridge/include/afs_bridge/runner_ipc.hpp#RunnerIpcServer", "Owns the same-UID SOCK_SEQPACKET server, validates v1 scenes, and publishes current source state."),
+      top("runner_scene", "RunnerScene", "bridge", "class", "bridge/include/afs_bridge/runner_ipc.hpp#RunnerScene", "Validated current runner sample retained by the bridge receiver."),
 
       top("ego_extract", "extract_ego()", "extraction", "function", O + "ego/extractor.py#extract_ego", "Reads the ego vehicle and returns one typed sample."),
       top("ego", "EgoSnapshot", "extraction", "class", O + "ego/types.py#EgoSnapshot", "One ego sample with kinematics, action, diagnostics, and validity."),
@@ -83,6 +90,11 @@
       edge("main", "server", "starts", "call", R + "__main__.py#main"),
       edge("run", "run.publish_scene()", "after reset/step", "call", R + "runner.py#run_single_agent"),
       edge("run", "summary", "returns", "data", R + "runner.py#run_single_agent"),
+      edge("main", "publisher", "always starts", "call", R + "__main__.py#main"),
+      edge("publisher", "read", "reads latest full scene", "call", "simulation_runner/src/ipc_adapter/publisher.py#RunnerPublisher"),
+      edge("publisher", "scene_message", "projects and encodes", "call", "simulation_runner/src/ipc_adapter/publisher.py#RunnerPublisher"),
+      edge("scene_message", "bridge_server", "SOCK_SEQPACKET JSON", "data", "simulation_runner/src/ipc_adapter/publisher.py#scene_message"),
+      edge("bridge_server", "runner_scene", "validates and replaces", "data", "bridge/src/ipc/runner_ipc.cpp"),
       edge("run.publish_scene()", "ego_extract", "calls", "call", R + "runner.py#run_single_agent"),
       edge("run.publish_scene()", "surround_extract", "calls", "call", R + "runner.py#run_single_agent"),
       edge("run.publish_scene()", "scene", "constructs", "data", R + "runner.py#run_single_agent"),

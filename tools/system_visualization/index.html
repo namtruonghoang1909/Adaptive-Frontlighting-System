@@ -11,11 +11,19 @@
     <script defer src="functionality-data.js"></script>
     <script defer src="viewer.js"></script>
     <script defer src="functionality-overlay.js"></script>
+    <script defer src="code-timestamp.js"></script>
   </head>
-  <body>
+  <body class="code-graph-page">
     <div id="workspace">
       <header class="topbar">
-        <a class="brand" href="../../README.md" title="Repository README"><span class="brand-mark">✳</span> AFS <span class="brand-divider">/</span> Code graph</a>
+        <a class="brand" href="../../README.md" title="Repository README"><span class="brand-mark">✳</span> AFS <span class="brand-divider">/</span> System Visualization</a>
+        <nav class="site-tabs" aria-label="Visualization views">
+          <a href="index.html" aria-current="page">Code graph</a>
+          <a href="system-in-action.html">System in Action</a>
+          <a href="beam-segments.html">High beam visual</a>
+          <a href="beam-segments.html?mode=low">Low beam visual</a>
+        </nav>
+        <time id="codeUpdated" class="code-updated" role="status" aria-live="polite" title="Latest modification time reported for this page and its local CSS and JavaScript files, shown in local time.">Code updated: checking…</time>
         <span class="topbar-hint">Classes and their interactions</span>
         <div class="search-wrap">
           <label class="search-box"><span aria-hidden="true">⌕</span><input id="graphSearch" type="search" aria-label="Search class or component name" placeholder="Search class or component…" autocomplete="off"><kbd>/</kbd></label>

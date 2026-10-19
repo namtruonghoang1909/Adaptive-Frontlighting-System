@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="Interactive three-lane AFS preview with an 8x8 low and high beam matrix on each headlight.">
+    <title>AFS · High beam visual</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="beam-segments.css">
+    <script defer src="beam-model.js"></script>
+    <script defer src="beam-segments.js"></script>
+    <script defer src="code-timestamp.js"></script>
+  </head>
+  <body class="beam-page">
+    <div id="workspace">
+      <header class="topbar">
+        <a class="brand" href="../../README.md" title="Repository README"><span class="brand-mark">✳</span> AFS <span class="brand-divider">/</span> System Visualization</a>
+        <nav class="site-tabs" aria-label="Visualization views">
+          <a href="index.html">Code graph</a>
+          <a href="system-in-action.html">System in Action</a>
+          <a id="highBeamTab" href="beam-segments.html" aria-current="page">High beam visual</a>
+          <a id="lowBeamTab" href="beam-segments.html?mode=low">Low beam visual</a>
+        </nav>
+        <time id="codeUpdated" class="code-updated" role="status" aria-live="polite" title="Latest modification time reported for this page and its local CSS and JavaScript files, shown in local time.">Code updated: checking…</time>
+        <span id="topbarGridSummary" class="topbar-hint">Configurable polar grid</span>
+      </header>
+
+      <main class="beam-main">
+        <section class="beam-hero" aria-labelledby="beamTitle">
+          <div>
+            <p class="beam-kicker">MATRIX HEADLIGHT PREVIEW / TOP-DOWN ROAD MAP</p>
+            <h1 id="beamTitle">High beam reaches ahead while both lamps stay centered.</h1>
+            <p id="beamLede" class="beam-lede">Rows 1–4 extend the beam and mask around vehicles. Rows 5–8 keep the low beam on. Select a column to inspect its road coverage.</p>
+          </div>
+          <p class="model-badge"><span></span>Interactive model · no live data</p>
+        </section>
+
+        <section class="beam-layout" aria-label="Beam sector visualization and controls">
+          <figure class="field-card">
+            <div class="field-heading">
+              <div>
+                <p class="field-eyebrow">EGO-RELATIVE OBJECT GRID</p>
+                <h2>Three-lane highway field</h2>
+              </div>
+              <div class="field-heading-tools">
+                <span id="beamModeLabel" class="beam-mode-label">HIGH + LOW · SERVOS CENTERED</span>
+                <span class="field-range"><span id="fieldSpanSummary">Near / far angular spans</span><i></i><span id="fieldRangeSummary">Configurable range</span></span>
+              </div>
+            </div>
+
+            <section class="lamp-control-panel" aria-labelledby="lampPanelTitle">
+              <div class="lamp-control-heading"><h3 id="lampPanelTitle">ONE 8×8 MATRIX PER HEADLIGHT</h3><span>MAX7219-style pixels · global brightness · on/off masking</span></div>
+              <div class="matrix-pair">
+                <section class="matrix-unit" aria-label="Left headlight matrix">
+                  <div class="matrix-unit-heading"><span class="lamp-left-label">L · LEFT</span><span id="leftMatrixState">High and low beam</span></div>
+                  <div id="leftMatrixFace" class="matrix-face">
+                  <div class="matrix-band"><span>HIGH · rows 1–4</span><div id="leftHighPixels" class="matrix-grid" aria-hidden="true"></div></div>
+                  <div class="matrix-band matrix-band-low"><span>LOW · rows 5–8</span><div id="leftLowPixels" class="matrix-grid" aria-hidden="true"></div></div>
+                  </div>
+                  <div id="leftZoneStrip" class="zone-strip" aria-label="Left matrix horizontal columns"></div>
+                </section>
+                <section class="matrix-unit" aria-label="Right headlight matrix">
+                  <div class="matrix-unit-heading"><span class="lamp-right-label">R · RIGHT</span><span id="rightMatrixState">High and low beam</span></div>
+                  <div id="rightMatrixFace" class="matrix-face">
+                  <div class="matrix-band"><span>HIGH · rows 1–4</span><div id="rightHighPixels" class="matrix-grid" aria-hidden="true"></div></div>
+                  <div class="matrix-band matrix-band-low"><span>LOW · rows 5–8</span><div id="rightLowPixels" class="matrix-grid" aria-hidden="true"></div></div>
+                  </div>
+                  <div id="rightZoneStrip" class="zone-strip" aria-label="Right matrix horizontal columns"></div>
+                </section>
+              </div>
+              <p id="zoneFocusReadout" class="zone-focus-readout" aria-live="polite">Select a matrix column to inspect its projected road coverage at 15, 50, and 100 m.</p>
+            </section>
+
+            <svg id="beamField" class="beam-field high-beam-on" viewBox="0 0 1000 780" role="img" aria-labelledby="fieldTitle fieldDescription">
+              <title id="fieldTitle">Two 8 by 8 matrix headlights and a configurable ADB polar grid</title>
+              <desc id="fieldDescription">Each matrix has a low-beam base in its lower four rows and an ADB-masked high-beam extension in its upper four rows.</desc>
+              <defs>
+                <linearGradient id="fieldBackground" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#18251e"></stop>
+                  <stop offset="1" stop-color="#111a15"></stop>
+                </linearGradient>
+              </defs>
+              <rect id="fieldBackdrop" class="field-backdrop" x="0" y="0" width="1000" height="780" rx="14"></rect>
+              <path id="roadSurface" class="road-surface"></path>
+              <path id="roadEdges" class="road-edge"></path>
+              <path id="laneDividers" class="lane-divider"></path>
+              <text id="rangeCap" class="range-cap" text-anchor="middle"></text>
+              <g id="sectorCells" aria-hidden="true"></g>
+              <g id="lowBeamBase" aria-hidden="true"></g>
+              <g id="headlightBeams" aria-hidden="true"></g>
+              <g id="gridLines" aria-hidden="true"></g>
+              <g id="zoneSelectionOutline" aria-hidden="true"></g>
+              <g id="rangeLabels" aria-hidden="true"></g>
+              <g id="sectorLabels" aria-hidden="true"></g>
+              <g id="testVehicles" aria-hidden="true"></g>
+              <g id="egoVehicle" class="ego-car" aria-hidden="true">
+                <path class="car-shadow" d="M494.15 959.25 L494.15 935.5 Q494.15 932.5 495.2 931.4 L495.7 930 H504.3 L504.8 931.4 Q505.85 932.5 505.85 935.5 L505.85 959.25 Z"></path>
+                <path class="car-body" d="M494.15 959.25 L494.15 935.5 Q494.15 932.5 495.2 931.4 L495.7 930 H504.3 L504.8 931.4 Q505.85 932.5 505.85 935.5 L505.85 959.25 Z"></path>
+                <path class="car-windshield" d="M495.2 936 Q500 933.8 504.8 936 L504.3 941 H495.7 Z"></path>
+                <path class="car-roof" d="M495.15 944 H504.85 L505.35 954 H494.65 Z"></path>
+                <path class="car-centerline" d="M500 942 V954"></path>
+                <rect class="headlamp-housing" x="496" y="930.1" width="2.5" height=".8" rx=".3"></rect>
+                <rect class="headlamp-housing" x="501.5" y="930.1" width="2.5" height=".8" rx=".3"></rect>
+              </g>
+              <g id="lampEmitters" aria-hidden="true"></g>
+              <text id="egoCarLabel" class="car-label" text-anchor="middle" aria-hidden="true">EGO · MIDDLE LANE</text>
+              <g id="gridDebugOverlay" class="grid-debug-overlay" aria-label="Grid configuration and effective cell width">
+                <rect id="debugOverlayBackground" x="16" y="16" width="455" height="118" rx="8"></rect>
+                <text id="debugTitle" x="29" y="35">GRID DEBUG · DESIGN ASSUMPTIONS</text>
+                <text id="debugAngles" x="29" y="54"></text>
+                <text id="debugRange" x="29" y="72"></text>
+                <text id="debugWidthFirst" x="29" y="91"></text>
+                <text id="debugWidthSecond" x="29" y="109"></text>
+                <text id="debugMask" x="29" y="127"></text>
+              </g>
+            </svg>
+
+            <figcaption class="field-caption">
+              <span><i class="legend-target"></i> Test vehicles · <span id="vehicleSizeCaption">configured physical size</span></span>
+              <span><i class="legend-sector"></i> Sectors touched by visible vehicles</span>
+              <span><i class="legend-range"></i> <span id="rangeBandCaption">Range bands</span></span>
+              <span><i class="legend-beam"></i> <span id="beamFootprintCaption">High-beam column footprints</span> · <span id="beamRangeCaption">configurable range</span></span>
+              <span><i class="legend-mask"></i> High-beam pixels off · <span id="maskDimCaption">affected columns</span></span>
+            </figcaption>
+            <p id="roadMaskReadout" class="lamp-mask-readout" aria-live="polite">Logical road mask 0x0000</p>
+            <p id="lampMaskReadout" class="lamp-mask-readout" aria-live="polite">Masked high-beam columns — L: none · R: none</p>
+          </figure>
+
+          <aside class="control-card" aria-labelledby="controlTitle">
+            <div class="control-heading">
+              <p id="controlEyebrow" class="field-eyebrow">HIGHWAY TEST SCENE</p>
+              <h2 id="controlTitle">Surrounding vehicles</h2>
+              <p id="controlDescription">Each vehicle stays in its lane. Change its forward distance or hide it from the scene.</p>
+            </div>
+            <section id="steeringControl" class="steering-control" aria-labelledby="steeringTitle" hidden>
+              <div class="steering-heading"><h3 id="steeringTitle">Low-beam driving dashboard</h3><span>PREVIEW CONTROLS</span></div>
+              <div class="dashboard-display">
+                <div class="wheel-display">
+                  <svg id="steeringWheel" class="steering-wheel" viewBox="0 0 120 120" aria-hidden="true">
+                    <circle class="wheel-rim" cx="60" cy="60" r="48"></circle>
+                    <path class="wheel-spokes" d="M60 60 V15 M60 60 L20 86 M60 60 L100 86"></path>
+                    <path class="wheel-top-mark" d="M60 12 V23"></path>
+                    <circle class="wheel-hub" cx="60" cy="60" r="13"></circle>
+                  </svg>
+                  <span>STEERING WHEEL</span>
+                </div>
+                <div class="speed-display">
+                  <label class="speed-bar-label" for="speedKmh"><span>VEHICLE SPEED</span><b id="speedGainValue">75% swivel response</b></label>
+                  <strong><span id="speedValue">40</span><small>km/h</small></strong>
+                  <input id="speedKmh" class="speed-bar" type="range" min="0" max="120" step="1" value="40">
+                  <div class="speed-scale"><span>0</span><span id="speedMaxLabel">120 km/h</span></div>
+                  <div class="swivel-output" aria-live="polite"><span>MATRIX SWIVEL · LEFT / RIGHT</span><b id="swivelValue">0° · centered</b></div>
+                </div>
+              </div>
+              <div class="dashboard-inputs">
+                <div>
+                  <label for="steeringAngle">Turn wheel <b id="steeringValue">0° · centered</b></label>
+                  <input id="steeringAngle" type="range" min="-90" max="90" step="1" value="0">
+                  <div class="range-ends"><span id="steeringRightLimit">−90° right</span><span>0°</span><span id="steeringLeftLimit">+90° left</span></div>
+                </div>
+              </div>
+              <p id="swivelRule">The outside matrix turns three times farther than the inside one, with a modest overall swivel. Speed reduces both angles while the car stays in place.</p>
+            </section>
+
+            <section class="vehicle-control" data-lane="left" aria-labelledby="leftVehicleTitle">
+              <div class="vehicle-control-heading">
+                <div><p class="lane-tag">LEFT LANE · Y <span id="leftLaneOffset">+3.5 m</span></p><h3 id="leftVehicleTitle">Test vehicle 1</h3></div>
+                <label class="visibility-toggle" for="leftVisible"><input id="leftVisible" type="checkbox" checked><span>Visible</span></label>
+              </div>
+              <div class="slider-control">
+                <label for="leftRange"><span>Forward distance <b id="leftValue">30 m</b></span></label>
+                <input id="leftRange" type="range" min="1" max="1" step="1" value="1">
+                <div class="range-ends"><span id="leftMinLabel"></span><span id="leftMaxLabel"></span></div>
+              </div>
+              <p class="vehicle-readout" id="leftReadout" aria-live="polite">Bearing +6.7° · sectors 06–07 · bands 20–40 m</p>
+            </section>
+
+            <section class="vehicle-control" data-lane="center" aria-labelledby="centerVehicleTitle">
+              <div class="vehicle-control-heading">
+                <div><p class="lane-tag">EGO LANE · Y <span id="centerLaneOffset">0 m</span></p><h3 id="centerVehicleTitle">Test vehicle 2</h3></div>
+                <label class="visibility-toggle" for="centerVisible"><input id="centerVisible" type="checkbox"><span>Visible</span></label>
+              </div>
+              <div class="slider-control">
+                <label for="centerRange"><span>Forward distance <b id="centerValue">55 m</b></span></label>
+                <input id="centerRange" type="range" min="1" max="1" step="1" value="1">
+                <div class="range-ends"><span id="centerMinLabel"></span><span id="centerMaxLabel"></span></div>
+              </div>
+              <p class="vehicle-readout" id="centerReadout" aria-live="polite">Bearing 0.0° · sectors 07–08 · bands 50–60 m</p>
+            </section>
+
+            <section class="vehicle-control" data-lane="right" aria-labelledby="rightVehicleTitle">
+              <div class="vehicle-control-heading">
+                <div><p class="lane-tag">RIGHT LANE · Y <span id="rightLaneOffset">−3.5 m</span></p><h3 id="rightVehicleTitle">Test vehicle 3</h3></div>
+                <label class="visibility-toggle" for="rightVisible"><input id="rightVisible" type="checkbox"><span>Visible</span></label>
+              </div>
+              <div class="slider-control">
+                <label for="rightRange"><span>Forward distance <b id="rightValue">80 m</b></span></label>
+                <input id="rightRange" type="range" min="1" max="1" step="1" value="1">
+                <div class="range-ends"><span id="rightMinLabel"></span><span id="rightMaxLabel"></span></div>
+              </div>
+              <p class="vehicle-readout" id="rightReadout" aria-live="polite">Bearing −2.5° · sector 08 · bands 70–90 m</p>
+            </section>
+
+            <div class="grid-spec">
+              <p class="readout-label">ACTIVE GRID CONFIGURATION</p>
+              <div class="spec-row"><span>Sector count</span><b id="gridSectorCount"></b></div>
+              <div class="spec-row"><span>Physical lamp output</span><b id="lampZoneSpec"></b></div>
+              <div class="spec-row"><span>Near / far span</span><b id="gridAngularSpan"></b></div>
+              <div class="spec-row"><span>Range / band</span><b id="gridRangeSpec"></b></div>
+              <div class="spec-row"><span>ADB pixel mask</span><b id="gridDimSpec"></b></div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="mapping-note" aria-label="Prototype mapping note">
+          <div class="mapping-icon"><span id="logicalSectorCount"></span><span>→</span><span id="physicalZoneCount"></span></div>
+          <div>
+            <h2 id="mappingTitle">Road sectors map to high-beam matrix columns.</h2>
+            <p id="mappingDescription">The 10-sector road grid projects onto eight columns on each headlight. Rows 5–8 stay on as a short, wide low beam. Centered high-beam mode adds rows 1–4 and masks their pixels around vehicles. The demo's example distances 30/50/70/100 m mask 4/3/2/1 top rows in affected columns.</p>
+          </div>
+          <p class="data-path"><b>Object X/Y</b><span>→</span><b>Sector distances</b><span>→</span><b>ADB pixel mask</b></p>
+        </section>
+
+        <p class="beam-footnote">Column colors identify channels in the map; the matrix pixels show the proposed white output. MAX7219 brightness applies to the whole matrix, while ADB switches individual high-beam pixels off. The default high beam reaches 100 m at ±10°; low beam reaches 40 m at ±18° and swivels up to ±6° at low speed. The outside matrix turns about three times farther than the inside matrix; at high speed both swivel less. These spans, the speed rule, and the distance-based vertical row mask are illustrative and need calibration. The default 10-sector grid follows the provisional <code>0x310</code> proposal; other sector counts are exploratory. Override numeric values with <code>AFS_BEAM_CONFIG</code> or URL query values such as <code>?maxRangeM=300&amp;sectorCount=31</code>.</p>
+      </main>
+      <noscript><p class="no-script-note">Enable JavaScript to move test vehicles and preview low-beam swivel.</p></noscript>
+    </div>
+  </body>
+</html>

@@ -3,6 +3,7 @@
 import argparse
 import ast
 import json
+import re
 from pathlib import Path
 
 
@@ -11,7 +12,7 @@ ROOT = TOOL.parent.parent
 OUTPUT = TOOL / "code-index.js"
 COMPONENTS = [
     ("simulation_runner", ("simulation_runner/src", "simulation_runner/scripts"), "#73b8f4", "implemented"),
-    ("bridge", ("bridge/src",), "#82c6a0", "planned"),
+    ("bridge", ("bridge/src", "bridge/include/afs_bridge"), "#82c6a0", "implemented"),
     ("dashboard", ("dashboard/src/afs_dashboard",), "#b69bea", "planned"),
     ("firmware", ("firmware",), "#e7b877", "planned"),
     ("tools", ("tools",), "#dc93ae", "implemented"),
@@ -27,7 +28,7 @@ def build_index():
 
     def add(path, parent, color, status, kind, label=None, symbol=None, qualified=None):
         relative = path.relative_to(ROOT).as_posix()
-        node_id = relative + (f"#{qualified or symbol.name}" if symbol else "")
+        node_id = relative + (f"#{qualified or symbol.name}" if qualified or symbol else "")
         description = ""
         if symbol:
             description = (ast.get_docstring(symbol) or "").split("\n\n", 1)[0]
@@ -43,7 +44,7 @@ def build_index():
         for path in sorted(directory.iterdir(), key=lambda p: (not p.is_dir(), p.name)):
             if path.name.startswith(".") or path.name in EXCLUDED or path.is_symlink():
                 continue
-            child_status = "planned" if path.name == "ipc_adapter" else status
+            child_status = status
             if path.is_dir():
                 before = len(nodes)
                 child = add(path, parent, color, child_status, "module")
@@ -76,6 +77,12 @@ def build_index():
                                     continue
                                 add(path, symbol_id, color, status, "method", method.name,
                                     method, f"{symbol.name}.{method.name}")
+                elif path.suffix in {".h", ".hpp"}:
+                    source = path.read_text(encoding="utf-8")
+                    for match in re.finditer(r"\b(?:class|struct)\s+(\w+)", source):
+                        name = match.group(1)
+                        add(path, child, color, status, "class", name,
+                            qualified=name)
 
     for name, sources, color, status in COMPONENTS:
         component = ROOT / name

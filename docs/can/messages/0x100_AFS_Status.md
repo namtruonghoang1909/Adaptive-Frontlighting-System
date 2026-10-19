@@ -60,7 +60,7 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 | 2 | 7 | `CanDecodeFault` | bool | At least one received input frame was rejected by CAN validation |
 | 3 | 0..7 | `LeftServoFeedbackDeg` | int8, `0.5 deg/bit` | Left lamp measured/estimated swivel angle |
 | 4 | 0..7 | `RightServoFeedbackDeg` | int8, `0.5 deg/bit` | Right lamp measured/estimated swivel angle |
-| 5..6 | 0..15 | `AppliedDimZoneMask16` | uint16 LE | Beam columns actually dimmed/suppressed by the ECU |
+| 5..6 | 0..15 | `AppliedDimSectorMask` | uint16 LE | Bits `0..9` report logical sectors whose mapped high-beam matrix pixels were switched off; bits `10..15` are zero |
 | 7 | 0..7 | `Checksum` | uint8 | XOR of bytes `0..6`; `0` until implemented |
 
 ## Enums
@@ -78,6 +78,11 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 | `6..7` | Reserved |
 
 `ExecutedMode` already tells the receiver whether swivel or beam dimming is active. No separate `SwivelActive` or `BeamDimmingActive` flag is carried in this frame.
+In `LowBeam_Swivel`, rows 1–4 are off, rows 5–8 are on, and both platforms
+follow steering. In either high-beam mode, both platforms are centered,
+rows 5–8 stay on, and rows 1–4 are enabled. During a change from low-beam
+swivel to high beam, the ECU should keep the low rows on and report the
+executed low-beam state until centered feedback permits the high rows.
 
 ### `HealthState`
 
@@ -120,7 +125,7 @@ Hardware/control fault meanings:
 |---|---|
 | `ServoControlLost` | The ECU cannot command the servo control path. Possible causes include servo PWM driver unavailable, I2C/control transaction failure, disabled servo output, or servo-control driver failure. |
 | `ServoMismatch` | The ECU can command the servo path, but measured feedback does not match the ECU target within calibrated tolerance. |
-| `BeamControlLost` | The ECU cannot command the beam/LED control path. Possible causes include LED PWM driver unavailable, LED-zone driver fault, disabled beam output, or requested beam output not applied. |
+| `BeamControlLost` | The ECU cannot command one or both MAX7219 matrix modules over SPI, or the requested matrix pattern was not applied. |
 
 Stale bits are reported per category, even if the current mode does not require that category. `RequiredInputsValid` is mode-dependent; stale bits are diagnostic.
 
@@ -155,22 +160,22 @@ Byte 0 bits: [7] [6]      [5]    [4]       [3 2 1 0]
              res fallback fault inputs-ok alive
 ```
 
-`AppliedDimZoneMask16` uses the same 16-column horizontal beam grid as `0x310 Vehicle_Object`. Bit `n` corresponds to beam column `n`; `1` means the ECU actually dimmed or suppressed that column.
+`AppliedDimSectorMask` uses the same 10-sector horizontal beam grid as `0x310 Vehicle_Object`. Bit `n` corresponds to logical sector `n`; `1` means the ECU switched off the high-beam matrix pixels mapped to that sector. The low-beam base remains active. In low-beam modes the mask is `0x0000` because rows 1–4 are disabled by mode rather than ADB. Bits `10..15` are reserved and transmitted as zero. This is a logical summary, not a per-pixel report for the 128 LEDs.
 
 ```text
-Column: 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15
-Mask:   b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15
+Sector: 00 01 02 03 04 05 06 07 08 09
+Mask:   b0 b1 b2 b3 b4 b5 b6 b7 b8 b9
 ```
 
 ## Example A: High Beam Dimming Active
 
-Two vehicles have caused the ECU to dim columns `05,06,07,11,12`. Both servos report centered feedback values, required inputs are fresh, and no faults are present.
+Two vehicles have caused the ECU to dim sectors `02,03,04,07,08`. Both servos report centered feedback values, required inputs are fresh, and no faults are present.
 
 ```text
 ID:   0x100
 DLC:  8
-HEX:  12 05 00 00 00 E0 18 EF
-BIN:  00010010 00000101 00000000 00000000 00000000 11100000 00011000 11101111
+HEX:  12 05 00 00 00 9C 01 8A
+BIN:  00010010 00000101 00000000 00000000 00000000 10011100 00000001 10001010
 ```
 
 | Byte | Hex | Binary | Signal | Decoded value |
@@ -184,8 +189,8 @@ BIN:  00010010 00000101 00000000 00000000 00000000 11100000 00011000 11101111
 | 2 | `0x00` | `00000000` | fault bits | none |
 | 3 | `0x00` | `00000000` | `LeftServoFeedbackDeg` | `0.0 deg` |
 | 4 | `0x00` | `00000000` | `RightServoFeedbackDeg` | `0.0 deg` |
-| 5..6 | `0x18E0` | `00011000 11100000` | `AppliedDimZoneMask16` | columns `05,06,07,11,12` |
-| 7 | `0xEF` | `11101111` | `Checksum` | XOR of bytes `0..6` |
+| 5..6 | `0x019C` | `00000001 10011100` | `AppliedDimSectorMask` | sectors `02,03,04,07,08` |
+| 7 | `0x8A` | `10001010` | `Checksum` | XOR of bytes `0..6` |
 
 ## Example B: Object Input Stale Forces Fallback
 
@@ -209,5 +214,5 @@ BIN:  01100011 00110001 00000100 00000000 00000000 00000000 00000000 01010110
 | 2 | `0x04` | `00000100` | `ObjectStale` | `1` |
 | 3 | `0x00` | `00000000` | `LeftServoFeedbackDeg` | `0.0 deg` |
 | 4 | `0x00` | `00000000` | `RightServoFeedbackDeg` | `0.0 deg` |
-| 5..6 | `0x0000` | `00000000 00000000` | `AppliedDimZoneMask16` | no high-beam dimming applied |
+| 5..6 | `0x0000` | `00000000 00000000` | `AppliedDimSectorMask` | no high-beam matrix pixels switched off |
 | 7 | `0x56` | `01010110` | `Checksum` | XOR of bytes `0..6` |

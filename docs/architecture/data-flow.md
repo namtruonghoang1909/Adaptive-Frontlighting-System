@@ -1,6 +1,6 @@
 # Data Flow
 
-The target runtime has three Linux application processes. Socket IPC carries observations, requests, and reported status between them. Only the C++ gateway opens SocketCAN for production AFS traffic. The repository now has separate `simulation_runner/`, `bridge/`, and `dashboard/` component trees, but the IPC and gateway runtime behavior described below is not implemented. See [overview.md](overview.md) for the whole-system flowchart.
+The target runtime has three Linux application processes. Runner observation IPC is implemented over a local Unix socket; Dashboard IPC and CAN gateway runtime remain planned. Only the C++ gateway will open SocketCAN for production AFS traffic. See [overview.md](overview.md) for the whole-system flowchart.
 
 ## Inside The Gateway
 
@@ -45,11 +45,11 @@ MetaDrive reset/step
   -> continue the simulation loop
 ```
 
-The extraction and scene-store operations are implemented calls within one Python application process. `get_scene_snapshot()` returns the complete current ego and surrounding sample; component getters are available for consumers that need only one part. The store retains only the newest scene, so slow readers do not create a backlog. The optional `scene_display` reads that interface and serves normalized JSON to a local browser at 10 Hz without blocking simulation ingestion. It is a development observer and is separate from the planned production Dashboard. Unix-socket publication remains planned. MetaDrive owns no CAN IDs or payload packing; its lifecycle and driving controls stay in Python.
+The extraction, scene store, and optional `scene_display` are implemented within the Python process. The runner publisher reads `get_scene_snapshot()` and sends the newest scene over the runner socket in a separate thread. It skips intermediate scenes and does not build a backlog. MetaDrive owns no CAN IDs or payload packing; its lifecycle and driving controls stay in Python.
 
 ## Cross-Process Contract
 
-The proposed transport is Unix Domain Sockets, `SOCK_SEQPACKET`, with versioned JSON messages. Simulation and Dashboard use separate client connections to a gateway-owned server. Exact fields and message names remain draft design.
+The runner transport uses Unix Domain Sockets, `SOCK_SEQPACKET`, with versioned JSON messages. Simulation and Dashboard use separate client connections to a gateway-owned server. The runner observation fields, sample identity, source freshness, and reconnect behavior are in [runner-bridge-communication.md](runner-bridge-communication.md). The Dashboard contract remains separate design work.
 
 | Message kind | Producer | Consumer | Meaning |
 |---|---|---|---|
@@ -90,4 +90,4 @@ The planned DBC defines CAN packing and signal meaning. Generated C pack/unpack 
 - STM32 independently validates incoming CAN and handles stale/invalid data even if the gateway crashes.
 - Waking and joining the CAN worker, closing sockets, and releasing owned resources belong to coordinated gateway shutdown.
 
-These are proposed behaviors; no IPC or gateway runtime is implemented yet.
+Runner IPC is implemented through validated latest-scene reception. Dashboard IPC, CAN scheduling and transport, DBC conversion, and firmware behavior remain planned.

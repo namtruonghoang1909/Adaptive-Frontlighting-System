@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Serve the Code graph with working source-file links.
+# Serve all System Visualization pages and repository source links.
 set -euo pipefail
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then

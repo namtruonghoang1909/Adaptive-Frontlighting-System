@@ -6,6 +6,8 @@ links.
 
 | Tool | Purpose |
 |---|---|
-| [system_visualization/](system_visualization/README.md) | Class interaction graph with layer clusters, search, expandable members, and ordered functionality paths |
+| [system_visualization/](system_visualization/README.md) | [Code graph](system_visualization/), static [System in Action](system_visualization/system-in-action.html) 3D view, [High beam visual](system_visualization/beam-segments.html), and [Low beam visual](system_visualization/beam-segments.html?mode=low) |
 
-Run the viewer with `bash tools/system_visualization/start_code_graph.sh` and open the printed local URL.
+Start System Visualization with
+`bash tools/system_visualization/start_system_visualization.sh` and open the
+printed local URL. Use its top navigation to switch views.

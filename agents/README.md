@@ -4,7 +4,7 @@ This is the main guide for repository work. The root [AGENTS.md](../AGENTS.md) p
 
 ## Reading Order
 
-1. Read [rules/README.md](rules/README.md) and every rule category relevant to the task.
+1. Read [rules/rules.md](rules/rules.md) and every rule category relevant to the task.
 2. Read [working-context.md](working-context.md) for changing implementation status and the current resume point.
 3. Read [prompt-tracking.md](prompt-tracking.md) for the latest ten context-changing requests.
 4. Read the README beside the component or module being changed.
@@ -15,7 +15,7 @@ This is the main guide for repository work. The root [AGENTS.md](../AGENTS.md) p
 
 | Location | Purpose |
 |---|---|
-| [rules/](rules/README.md) | Category-specific instructions |
+| [rules/](rules/rules.md) | Category-specific instructions |
 | [working-context.md](working-context.md) | Current implementation and resume point |
 | [prompt-tracking.md](prompt-tracking.md) | Recent context-changing requests |
 | [roadmap.md](roadmap.md) | Proposed order and open design decisions |
@@ -26,7 +26,7 @@ This is the main guide for repository work. The root [AGENTS.md](../AGENTS.md) p
 
 | Component | Ownership |
 |---|---|
-| `simulation_runner/` | Python owns MetaDrive lifecycle, driving controls, object extraction, coordinate normalization, the development scene display, and future IPC publishing. |
+| `simulation_runner/` | Python owns MetaDrive lifecycle, driving controls, object extraction, coordinate normalization, the development scene display, and automatic IPC publishing to the C++ bridge. |
 | `bridge/` | C++ owns host IPC, CAN conversion and scheduling, SocketCAN, decoded ECU status, and communication diagnostics. |
 | `dashboard/` | Python owns operator commands and presentation of bridge/ECU status. |
 | `firmware/` | STM32 owns AFS/ADB decisions, actuator commands, feedback checks, and safe fallback. |

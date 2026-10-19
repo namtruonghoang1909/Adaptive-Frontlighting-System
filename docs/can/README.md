@@ -36,7 +36,7 @@ message index file.
 | DLC | Message-specific and defined by the DBC; receivers reject frames whose DLC does not match the expected value |
 | Byte order | Little-endian for multi-byte integers |
 | Alive counter | 4-bit rolling counter in byte `0` bits `0..3`, increments by 1 modulo 16 |
-| Checksum | Optional per-frame application checksum where payload space allows; `0x310` uses all remaining bytes for distance codes |
+| Checksum | Optional per-frame application checksum where payload space allows; `0x310` retains eight packed 6-bit slots per frame, including six zero padding slots in group 1 |
 | Reserved fields | Transmit as `0`; each message file defines whether receivers ignore or reject nonzero reserved bits |
 
 The alive counter is placed at the first payload bits for consistency and quick inspection.
@@ -65,7 +65,7 @@ The message specifications use "C++ bridge CAN module" for the native gateway's 
 | `Vehicle_Speed` | Alive counter, ego speed, acceleration, validity, saturation, reverse flag |
 | `Vehicle_Object` | Alive counter, sector group, grid sample counter, grid validity, nearest distance code per sector |
 | `Dashboard_Command` | Alive counter, command validity, clear-fault request, requested headlight power, requested headlight mode, checksum |
-| `AFS_Status` | Alive counter, executed mode, health, fault flags, servo feedback, applied dim-zone mask |
+| `AFS_Status` | Alive counter, executed mode, health, fault flags, servo feedback, applied logical-sector mask |
 
 ## DBC Ownership
 

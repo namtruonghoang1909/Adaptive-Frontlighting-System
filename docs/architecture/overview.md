@@ -1,8 +1,8 @@
 # System Architecture
 
-Simulated driving and operator requests feed a physical STM32 controller, which swivels low-beam headlights and dims high-beam zones around other vehicles. The Dashboard displays the ECU's reported output and faults.
+Simulated driving and operator requests feed a physical STM32 controller. In low-beam swivel mode, only matrix rows 5–8 shine and both platforms follow steering. In high-beam modes, both platforms return to center, rows 5–8 stay on, and rows 1–4 add the longer beam with optional pixel masking around vehicles. The Dashboard displays the ECU's reported output and faults.
 
-This flowchart shows the target runtime after the component reorganization. The Python runner, controls, ego/surrounding extraction, in-process latest-scene interface, and optional development display are implemented. The IPC adapter, C++ bridge runtime, Dashboard runtime, and firmware remain planned.
+This flowchart shows the target runtime after the component reorganization. The Python runner, controls, ego/surrounding extraction, in-process latest-scene interface, optional development display, and runner-to-bridge IPC are implemented. CAN gateway behavior, Dashboard runtime, and firmware remain planned.
 
 Use the [interactive code map](../../tools/system_visualization/index.html) to
 explore implemented classes and their interactions. Nodes are clustered by
@@ -10,6 +10,10 @@ layer; clicking one highlights its direct connections and expands smaller
 member circles. The right panel describes the selected node and links to source.
 Its Functionalities section highlights ordered, implemented paths such as ego
 extraction, surrounding extraction, and browser display on the same graph.
+For a visitor-facing picture of the intended complete physical setup, use the
+[System in Action walkthrough](../../tools/system_visualization/system-in-action.html).
+It is a static 3D render of the laptop, CAN wiring, STM32, and two 8x8 matrix
+headlights with low-beam and high-beam rows.
 
 ## System At A Glance
 
@@ -20,10 +24,10 @@ flowchart LR
             MD["MetaDrive<br/>Road, ego vehicle, surrounding traffic"]
             STORE["Latest SceneSnapshot<br/>Lock-protected replacement"]
             SD["scene_display<br/>Optional development HTTP thread"]
-            AD["Simulation adapter<br/>Future IPC publisher"]
+            AD["Simulation adapter<br/>Automatic Unix socket publisher"]
             MD -->|"Extract after reset / step"| STORE
             STORE -->|"Read latest scene"| SD
-            STORE -->|"Future in-process read"| AD
+            STORE -->|"Read latest scene"| AD
         end
 
         subgraph GATEWAY["Process 2: C++17 gateway"]
@@ -40,12 +44,12 @@ flowchart LR
     end
 
     BUS["CAN adapter<br/>Physical CAN bus"]
-    ECU["STM32 AFS ECU - Embedded C<br/>Low-beam swivel + high-beam dimming<br/>Timeouts, faults, safe fallback"]
-    RIG["Physical headlight rig<br/>Swivel servos + LED beam zones"]
+    ECU["STM32 AFS ECU - Embedded C<br/>Low-beam swivel + high-beam pixel masking<br/>Timeouts, faults, safe fallback"]
+    RIG["Physical headlight rig<br/>Swivel servos + two 8x8 matrix modules"]
 
     GW <-->|"SocketCAN / can0<br/>Input frames and ECU status"| BUS
     BUS <-->|"CAN frames via ECU transceiver"| ECU
-    ECU -->|"Servo + LED commands"| RIG
+    ECU -->|"Servo + SPI matrix patterns"| RIG
     RIG -->|"Servo position feedback"| ECU
 
     classDef python fill:#e8f1ff,stroke:#265d97,color:#142b45
@@ -64,13 +68,15 @@ A process is a separately running program with its own memory. Threads are execu
 
 | Application process | Application work | Communication |
 |---|---|---|
-| Python simulation + adapter | Run MetaDrive, extract and retain the latest scene, optionally serve the development display, later publish observations | Lock-protected local scene access; local HTTP for the optional observer; future Unix socket IPC to the gateway |
-| C++ gateway | Main/IPC thread plus a CAN TX/RX worker thread | Mutex-protected snapshots internally; Unix sockets to Python clients; SocketCAN to the bus |
-| Python Dashboard | UI interaction and gateway client | Unix socket IPC to the gateway |
+| Python simulation + adapter | Run MetaDrive, extract and retain the latest scene, automatically publish it to the gateway, optionally serve the development display | Lock-protected local scene access; local HTTP for the optional observer; Unix socket IPC to the gateway |
+| C++ gateway | Runner IPC receiver; future CAN TX/RX worker | Mutex-protected latest scene; runner Unix socket implemented; Dashboard socket and SocketCAN planned |
+| Python Dashboard | Planned UI interaction and gateway client | Planned Unix socket IPC to the gateway |
 
 The process numbers identify applications, not startup order or dedicated CPU cores. MetaDrive and UI libraries may use additional internal threads. For a browser-based Dashboard, its Python backend owns the Unix socket; the browser communicates with that backend.
 
 See [data-flow.md](data-flow.md) for the gateway thread diagram and the distinction between socket IPC and in-process state.
+The [ADB grid and two-headlamp mapping](adb-grid-and-lamps.md) describes the
+proposed logical sector and physical lamp data types.
 
 ## Ownership
 
@@ -80,15 +86,15 @@ See [data-flow.md](data-flow.md) for the gateway thread diagram and the distinct
 | [C++ gateway](components/bridge.md) | IPC, current source state, CAN conversion/scheduling/TX/RX, decoded ECU status, and communication diagnostics |
 | [Dashboard](components/dashboard.md) | Operator requests and display of reported state |
 | [STM32 ECU](components/afs-ecu.md) | Final AFS/ADB decisions, actuator commands, feedback supervision, and independent fault/timeout handling |
-| [Headlight rig](components/headlights.md) | Physical low-beam swivel and segmented high-beam output |
+| [Headlight rig](components/headlights.md) | Physical low-beam swivel and matrix low/high beam output |
 
 ## Current Implementation And Design Status
 
 - The Python implementation is under `simulation_runner/`. Its runner constructs a matching ego and ground-truth surrounding `SceneSnapshot` after every reset and step, atomically replaces a process-local latest value, preserves the existing ego-only callback, and can serve the read-only `scene_display` development observer.
-- `bridge/` now contains the C++17/CMake gateway module scaffold; no executable, IPC, or CAN behavior exists yet.
+- `bridge/` contains the C++17/CMake runner socket receiver and latest source-state retention; CAN behavior remains planned.
 - `dashboard/` now contains the Python package scaffold; no UI or gateway-client behavior exists yet.
-- DBC and STM32 firmware are not implemented. The Python IPC adapter is still a placeholder and the latest-scene store does not cross process boundaries.
-- The proposed baseline is C++17/CMake and Unix Domain Sockets with `SOCK_SEQPACKET` carrying versioned JSON. Message fields, timing, and recovery policies remain detailed-design work.
+- The runner publisher and C++ receiver implement versioned local socket IPC and latest source-state retention. CAN, DBC, Dashboard IPC, and STM32 firmware are not implemented.
+- The runner observation boundary uses C++17/CMake and Unix Domain Sockets with `SOCK_SEQPACKET` carrying versioned JSON. The [runner–bridge communication contract](runner-bridge-communication.md) documents the implemented fields, limits, and recovery policy.
 - The established component layout and future deeper structure are documented in [desired_file_system.md](../temporary/desired_file_system.md).
 
 ## Virtual Tests And Physical HIL

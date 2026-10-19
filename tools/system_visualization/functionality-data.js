@@ -1,6 +1,8 @@
 /* Ordered paths through implemented runtime code. These are viewer overlays. */
 (() => {
   const R = "simulation_runner/src/metadrive_runner/";
+  const I = "simulation_runner/src/ipc_adapter/publisher.py";
+  const B = "bridge/src/ipc/runner_ipc.cpp";
   const O = "simulation_runner/src/object_extraction/";
   const D = "simulation_runner/src/scene_display/";
   const step = (from, to, action, detail, evidence) =>
@@ -76,12 +78,25 @@
     {
       id: "runner_startup",
       title: "Runner startup",
-      summary: "Start the optional local display before entering the simulation loop.",
+      summary: "Start bridge publishing and the optional local display before entering the simulation loop.",
       steps: [
+        step("main", "publisher", "always starts", "RunnerPublisher(path) starts a dedicated reconnecting worker on every invocation", R + "__main__.py#main"),
         step("main", "server", "starts if requested", "SceneDisplayServer(port) when --scene-display is set", R + "__main__.py#main"),
         step("server.start()", "app", "creates", "the local FastAPI application", D + "server.py#SceneDisplayServer.start"),
         step("main", "run", "calls", "run_single_agent(env_config, seed, radius_m, ...)", R + "__main__.py#main"),
         step("run", "run.publish_scene()", "begins publishing", "after the first reset and every step", R + "runner.py#run_single_agent"),
+      ],
+    },
+    {
+      id: "runner_bridge_ipc",
+      title: "Runner to bridge IPC",
+      summary: "Read the latest complete scene, publish protocol v1 packets, and retain the newest accepted source sample.",
+      steps: [
+        step("main", "publisher", "always starts", "RunnerPublisher(path) starts a dedicated reconnecting worker and retries until the bridge is available", R + "__main__.py#main"),
+        step("publisher", "read", "reads current sample", "get_scene_snapshot() returns one matched ego and object scene", I + "#RunnerPublisher"),
+        step("publisher", "scene_message", "projects scene to protocol", "sequence, source monotonic timestamp, quality, ego fields, and up to 128 objects", I + "#scene_message"),
+        step("scene_message", "bridge_server", "sends one packet", "SOCK_SEQPACKET UTF-8 JSON; hello handshake precedes scene packets", I + "#scene_message"),
+        step("bridge_server", "runner_scene", "validates, logs, and replaces", "session, increasing sequence, packet bounds, fields, and source age before latest-state replacement; prints each accepted JSON packet to stdout", B),
       ],
     },
   ];

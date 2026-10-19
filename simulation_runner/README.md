@@ -1,6 +1,6 @@
 # Simulation Runner
 
-This Python application owns MetaDrive lifecycle, driving controls, ego and surrounding-object extraction, and the latest in-process scene snapshot. Future IPC publishing will connect this process to the separate C++ gateway.
+This Python application owns MetaDrive lifecycle, driving controls, ego and surrounding-object extraction, the latest in-process scene snapshot, and automatic publishing to the C++ gateway.
 
 ## Current Implementation
 
@@ -12,7 +12,7 @@ src/
 |   |-- surrounding/           # SingleObjectSnapshot and complete scans
 |   `-- scene.py               # matching ego + surrounding samples
 |-- scene_display/             # optional live browser observer
-`-- ipc_adapter/               # future cross-process publishing boundary
+`-- ipc_adapter/               # versioned Unix socket publisher to C++ bridge
 tests/                         # dependency-free unit tests with MetaDrive-like fakes
 scripts/                       # runtime checker and launcher
 ```
@@ -41,12 +41,16 @@ The public getters return immutable snapshot objects or `None` before the first 
 
 The optional development `scene_display` calls `get_scene_snapshot()`, converts only typed fields to normalized JSON, and serves a bundled Canvas UI from a background thread. It remains a read-only consumer of extraction data.
 
+Every runner invocation starts the bridge publisher. It retries the configured
+local socket until the C++ receiver is available and then sends the newest
+scene as it is produced.
+
 ## Run The Simulation
 
-Check headless readiness and run a finite smoke test:
+The launcher checks the selected runtime requirements automatically. Start a
+finite headless run with:
 
 ```bash
-bash simulation_runner/scripts/check_simulation_requirements.sh --headless
 bash simulation_runner/scripts/start_metadrive_simulation.sh \
   --headless --max-steps 100 --print-every 10
 ```
