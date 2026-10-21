@@ -2,96 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
+    <meta http-equiv="refresh" content="0; url=system-in-action/">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="dark">
     <title>AFS · System in Action</title>
-    <meta name="description" content="A static view of the AFS prototype: MetaDrive on a laptop, CAN wiring, STM32, and two 8x8 matrix headlights.">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="system-in-action.css">
-    <script defer src="code-timestamp.js"></script>
   </head>
-  <body class="action-page">
-    <div id="workspace">
-      <header class="topbar">
-        <a class="brand" href="../../README.md" title="Repository README"><span class="brand-mark">✳</span> AFS <span class="brand-divider">/</span> System Visualization</a>
-        <nav class="site-tabs" aria-label="Visualization views">
-          <a href="index.html">Code graph</a>
-          <a href="system-in-action.html" aria-current="page">System in Action</a>
-          <a href="beam-segments.html">High beam visual</a>
-          <a href="beam-segments.html?mode=low">Low beam visual</a>
-        </nav>
-        <time id="codeUpdated" class="code-updated" role="status" aria-live="polite" title="Latest modification time reported for this page and its local CSS and JavaScript files, shown in local time.">Code updated: checking…</time>
-        <span class="topbar-hint">A visitor's view of the target system</span>
-      </header>
-
-      <main id="mainContent" class="action-main">
-        <section class="action-intro" aria-labelledby="actionTitle">
-          <div>
-            <p class="intro-kicker">THE AFS PROTOTYPE</p>
-            <h1 id="actionTitle">A vehicle ahead. <em>High beam makes room.</em></h1>
-            <p class="intro-copy">See how a road scene on a laptop becomes a low and high beam pattern on two 8×8 matrices.</p>
-          </div>
-          <p class="concept-badge"><span class="badge-light" aria-hidden="true"></span> 3D view of the target system <span class="badge-separator">·</span> Static example</p>
-        </section>
-
-        <section class="story-shell" aria-label="Prototype setup and matrix masking example">
-          <figure class="story-figure">
-            <div class="bench-overview" aria-hidden="true">
-              <div class="bench-visual">
-                <img class="bench-art" src="assets/system-in-action/bench-3d.png" alt="" width="1672" height="941">
-                <svg class="screen-composite" viewBox="0 0 1672 941" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="overview-screen-clip"><path d="M 105 28 L 572 62 L 547 355 L 75 323 Z"/></clipPath></defs><g clip-path="url(#overview-screen-clip)"><image href="../../simulation_runner/assets/screenshots/main_index_24_step_906_1788674762.5795348.png" width="1104" height="828" transform="matrix(.4275 .0263 -.0314 .3466 100 36)"/></g></svg>
-              </div>
-            </div>
-            <p class="mobile-pan-hint">Full setup above. Swipe the detailed view below to inspect every connection.</p>
-            <div class="story-scene" tabindex="0" aria-label="Static 3D prototype view. On narrow screens, scroll horizontally to inspect the full setup.">
-              <div class="bench-visual">
-                <img class="bench-art" src="assets/system-in-action/bench-3d-matrix.png" alt="Rendered prototype on a plain table: laptop, USB-CAN controller, shared CAN H and CAN L breadboard, STM32 ECU, and two 8x8 MAX7219 matrix modules. The lower four rows stay lit for low beam; several upper pixels are off on the left matrix." width="1672" height="941">
-                <svg class="screen-composite" viewBox="0 0 1672 941" preserveAspectRatio="none" role="img" aria-label="MetaDrive frame on the laptop screen: a white car ahead-left of the red ego car."><defs><clipPath id="detail-screen-clip"><path d="M 105 28 L 572 62 L 547 355 L 75 323 Z"/></clipPath></defs><g clip-path="url(#detail-screen-clip)"><image href="../../simulation_runner/assets/screenshots/main_index_24_step_906_1788674762.5795348.png" width="1104" height="828" transform="matrix(.4275 .0263 -.0314 .3466 100 36)"/></g></svg>
-              </div>
-            </div>
-            <div class="bench-key" aria-label="Hardware arranged from left to right">
-              <span><b>01</b> Laptop</span><span><b>02</b> USB-CAN</span><span><b>03</b> CAN breadboard</span>
-              <span><b>04</b> STM32 ECU</span><span><b>05</b> SPI matrix modules</span><span><b>06</b> 2 × 8×8 matrices</span>
-            </div>
-            <figcaption class="scene-footnote">The Python runner and C++ bridge run as separate processes on the same laptop. This fixed example illustrates the intended setup and LED response. <a href="../../simulation_runner/assets/screenshots/main_index_24_step_906_1788674762.5795348.png" target="_blank" rel="noopener">Open the MetaDrive frame ↗</a></figcaption>
-          </figure>
-
-          <aside class="story-console" aria-labelledby="exampleTitle">
-            <div class="console-topline"><span>ONE SCENE, ONE RESPONSE</span><span>128 MATRIX PIXELS</span></div>
-            <div class="console-copy">
-              <p class="console-eyebrow">Vehicle ahead · left side</p>
-              <h2 id="exampleTitle">Keep low beam on. Mask upper pixels near the vehicle.</h2>
-              <p class="console-description">The white car sits ahead and to the left of the red ego car on the laptop screen. The lower four rows stay on as low beam; selected pixels in the upper high-beam rows switch off on the left matrix.</p>
-              <div class="led-summary" aria-label="Illustrated LED states">
-                <div><span class="array-name">LEFT MATRIX</span><strong>Low on <span>·</span> high masked</strong></div>
-                <div><span class="array-name">RIGHT MATRIX</span><strong>Low + high on</strong></div>
-              </div>
-              <p class="console-detail">Each headlight uses one 8×8 matrix module. Its MAX7219 switches individual pixels on or off and sets brightness for the whole matrix. High-beam mode adds the upper four rows while the lower four rows remain active.</p>
-            </div>
-            <div class="wire-key" aria-label="CAN wire colors in the illustration">
-              <span><i class="wire-high" aria-hidden="true"></i> CAN H</span>
-              <span><i class="wire-low" aria-hidden="true"></i> CAN L</span>
-              <small>Both lines pass through the shared breadboard.</small>
-            </div>
-          </aside>
-        </section>
-
-        <section class="story-transcript" aria-labelledby="transcriptHeading">
-          <div class="transcript-intro">
-            <p class="intro-kicker">FOLLOW THE CONNECTIONS</p>
-            <h2 id="transcriptHeading">From the laptop to two matrix headlights.</h2>
-            <p>One fixed scene shows the proposed physical path. The ECU chooses which high-beam pixels switch off.</p>
-          </div>
-          <ol>
-            <li><span>01</span><div><strong>Laptop · MetaDrive</strong><p>Python extracts the scene. A local socket carries observations to the C++ bridge on the same laptop.</p></div></li>
-            <li><span>02</span><div><strong>USB-CAN controller</strong><p>The controller connects to the laptop and provides the CAN H and CAN L connections.</p></div></li>
-            <li><span>03</span><div><strong>Shared CAN breadboard</strong><p>CAN H and CAN L enter this breadboard. A second pair leaves the same board for the ECU's CAN transceiver.</p></div></li>
-            <li><span>04</span><div><strong>STM32 ECU</strong><p>The MCU receives the observation over CAN and decides which headlight segments should dim.</p></div></li>
-            <li><span>05</span><div><strong>Two matrix modules</strong><p>The STM32 sends pixel patterns over SPI to the left and right MAX7219 modules. Each matrix has a global brightness setting.</p></div></li>
-            <li><span>06</span><div><strong>Two 8×8 matrices</strong><p>Each matrix has 32 lower low-beam pixels and 32 upper high-beam pixels. ADB switches selected upper pixels off around the vehicle.</p></div></li>
-          </ol>
-        </section>
-      </main>
-    </div>
+  <body>
+    <p>Opening the <a href="system-in-action/">System in Action view</a>.</p>
+    <script>window.location.replace("system-in-action/" + window.location.search + window.location.hash);</script>
   </body>
 </html>
