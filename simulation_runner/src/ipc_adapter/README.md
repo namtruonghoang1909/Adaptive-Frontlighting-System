@@ -5,7 +5,9 @@ version 1 JSON packets to the local C++ bridge over `AF_UNIX/SOCK_SEQPACKET`.
 It performs a `hello` handshake, keeps one session UUID across reconnects, and
 publishes the newest scene at up to 20 Hz without a history queue. It skips
 unchanged or older-than-250-ms scenes and retries connections with bounded
-backoff.
+backoff. Each ego sample includes steering angle and the active
+`max_steering_deg`; if MetaDrive does not provide the limit, the publisher sends
+JSON `null` so the bridge can keep the steering input invalid for CAN.
 
 The runner starts it on every invocation and retries until the bridge receiver
 is available. Use `--bridge-socket PATH` or `AFS_BRIDGE_SOCKET` to configure the

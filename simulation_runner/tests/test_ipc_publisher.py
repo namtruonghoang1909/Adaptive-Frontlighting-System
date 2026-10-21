@@ -40,6 +40,7 @@ def _scene(
     ego_valid: bool = True,
     objects_valid: bool = True,
     degraded: bool = False,
+    max_steering_deg: float | None = 60.0,
 ) -> SceneSnapshot:
     timestamp = 123.5
     ego = EgoSnapshot(
@@ -48,7 +49,9 @@ def _scene(
         kinematics=EgoKinematicsSnapshot(
             velocity_mps=(3.0, 4.0), heading_rad=math.pi / 2
         ),
-        action=EgoActionSnapshot(steering_deg=12.5),
+        action=EgoActionSnapshot(
+            steering_deg=12.5, max_steering_deg=max_steering_deg
+        ),
         source="test",
         seed=21,
         episode_step=8,
@@ -81,6 +84,7 @@ def test_scene_message_projects_ego_and_surrounding_fields() -> None:
         "sim_time_s": 0.48,
     }
     assert message["ego"]["steering_deg"] == 12.5
+    assert message["ego"]["max_steering_deg"] == 60.0
     assert abs(message["ego"]["longitudinal_speed_mps"] - 4.0) < 1e-9
     assert message["quality"] == {
         "ego_valid": True,
@@ -99,6 +103,15 @@ def test_scene_message_projects_ego_and_surrounding_fields() -> None:
             "relative_heading_rad": 0.0,
         }
     ]
+
+
+def test_scene_message_preserves_unavailable_steering_limit_as_null() -> None:
+    message = publisher.scene_message(
+        _scene(max_steering_deg=None), "session", 4, 123_500_000_000
+    )
+
+    assert message["ego"]["steering_deg"] == 12.5
+    assert message["ego"]["max_steering_deg"] is None
 
 
 def test_scene_message_keeps_nearest_objects_and_marks_truncation() -> None:

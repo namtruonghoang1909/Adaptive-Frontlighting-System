@@ -30,9 +30,11 @@ struct RunnerScene {
     bool objects_valid{};
     bool objects_degraded{};
     bool objects_truncated{};
+    bool ipc_faulted{true};
     bool has_steering{};
     bool has_speed{};
     double steering_deg{};
+    std::optional<double> max_steering_deg;
     double longitudinal_speed_mps{};
     std::string source;
     std::vector<RunnerObject> objects;
@@ -40,7 +42,7 @@ struct RunnerScene {
 
 class RunnerIpcServer {
 public:
-    explicit RunnerIpcServer(std::string socket_path);
+    explicit RunnerIpcServer(std::string socket_path, bool log_scenes = true);
     ~RunnerIpcServer();
     RunnerIpcServer(const RunnerIpcServer&) = delete;
     RunnerIpcServer& operator=(const RunnerIpcServer&) = delete;
@@ -54,6 +56,7 @@ public:
 
 private:
     std::string path_;
+    bool log_scenes_;
     std::atomic_int listen_fd_{-1};
     mutable std::mutex state_lock_;
     RunnerScene scene_;

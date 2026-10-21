@@ -105,7 +105,9 @@ for packet in packets:
         raise SystemExit("scene source was not MetaDrive")
     if not isinstance(packet["objects"], list):
         raise SystemExit("surrounding objects field is not a list")
-    if "steering_deg" not in packet["ego"] or "longitudinal_speed_mps" not in packet["ego"]:
+    if ("steering_deg" not in packet["ego"]
+            or "max_steering_deg" not in packet["ego"]
+            or "longitudinal_speed_mps" not in packet["ego"]):
         raise SystemExit("ego fields are missing")
 
 if not any(packet["quality"]["ego_valid"] and packet["quality"]["objects_valid"] for packet in packets):
