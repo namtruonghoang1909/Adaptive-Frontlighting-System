@@ -119,7 +119,7 @@ Low-beam AFS uses the servo to swivel both platforms horizontally with rows
 off upper pixels in affected horizontal columns. The High beam visual preview uses vehicle distance as a
 coarse vertical heuristic: its example distances 30/50/70/100 m mask 4/3/2/1
 top high-beam rows per affected column. It does not use target height or
-produce a vehicle-shaped vertical shadow. The [Low beam visual](../../tools/system_visualization/beam-segments.html?mode=low)
+produce a vehicle-shaped vertical shadow. The [Low beam visual](../../tools/system_visualization/beam-visual/beam-segments.html?mode=low)
 shows the proposed shorter, wider shine and a preview of speed-scaled steering response. Its 40 m /
 ±18° low beam and the high view's centered 100 m / ±10° beam are illustrative
 optical targets.
