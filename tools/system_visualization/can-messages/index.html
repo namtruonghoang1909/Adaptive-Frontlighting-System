@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="description" content="Signal names, bit positions, meanings, and example values for Adaptive Frontlighting System CAN messages.">
+    <title>AFS · CAN messages</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="can-messages.css">
+    <script defer src="../shared/code-timestamp.js"></script>
+    <script defer src="can-messages.js"></script>
+  </head>
+  <body class="can-messages-page">
+    <div id="workspace">
+      <header class="topbar">
+        <a class="brand" href="../../../README.md" title="Repository README"><span class="brand-mark">✳</span> AFS <span class="brand-divider">/</span> System Visualization</a>
+        <nav class="site-tabs" aria-label="Visualization views">
+          <a href="../code-graph/">Code graph</a>
+          <a href="../system-in-action/">System in Action</a>
+          <a href="../beam-visual/beam-segments.html">High beam visual</a>
+          <a href="../beam-visual/beam-segments.html?mode=low">Low beam visual</a>
+          <a href="index.html" aria-current="page">CAN messages</a>
+        </nav>
+        <time id="codeUpdated" class="code-updated" role="status" aria-live="polite" title="Latest modification time reported for this page and its local CSS and JavaScript files, shown in local time.">Code updated: checking…</time>
+      </header>
+
+      <main class="can-main">
+        <header class="can-intro">
+          <p class="can-kicker">MESSAGE REFERENCE · CLASSICAL CAN · 500 KBIT/S</p>
+          <h1>CAN messages</h1>
+          <p>Each byte map splits the payload into bits and links each signal to its exact bit positions in the table below.</p>
+          <p class="can-note"><strong>Design reference.</strong> This page shows documented formats, not live CAN traffic. The bridge has an in-memory DBC frame encoder; SocketCAN transmission is pending.</p>
+        </header>
+
+        <nav class="message-index" aria-label="Jump to a CAN message">
+          <a href="#message-100"><strong>0x100</strong><span>Speed</span></a>
+          <a href="#message-200"><strong>0x200</strong><span>Steering</span></a>
+          <a href="#message-300"><strong>0x300</strong><span>Vehicle grid</span></a>
+          <a href="#message-400"><strong>0x400</strong><span>Dashboard command</span></a>
+          <a href="#message-500"><strong>0x500</strong><span>AFS Status</span></a>
+        </nav>
+
+        <section class="message-list" aria-label="CAN message signal tables">
+          <article id="message-100" class="message-card">
+            <header class="message-heading">
+              <div class="message-title"><span class="message-id">0x100</span><div><h2>Vehicle_Speed</h2><p>C++ bridge → AFS ECU</p></div></div>
+              <div class="message-meta"><span>DLC 8</span><span>20 ms TX design</span><span>100 ms ECU timeout</span><span class="status-chip">Encoder API implemented</span></div>
+            </header>
+            <p class="sample-payload"><strong>Example payload</strong><code>18 E8 03 00 00 00 00 00</code></p>
+            <section class="byte-map-section" aria-label="0x100 byte map">
+              <div class="byte-map-heading"><h3>Byte map</h3><p>Each segment is one byte; bits read 7 to 0. Arrows link to the matching signal row.</p></div>
+              <div class="byte-map-scroll"><div class="byte-map" data-message-map="0x100" data-dlc="8"></div></div>
+            </section>
+            <div class="signal-table" data-message-table="0x100"></div>
+          </article>
+          <article id="message-200" class="message-card">
+            <header class="message-heading">
+              <div class="message-title"><span class="message-id">0x200</span><div><h2>Vehicle_Steering</h2><p>C++ bridge → AFS ECU</p></div></div>
+              <div class="message-meta"><span>DLC 8</span><span>20 ms TX design</span><span>100 ms ECU timeout</span><span class="status-chip">Encoder API implemented</span></div>
+            </header>
+            <p class="sample-payload"><strong>Example payload</strong><code>17 7B 00 00 00 00 00 00</code></p>
+            <section class="byte-map-section" aria-label="0x200 byte map">
+              <div class="byte-map-heading"><h3>Byte map</h3><p>Each segment is one byte; bits read 7 to 0. Arrows link to the matching signal row.</p></div>
+              <div class="byte-map-scroll"><div class="byte-map" data-message-map="0x200" data-dlc="8"></div></div>
+            </section>
+            <div class="signal-table" data-message-table="0x200"></div>
+          </article>
+          <article id="message-300" class="message-card">
+            <header class="message-heading">
+              <div class="message-title"><span class="message-id">0x300</span><div><h2>Vehicle_Object</h2><p>C++ bridge → AFS ECU</p></div></div>
+              <div class="message-meta"><span>DLC 8</span><span>20 ms TX design</span><span>100 ms ECU timeout</span><span class="status-chip">Encoder API implemented</span></div>
+            </header>
+            <p class="sample-payload"><strong>Example payload</strong><code>00 01 00 7C 00 C0 00 00</code></p>
+            <p class="grid-bit-note"><strong>Mask bit values:</strong> M0 is farthest (75–100 m), M1 is 50–75 m, M2 is 25–50 m, and M3 is nearest (0–25 m). A sector row's sample shows <code>occupied</code> and <code>M0 M1 M2 M3</code>.</p>
+            <section class="byte-map-section" aria-label="0x300 byte map">
+              <div class="byte-map-heading"><h3>Byte map</h3><p>Each segment is one byte; bits read 7 to 0. Arrows link to the matching signal row.</p></div>
+              <div class="byte-map-scroll"><div class="byte-map" data-message-map="0x300" data-dlc="8"></div></div>
+            </section>
+            <div class="signal-table" data-message-table="0x300"></div>
+          </article>
+          <article id="message-400" class="message-card">
+            <header class="message-heading">
+              <div class="message-title"><span class="message-id">0x400</span><div><h2>Dashboard_Command</h2><p>C++ bridge → AFS ECU · Dashboard source</p></div></div>
+              <div class="message-meta"><span>DLC 3</span><span>50 ms</span><span class="status-chip">Documented</span></div>
+            </header>
+            <p class="sample-payload"><strong>Example payload</strong><code>14 07 13</code></p>
+            <section class="byte-map-section" aria-label="0x400 byte map">
+              <div class="byte-map-heading"><h3>Byte map</h3><p>Each segment is one byte; bits read 7 to 0. Arrows link to the matching signal row.</p></div>
+              <div class="byte-map-scroll"><div class="byte-map" data-message-map="0x400" data-dlc="3"></div></div>
+            </section>
+            <div class="signal-table" data-message-table="0x400"></div>
+          </article>
+          <article id="message-500" class="message-card">
+            <header class="message-heading">
+              <div class="message-title"><span class="message-id">0x500</span><div><h2>AFS_Status</h2><p>ECU → C++ bridge</p></div></div>
+              <div class="message-meta"><span>DLC 8</span><span>20 ms</span><span class="status-chip">Documented</span></div>
+            </header>
+            <p class="sample-payload"><strong>Example payload</strong><code>12 05 00 00 00 9C 01 8A</code></p>
+            <section class="byte-map-section" aria-label="0x500 byte map">
+              <div class="byte-map-heading"><h3>Byte map</h3><p>Each segment is one byte; bits read 7 to 0. Arrows link to the matching signal row.</p></div>
+              <div class="byte-map-scroll"><div class="byte-map" data-message-map="0x500" data-dlc="8"></div></div>
+            </section>
+            <div class="signal-table" data-message-table="0x500"></div>
+          </article>
+
+        </section>
+        <footer class="can-footer"><span>Signal layouts from <a href="../../../docs/can/README.md">docs/can</a>.</span><span>This is a static reference; it does not display live bus traffic.</span></footer>
+      </main>
+    </div>
+  </body>
+</html>
