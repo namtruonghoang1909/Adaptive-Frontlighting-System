@@ -24,9 +24,10 @@ The runtime platform is Linux. Run commands from the repository root and use rep
 | Embedded target | STM32F407VE | Physical AFS/ADB ECU |
 | Hardware debug | Logic analyzer, multimeter, ST-Link | Electrical and firmware bring-up |
 | Code map | [Interactive System Visualization](../../tools/system_visualization/README.md) | Class interactions, expandable members, and highlighted sequences for implemented functionality |
-| Visitor 3D view | [System in Action](../../tools/system_visualization/system-in-action.html) | Static MetaDrive-to-headlight prototype render; one 8×8 MAX7219 matrix per side and no live data |
-| High beam visual | [High beam visual](../../tools/system_visualization/beam-segments.html) | Centered matrices with low rows on and upper high-beam rows masked around vehicles |
-| Low beam visual | [Low beam visual](../../tools/system_visualization/beam-segments.html?mode=low) | Shorter, wider rows 5–8 footprint with a steering wheel and speed bar that set both matrix angles |
+| Visitor 3D view | [System in Action](../../tools/system_visualization/system-in-action/index.html) | Static MetaDrive-to-headlight prototype render; one 8×8 MAX7219 matrix per side and no live data |
+| High beam visual | [High beam visual](../../tools/system_visualization/beam-visual/beam-segments.html) | Centered matrices with low rows on and upper high-beam rows masked around vehicles |
+| Low beam visual | [Low beam visual](../../tools/system_visualization/beam-visual/beam-segments.html?mode=low) | Shorter, wider rows 5–8 footprint with a steering wheel and speed bar that set both matrix angles |
+| CAN messages | [CAN messages](../../tools/system_visualization/can-messages/index.html) | Signal names, byte/bit positions, meanings, and example values for the documented CAN frames |
 
 The Python runner, controls, ego extractor, and automatically started runner IPC publisher are under `simulation_runner/`. The C++ `bridge/` receives and retains the latest runner scene over a local Unix socket; CAN transport and Dashboard IPC remain planned. Runtime CAN transport will be native C++; Python DBC tooling runs during generation/testing, not inside the bridge's CAN loop. A browser Dashboard may additionally use HTTP/WebSocket between browser and Python backend.
 

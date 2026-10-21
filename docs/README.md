@@ -60,7 +60,7 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 | Python simulation | Runner, controls, ego/surrounding extraction, latest-scene access, optional development browser display, and automatic bridge publishing implemented under `simulation_runner/` |
 | Simulation adapter IPC | Versioned local Unix socket publisher implemented; starts with every runner invocation |
 | C++ bridge | C++17/CMake runner socket receiver and latest source-scene retention implemented; CAN runtime remains planned |
-| DBC | Planned as `can/afs.dbc` |
+| DBC | [bridge/can/afs.dbc](../bridge/can/afs.dbc) defines all five CAN messages; generated payload codecs remain planned |
 | Dashboard | Python package scaffold; UI and IPC behavior not implemented |
 | AFS/ADB firmware | Not implemented |
 | Vendored MetaDrive | Local ignored tree under `simulation/metadrive/` |
@@ -69,6 +69,6 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 ## Documentation Rules
 
 - Keep architecture files concise and explanatory.
-- Keep CAN details under [can/](can/README.md); the DBC becomes the source of truth.
+- Keep CAN details under [can/](can/README.md); the DBC is the source of truth for message layouts.
 - Keep agent rules, context, and planning under the root [agents/](../agents/README.md).
 - Add source skeletons incrementally with their implementation milestones.

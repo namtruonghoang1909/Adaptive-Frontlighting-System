@@ -1,8 +1,8 @@
 # Adaptive Front-lighting System
 
-A bench-scale design for headlights that **swivel with steering in low beam** and **mask selected pixels around vehicles in high beam**. The proposed rig has one servo-mounted 8×8 MAX7219 LED matrix on each side, controlled by an STM32F407VE.
+A bench-scale design for headlights that **swivel with steering in low beam** and **mask selected pixels around vehicles in high beam**. The proposed rig has one servo-mounted 8×8 MAX7219 LED matrix on each side, controlled by an STM32F407ZG.
 
-**Project status:** MetaDrive scene extraction and runner-to-C++ bridge socket communication work today. CAN output, the operator Dashboard, STM32 firmware, and physical lamp control are planned.
+**Project status:** MetaDrive scene extraction, runner-to-C++ bridge socket communication, and standalone APIs for validating/projecting CAN signals and packing DBC-generated `0x100`–`0x300` frames are implemented. A separate diagnostic logger exercises those APIs against live MetaDrive scenes; the production bridge executable does not call them yet. SocketCAN transmission, the operator Dashboard, Zephyr-based STM32 firmware, and physical lamp control are planned.
 
 ## System design
 
@@ -11,8 +11,8 @@ flowchart LR
     SIM["MetaDrive + Python runner<br/>scene, steering, speed"] -->|"Implemented<br/>Unix socket IPC"| BRIDGE["C++ bridge<br/>scene receiver"]
     DASH["Python Dashboard<br/>planned runtime"] -.->|"Planned<br/>command IPC"| BRIDGE
     BRIDGE -.->|"Planned<br/>status IPC"| DASH
-    BRIDGE -.->|"Planned<br/>CAN conversion + SocketCAN"| BUS["USB-CAN + CAN bus"]
-    BUS -.->|"Planned<br/>CAN frames"| ECU["STM32 AFS ECU<br/>planned firmware"]
+    BRIDGE -.->|"Standalone signal and DBC frame APIs<br/>SocketCAN planned"| BUS["USB-CAN + CAN bus"]
+    BUS -.->|"Planned<br/>CAN frames"| ECU["STM32 AFS ECU<br/>Zephyr firmware planned"]
     ECU -.->|"Planned<br/>servo + matrix control"| LAMPS["Left + right headlights<br/>8×8 matrix on each swivel platform"]
 ```
 
@@ -28,10 +28,10 @@ control remain a build plan.
 | Component | Purpose | Status |
 |---|---|---|
 | MetaDrive + Python runner | Simulate the road, ego car, traffic, steering, and speed; publish scene data | Scene extraction and runner-to-bridge IPC implemented |
-| C++ bridge | Receive runner data and eventually own host CAN traffic | Runner socket receiver implemented; CAN gateway planned |
+| C++ bridge | Receive runner data and own host CAN traffic | Runner receiver, CAN signal validation/projection, and DBC-generated frame packing APIs implemented; runtime transport planned |
 | CAN-to-USB adapter and CAN bus | Connect the Linux host to the ECU | Proposed hardware; CAN transport planned |
 | MCP2551 CAN transceiver | Connect STM32 CAN signals to the physical bus | Proposed hardware |
-| STM32F407VE AFS ECU | Decide beam patterns, supervise feedback, and drive the lamps | Firmware planned |
+| STM32F407ZG AFS ECU | Decide beam patterns, supervise feedback, and drive the lamps | Zephyr firmware planned |
 | PCA9685 and two feedback servos | Rotate the left and right headlight platforms with steering | Proposed hardware; limits need calibration |
 | Two MAX7219 8×8 matrix modules | Provide one shared low/high-beam pixel array per side | Proposed bench display; optical performance needs evaluation |
 | Dedicated LED and servo supplies | Power the matrix modules and moving platforms | Select and size for the chosen hardware |
@@ -83,9 +83,9 @@ for preview pictures; they do not show live ECU or hardware output.
 
 > **Place a photo of the real built system here.**
 
-The [System in Action view](tools/system_visualization/system-in-action.html) is a concept illustration for design reference. It is not a photo of the completed hardware.
+The [System in Action view](tools/system_visualization/system-in-action/index.html) is a concept illustration for design reference. It is not a photo of the completed hardware.
 
-### [High beam visual](tools/system_visualization/beam-segments.html)
+### [High beam visual](tools/system_visualization/beam-visual/beam-segments.html)
 
 The two matrices stay centered. Rows 5–8 provide the low-beam base; rows 1–4 add high beam and switch off selected pixels around vehicles.
 
@@ -93,7 +93,7 @@ The two matrices stay centered. Rows 5–8 provide the low-beam base; rows 1–4
 |---|---|
 | ![HIGH-BEAM-ONE-CAR](docs/figures/high_beam_one_car.png) | ![HIGH-BEAM-TWO-CAR](docs/figures/high_beam_two_car.png) |
 
-### [Low beam visual](tools/system_visualization/beam-segments.html?mode=low)
+### [Low beam visual](tools/system_visualization/beam-visual/beam-segments.html?mode=low)
 
 Rows 1–4 are off while rows 5–8 swivel with steering. Higher speed reduces the preview swivel response.
 
@@ -105,15 +105,18 @@ Rows 1–4 are off while rows 5–8 swivel with steering. Higher speed reduces t
 
 The Python runner extracts MetaDrive scene data and publishes it to the C++
 bridge over a local socket. The bridge receives and retains the latest scene.
-CAN conversion and transport, Dashboard communication, STM32 firmware, and
-physical lamp control are planned. The headlight illustrations and beam
+Standalone CAN APIs validate steering and speed, project vehicle geometry,
+and use the DBC-generated C codec to pack three in-memory frames. A separate
+diagnostic logger exercises them against live runner data; they are not wired
+into the production bridge executable. SocketCAN transport, Dashboard communication,
+Zephyr-based STM32 firmware, and physical lamp control are planned. The headlight illustrations and beam
 screenshots above describe the proposed design; they are not connected to the
 runtime or hardware.
 
 ## Development tools
 
 The [System Visualization](tools/system_visualization/README.md) pages help
-inspect the code and explore the proposed beam behavior. To open them, run from
+inspect the code, review CAN layouts, and explore the proposed beam behavior. To open them, run from
 the repository root:
 
 ```bash
@@ -122,11 +125,15 @@ bash tools/system_visualization/start_system_visualization.sh
 
 Open the printed address (normally
 `http://127.0.0.1:8000/tools/system_visualization/`) and use the tabs across
-the top. The [Code graph](tools/system_visualization/index.html) maps
-implemented classes and code paths. The [System in Action page](tools/system_visualization/system-in-action.html)
+the top. The [Code graph](tools/system_visualization/code-graph/index.html) maps
+implemented classes and code paths. The [System in Action page](tools/system_visualization/system-in-action/index.html)
 is a static design illustration, not a photo of the built rig. The [High beam
-visual](tools/system_visualization/beam-segments.html) and [Low beam visual](tools/system_visualization/beam-segments.html?mode=low)
+visual](tools/system_visualization/beam-visual/beam-segments.html) and [Low beam visual](tools/system_visualization/beam-visual/beam-segments.html?mode=low)
 are interactive previews with no live simulator or hardware connection. The
+[CAN messages tab](tools/system_visualization/can-messages/index.html) shows a
+byte-by-byte map for each documented frame, with bit cells and arrows linking
+to signal names, followed by a table of positions, meanings, and sample values.
+It is a static design reference, not live bus traffic. The
 **Code updated** timestamp beside the tabs shows the newest modification time
 reported by the current page and its local CSS/JavaScript files.
 
@@ -138,7 +145,7 @@ On Linux, run from the repository root:
 bash simulation_runner/scripts/start_metadrive_simulation.sh --scene-display
 ```
 
-The launcher checks requirements before startup. The optional live [scene display](simulation_runner/src/scene_display/README.md) shows extracted ego and surrounding objects; it is separate from the four design/development tabs above. See the [runner guide](simulation_runner/runner.md) for controls and other modes.
+The launcher checks requirements before startup. The optional live [scene display](simulation_runner/src/scene_display/README.md) shows extracted ego and surrounding objects; it is separate from the five design/development tabs above. See the [runner guide](simulation_runner/runner.md) for controls and other modes.
 
 Run Python tests with the configured MetaDrive environment when pytest is installed:
 
@@ -154,11 +161,11 @@ If pytest is unavailable, use the [dependency-free test procedure](docs/verifica
 | Location | Purpose and current state |
 |---|---|
 | [`simulation_runner/`](simulation_runner/README.md) | MetaDrive lifecycle, controls, scene extraction, optional live display, and implemented scene publishing |
-| [`bridge/`](bridge/README.md) | C++ runner socket receiver and latest source state implemented; CAN and Dashboard communication planned |
+| [`bridge/`](bridge/README.md) | C++ runner receiver, transport-independent CAN signal validation/projection, DBC-generated frame packing, and a diagnostic MetaDrive frame smoke tool; production transport and Dashboard communication planned |
 | [`dashboard/`](dashboard/README.md) | Python package scaffold; operator UI and gateway client planned |
-| `firmware/` | STM32 control and hardware drivers planned |
-| [`tools/system_visualization/`](tools/system_visualization/README.md) | Four interactive or static development/design views |
+| `firmware/` | Zephyr-based STM32 control and hardware drivers planned |
+| [`tools/system_visualization/`](tools/system_visualization/README.md) | Five interactive or static development/design views |
 | [`docs/`](docs/README.md) | Architecture, CAN, hardware, tools, and verification guides |
 | [`agents/`](agents/README.md) | Repository agent rules, working context, and plans |
 
-The [development guide](docs/development.md) indexes the runnable scripts. CAN signal layouts remain provisional until `can/afs.dbc` is created; virtual `vcan0` tests and physical `can0` hardware work are future steps.
+The [development guide](docs/development.md) indexes the runnable scripts. The [CAN DBC](bridge/can/afs.dbc) defines the agreed message layouts; generated in-memory frame packing is implemented, while virtual `vcan0` transport and physical `can0` hardware work remain future steps.

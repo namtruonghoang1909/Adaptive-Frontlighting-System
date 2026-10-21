@@ -1,13 +1,31 @@
 # System Visualization
 
-This tool has four tabs. **Code graph** maps implemented classes and calls.
+This tool has five tabs. **Code graph** maps implemented classes and calls.
 **System in Action** illustrates the target prototype on a plain table.
 **High beam visual** shows centered matrices and adaptive masking.
 **Low beam visual** shows shorter, wider light that follows steering.
+**CAN messages** maps every payload bit and explains each signal in the documented frames.
+
+## Folder Layout
+
+```text
+tools/system_visualization/
+├── code-graph/       Code graph page, model, inventory, and validator
+├── beam-visual/      High/low beam page and lamp model
+├── can-messages/     CAN frame reference page
+├── system-in-action/ Static hardware illustration and artwork
+├── shared/           Common page styles and timestamp loader
+├── tests/            Focused model and page tests
+├── index.html        Redirect to the Code graph
+└── start_system_visualization.sh
+```
+
+The root `beam-segments.html` and `system-in-action.html` are small redirects
+kept for existing links. New links should point to the folders above.
 
 ## System in Action
 
-Open the [visitor 3D view](system-in-action.html) after starting the local
+Open the [visitor 3D view](system-in-action/index.html) after starting the local
 server below, or choose **System in Action** in the top navigation. The setup
 runs left to right: a laptop displaying MetaDrive, a USB-CAN controller, CAN H
 and CAN L through a shared breadboard, the STM32 ECU with its CAN transceiver,
@@ -25,10 +43,22 @@ The page uses a static 3D render with a local MetaDrive screen composite. It wor
 JavaScript and has no playback, moving objects, or runtime data connection.
 The Code graph and other views use the same local server.
 
+## CAN Messages
+
+Open [CAN messages](can-messages/index.html) for a quick reference to the five
+documented frames: `0x100`, `0x200`, `0x300`, `0x400`, and `0x500`. Each frame
+starts with a byte map divided into individual bit cells; arrows link the bits
+to their signal names. The table below lists every signal or bit name, byte and
+bit position, meaning, and sample value decoded from the example payload. The
+`0x300` table lists each sector's occupancy bit and all four mask bits with
+exact positions. This is a static design reference, not a live CAN monitor;
+the detailed specifications remain in
+[docs/can](../../docs/can/README.md).
+
 ## High And Low Beam Visuals
 
-Open [High beam visual](beam-segments.html) or
-[Low beam visual](beam-segments.html?mode=low) after starting the local server.
+Open [High beam visual](beam-visual/beam-segments.html) or
+[Low beam visual](beam-visual/beam-segments.html?mode=low) after starting the local server.
 The same road map serves both tabs. Its default grid has 10 logical sectors and 10 m radial bands to
 100 m. It retains the exact far-field boundaries of the former sectors `03–12`,
 renumbered `00–09`; no remaining far-field cell becomes wider. The far-field
@@ -51,9 +81,9 @@ to both headlight positions, maps it to eight horizontal columns per matrix,
 and switches off a distance-based number of top pixels in each affected
 column. The example distances 30/50/70/100 m switch off the top 4/3/2/1
 high-beam rows. The bands are ≤40 m: 4 rows, 41–60 m: 3, 61–85 m: 2, and
-farther: 1. The 10-sector
-`0x310` input provides distance but no vehicle-height bounds, so this is only
-a coarse vertical approximation, not an object-shaped shadow calculation.
+farther: 1. The 10-sector `0x300` design reports occupancy plus four near-to-far
+distance bands, but no vehicle-height bounds, so this is only a coarse vertical
+approximation, not an object-shaped shadow calculation.
 This is illustrative geometry, not calibrated glare control.
 
 Two labeled markers on the car show the separate light origins. Each of the 16
@@ -100,11 +130,11 @@ at 120 km/h; the same rule mirrors right turns. Speed reduces both angles more
 strongly at higher speeds, while the car and road stay fixed. This is a preview
 rule, not ECU firmware or a calibrated vehicle response.
 
-All numeric values come from the defaults in `beam-segments.js`. Override
+All numeric values come from the defaults in `beam-visual/beam-segments.js`. Override
 them with `window.AFS_BEAM_CONFIG` before that script runs, or pass matching
 URL query keys; query values take precedence. For example,
-`beam-segments.html?maxRangeM=300&sectorCount=31` displays a 300 m grid with
-31 sectors. The default count follows the revised provisional `0x310`
+`beam-visual/beam-segments.html?maxRangeM=300&sectorCount=31` displays a 300 m grid with
+31 sectors. The default count follows the revised provisional `0x300`
 10-sector proposal. `trimmedSectorsPerSide` defaults to 3; change it together
 with `sectorCount` when exploring another boundary layout. The angle spans and beam footprints are visualization design
 assumptions, not published Audi specifications. The default low-beam range,
@@ -118,9 +148,10 @@ ADB masking here switches individual pixels on/off. See the
 [ADB grid and lamp design](../../docs/architecture/adb-grid-and-lamps.md).
 
 Run the focused lamp geometry and page interaction checks with
-`node tools/system_visualization/beam-model.test.cjs`,
-`node tools/system_visualization/beam-segments.test.cjs`, and
-`node tools/system_visualization/code-timestamp.test.cjs`.
+`node tools/system_visualization/tests/beam-model.test.cjs`,
+`node tools/system_visualization/tests/beam-segments.test.cjs`, and
+`node tools/system_visualization/tests/code-timestamp.test.cjs` and
+`node tools/system_visualization/tests/can-messages.test.cjs`.
 
 The **Code updated** label beside the view tabs uses the newest modification
 time reported by the current HTML page and its local CSS/JavaScript files. It
@@ -145,11 +176,12 @@ bash tools/system_visualization/start_system_visualization.sh
 ```
 
 Open the printed URL (default
-`http://127.0.0.1:8000/tools/system_visualization/`) for System Visualization,
+`http://127.0.0.1:8000/tools/system_visualization/`) to go to the Code graph,
 then use the top navigation to switch views. Direct pages are
-`http://127.0.0.1:8000/tools/system_visualization/system-in-action.html` and
-`http://127.0.0.1:8000/tools/system_visualization/beam-segments.html` for
-high beam, and add `?mode=low` for low beam. Pass a
+`http://127.0.0.1:8000/tools/system_visualization/system-in-action/index.html` and
+`http://127.0.0.1:8000/tools/system_visualization/beam-visual/beam-segments.html` for
+high beam, add `?mode=low` for low beam, or open
+`http://127.0.0.1:8000/tools/system_visualization/can-messages/` for CAN layouts. Pass a
 port number to use another port. Press Ctrl+C to stop the server. Python 3 is
 the only runtime requirement for viewing.
 
@@ -196,9 +228,9 @@ arrows remain readable.
 
 ## Maintenance And Verification
 
-`graph-data.js` contains curated classes, members, implemented interactions,
-layer metadata, and parent positions. `functionality-data.js` contains the
-separate, ordered implemented paths. `build_index.py` generates `code-index.js`
+`code-graph/graph-data.js` contains curated classes, members, implemented interactions,
+layer metadata, and parent positions. `code-graph/functionality-data.js` contains the
+separate, ordered implemented paths. `code-graph/build_index.py` generates `code-graph/code-index.js`
 for source links and validation. The generated inventory is not displayed as
 graph nodes.
 After implementing or fixing code, review both curated models against the
@@ -209,13 +241,13 @@ The visitor illustration describes the target system and does not add planned IP
 CAN, or firmware behavior to the implemented Code graph paths.
 
 ```bash
-python3 tools/system_visualization/build_index.py
-python3 tools/system_visualization/build_index.py --check
-node tools/system_visualization/validate.mjs
-node --check tools/system_visualization/graph-data.js
-node --check tools/system_visualization/code-index.js
-node --check tools/system_visualization/viewer.js
-node --check tools/system_visualization/functionality-data.js
-node --check tools/system_visualization/functionality-overlay.js
-node --check tools/system_visualization/validate.mjs
+python3 tools/system_visualization/code-graph/build_index.py
+python3 tools/system_visualization/code-graph/build_index.py --check
+node tools/system_visualization/code-graph/validate.mjs
+node --check tools/system_visualization/code-graph/graph-data.js
+node --check tools/system_visualization/code-graph/code-index.js
+node --check tools/system_visualization/code-graph/viewer.js
+node --check tools/system_visualization/code-graph/functionality-data.js
+node --check tools/system_visualization/code-graph/functionality-overlay.js
+node --check tools/system_visualization/code-graph/validate.mjs
 ```
