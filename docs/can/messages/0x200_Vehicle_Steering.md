@@ -13,18 +13,24 @@
 | Direction | Host to ECU |
 | DLC | 8 |
 | Suggested period | 20 ms |
+| ECU receive timeout | 100 ms without an accepted frame (five 20 ms periods) |
 
 `DLC = 8` means this Classical CAN frame carries eight data bytes, byte `0` through byte `7`.
 
 ## Coordinate Convention
 
-Positive steering angle means the ego vehicle is steering left. Negative steering angle means the ego vehicle is steering right.
+`SteeringAngleDeg` preserves the sign of `ego.steering_deg` from runner IPC. The bridge does not invert or normalize it. The ECU interprets left and right using the same MetaDrive source convention, whether left is positive or negative. The sample signed angle below is illustrative; it does not define which sign means left.
+
+The accepted angle range follows the active MetaDrive vehicle's
+`max_steering_deg`: `-max_steering_deg` through `+max_steering_deg`. The runner
+IPC must include this MetaDrive limit so the bridge can validate the angle;
+the limit itself is not a CAN signal.
 
 ## Signal Semantics
 
-`SteeringValid` means the bridge read, converted, and range-checked a usable steering sample. If `SteeringValid = 0`, the ECU should ignore the steering value and should not refresh the usable steering-input timer.
+`SteeringValid` means the bridge received a steering angle and its active MetaDrive limit from a source sample no older than 250 ms, then confirmed the angle is within that limit. If the source sample is stale, either value is unavailable, or a runner transfer, parsing, or validation fault invalidates the input, the bridge sets `SteeringValid = 0`. The ECU should then ignore the steering value and should not refresh the usable steering-input timer.
 
-`SteeringSaturated` means the bridge clipped the steering angle or rate to the supported CAN signal range before transmission. A saturated value may still be usable if `SteeringValid = 1`, but it should be treated as diagnostic evidence that the simulator value exceeded the expected range.
+`SteeringSaturated` means the bridge had to clamp the value to fit the signed CAN field. When this is `1`, the bridge also sets `SteeringValid = 0`; the ECU ignores the clamped value. The combination `SteeringSaturated = 1` and `SteeringValid = 1` is invalid.
 
 No source field is carried in this frame. The producer is already fixed as the C++ bridge CAN module; if source diagnostics are needed later, they should be added to a separate bridge/status message.
 
@@ -34,21 +40,21 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 
 | Byte | Bits | Signal | Type / Scale | Meaning |
 |---:|---|---|---|---|
-| 0 | 0..3 | `AliveCounter` | uint4 | Rolling bridge heartbeat counter, `0..15` |
-| 0 | 4 | `SteeringValid` | bool | Steering sample is fresh and usable |
-| 0 | 5 | `SteeringSaturated` | bool | Steering angle or rate was clipped to supported range |
+| 0 | 0..3 | `AliveCounter` | uint4 | Increment for every transmitted `0x200` frame, even when steering is invalid or repeated; wrap `15` to `0` |
+| 0 | 4 | `SteeringValid` | bool | Steering sample is no older than 250 ms and usable; cleared on detected runner input faults |
+| 0 | 5 | `SteeringSaturated` | bool | Angle exceeded the CAN field range and was clamped for encoding; `SteeringValid` is also `0` |
 | 0 | 6..7 | `Reserved` | uint2 | Transmit `0` |
 | 1..2 | 0..15 | `SteeringAngleDeg` | int16 LE, `0.1 deg/bit` | Ego steering angle in degrees |
-| 3 | 0..7 | `SteeringRateDegps` | int8, `1 deg/s/bit` | Steering-angle rate, optional tuning input |
+| 3 | 0..7 | `Reserved` | uint8 | Transmit `0`; steering rate is not used by the agreed swivel input |
 | 4..6 | 0..23 | `Reserved` | uint24 | Transmit `0` |
-| 7 | 0..7 | `Checksum` | uint8 | XOR of bytes `0..6`; `0` until implemented |
+| 7 | 0..7 | `Reserved` | uint8 | Transmit `0`; use Classical CAN CRC, with no application checksum |
 
 ## Visual Layout
 
 ```text
 Byte:    0          1          2          3          4          5          6          7
       +--------+ +-------------------+ +--------+ +-----------------------------+ +--------+
-Bits: | alive  | | SteeringAngleDeg  | |  rate  | |          reserved           | | cksum  |
+Bits: | alive  | | SteeringAngleDeg  | |  res   | |          reserved           | |  res   |
       +--------+ +-------------------+ +--------+ +-----------------------------+ +--------+
 
 Byte 0 bits: [7 6] [5] [4]   [3 2 1 0]
@@ -57,17 +63,17 @@ Byte 0 bits: [7 6] [5] [4]   [3 2 1 0]
 
 ## Example
 
-Steering left by `12.3 deg`, steering rate `-4 deg/s`, valid, not saturated, alive counter `7`:
+Steering angle `+12.3 deg` (the sign is illustrative), valid, not saturated, alive counter `7`:
 
 ```text
 Byte 0 = alive counter 7 in bits 0..3 + SteeringValid = 0x17
 SteeringAngleDeg raw = 12.3 / 0.1 = 123 = 0x007B
-SteeringRateDegps raw = -4 = 0xFC
+Reserved bytes 3..7 are transmitted as 0; byte 7 is not an application checksum.
 
 ID:   0x200
 DLC:  8
-HEX:  17 7B 00 FC 00 00 00 90
-BIN:  00010111 01111011 00000000 11111100 00000000 00000000 00000000 10010000
+HEX:  17 7B 00 00 00 00 00 00
+BIN:  00010111 01111011 00000000 00000000 00000000 00000000 00000000 00000000
 ```
 
 | Byte | Hex | Binary | Signal | Decoded value |
@@ -76,12 +82,12 @@ BIN:  00010111 01111011 00000000 11111100 00000000 00000000 00000000 10010000
 | 0 | `0x17` | `00010111` | `SteeringValid` | `1` |
 | 0 | `0x17` | `00010111` | `SteeringSaturated` | `0` |
 | 1..2 | `0x007B` | `00000000 01111011` | `SteeringAngleDeg` | `+12.3 deg` |
-| 3 | `0xFC` | `11111100` | `SteeringRateDegps` | `-4 deg/s` |
+| 3 | `0x00` | `00000000` | `Reserved` | transmit `0` |
 | 4..6 | `0x000000` | `00000000 00000000 00000000` | reserved | transmit `0` |
-| 7 | `0x90` | `10010000` | `Checksum` | XOR of bytes `0..6` |
+| 7 | `0x00` | `00000000` | `Reserved` | transmit `0`; frame uses Classical CAN CRC |
 
 ## Receiver Behavior
 
-- If `SteeringValid = 0`, the ECU should ignore `SteeringAngleDeg` and should not refresh the usable steering-input timer.
-- If this message times out or fails alive-counter checks, the ECU should disable low-beam swivel when that behavior requires steering and set `SteeringStale` in `0x100 AFS_Status`.
-- If `SteeringSaturated = 1` and `SteeringValid = 1`, the ECU may use the clipped value but should treat the condition as diagnostic/degraded input.
+- If `SteeringValid = 0`, the ECU should immediately ignore `SteeringAngleDeg`, mark steering unusable, and not run behavior that requires a valid steering input.
+- If no accepted `0x200` frame arrives for 100 ms, or this message fails alive-counter checks, the ECU should disable low-beam swivel when that behavior requires steering and set `SteeringStale` in `0x500 AFS_Status`. This is five expected 20 ms periods. A frame with `SteeringValid = 0` is received but does not make the steering input usable.
+- If `SteeringSaturated = 1`, the ECU must ignore `SteeringAngleDeg`; reject the inconsistent combination where `SteeringValid = 1`.

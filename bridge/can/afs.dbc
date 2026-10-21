@@ -1,0 +1,134 @@
+VERSION "AFS 1.0"
+
+NS_ :
+    CM_
+    BA_DEF_
+    BA_
+    BA_DEF_DEF_
+    VAL_
+
+BS_:
+
+BU_: Bridge AFS_ECU
+
+
+BO_ 256 Vehicle_Speed: 8 Bridge
+ SG_ AliveCounter : 0|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ SpeedValid : 4|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ SpeedSaturated : 5|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ SpeedReservedBits6_7 : 6|2@1+ (1,0) [0|0] "" AFS_ECU
+ SG_ LongitudinalSpeedMps : 8|16@1- (0.01,0) [-327.68|327.67] "m/s" AFS_ECU
+ SG_ SpeedReservedByte3 : 24|8@1+ (1,0) [0|0] "" AFS_ECU
+ SG_ SpeedReservedBytes4To6 : 32|24@1+ (1,0) [0|0] "" AFS_ECU
+ SG_ SpeedReservedByte7 : 56|8@1+ (1,0) [0|0] "" AFS_ECU
+
+BO_ 512 Vehicle_Steering: 8 Bridge
+ SG_ AliveCounter : 0|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ SteeringValid : 4|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ SteeringSaturated : 5|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ SteeringReservedBits6_7 : 6|2@1+ (1,0) [0|0] "" AFS_ECU
+ SG_ SteeringAngleDeg : 8|16@1- (0.1,0) [-3276.8|3276.7] "deg" AFS_ECU
+ SG_ SteeringReservedByte3 : 24|8@1+ (1,0) [0|0] "" AFS_ECU
+ SG_ SteeringReservedBytes4To6 : 32|24@1+ (1,0) [0|0] "" AFS_ECU
+ SG_ SteeringReservedByte7 : 56|8@1+ (1,0) [0|0] "" AFS_ECU
+
+BO_ 768 Vehicle_Object: 8 Bridge
+ SG_ ObjectReservedByte0 : 0|8@1+ (1,0) [0|0] "" AFS_ECU
+ SG_ GridValid : 8|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ PerceptionDegraded : 9|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ ObjectListOverflow : 10|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ Sector00Occupied : 11|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ Sector00SubsectorMask : 12|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ Sector01Occupied : 16|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ Sector01SubsectorMask : 17|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ Sector02Occupied : 21|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ Sector02SubsectorMask : 22|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ Sector03Occupied : 26|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ Sector03SubsectorMask : 27|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ Sector04Occupied : 31|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ Sector04SubsectorMask : 32|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ Sector05Occupied : 36|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ Sector05SubsectorMask : 37|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ Sector06Occupied : 41|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ Sector06SubsectorMask : 42|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ Sector07Occupied : 46|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ Sector07SubsectorMask : 47|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ Sector08Occupied : 51|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ Sector08SubsectorMask : 52|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ Sector09Occupied : 56|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ Sector09SubsectorMask : 57|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ ObjectReservedBits61_63 : 61|3@1+ (1,0) [0|0] "" AFS_ECU
+
+BO_ 1024 Dashboard_Command: 3 Bridge
+ SG_ AliveCounter : 0|4@1+ (1,0) [0|15] "" AFS_ECU
+ SG_ CommandValid : 4|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ ClearFaultRequest : 5|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ CommandReservedBits6_7 : 6|2@1+ (1,0) [0|0] "" AFS_ECU
+ SG_ RequestedHeadlightPower : 8|1@1+ (1,0) [0|1] "" AFS_ECU
+ SG_ RequestedHeadlightMode : 9|3@1+ (1,0) [0|3] "" AFS_ECU
+ SG_ CommandReservedBits12_15 : 12|4@1+ (1,0) [0|0] "" AFS_ECU
+ SG_ Checksum : 16|8@1+ (1,0) [0|255] "" AFS_ECU
+
+BO_ 1280 AFS_Status: 8 AFS_ECU
+ SG_ AliveCounter : 0|4@1+ (1,0) [0|15] "" Bridge
+ SG_ RequiredInputsValid : 4|1@1+ (1,0) [0|1] "" Bridge
+ SG_ FaultPresent : 5|1@1+ (1,0) [0|1] "" Bridge
+ SG_ SafeFallback : 6|1@1+ (1,0) [0|1] "" Bridge
+ SG_ StatusReservedBit7 : 7|1@1+ (1,0) [0|0] "" Bridge
+ SG_ ExecutedMode : 8|3@1+ (1,0) [0|5] "" Bridge
+ SG_ StatusReservedBit11 : 11|1@1+ (1,0) [0|0] "" Bridge
+ SG_ HealthState : 12|4@1+ (1,0) [0|3] "" Bridge
+ SG_ SteeringStale : 16|1@1+ (1,0) [0|1] "" Bridge
+ SG_ SpeedStale : 17|1@1+ (1,0) [0|1] "" Bridge
+ SG_ ObjectStale : 18|1@1+ (1,0) [0|1] "" Bridge
+ SG_ DashboardStale : 19|1@1+ (1,0) [0|1] "" Bridge
+ SG_ ServoControlLost : 20|1@1+ (1,0) [0|1] "" Bridge
+ SG_ ServoMismatch : 21|1@1+ (1,0) [0|1] "" Bridge
+ SG_ BeamControlLost : 22|1@1+ (1,0) [0|1] "" Bridge
+ SG_ CanDecodeFault : 23|1@1+ (1,0) [0|1] "" Bridge
+ SG_ LeftServoFeedbackDeg : 24|8@1- (0.5,0) [-64|63.5] "deg" Bridge
+ SG_ RightServoFeedbackDeg : 32|8@1- (0.5,0) [-64|63.5] "deg" Bridge
+ SG_ AppliedDimSectorMask : 40|16@1+ (1,0) [0|1023] "" Bridge
+ SG_ Checksum : 56|8@1+ (1,0) [0|255] "" Bridge
+
+
+CM_ "AFS prototype: Classical CAN, 11-bit identifiers, nominal bitrate 500 kbit/s. Application code enforces freshness, counters, checksums, reserved zeros, and cross-signal validity.";
+CM_ BU_ Bridge "Linux C++ bridge and host CAN producer.";
+CM_ BU_ AFS_ECU "STM32 AFS controller and executed-status producer.";
+CM_ BO_ 256 "Signed longitudinal speed. Repeated every 20 ms; ECU receive timeout 100 ms. No application checksum.";
+CM_ BO_ 512 "Signed ego steering angle. Repeated every 20 ms; ECU receive timeout 100 ms. No application checksum.";
+CM_ BO_ 768 "Complete ten-sector vehicle occupancy grid in one frame. Repeated every 20 ms; ECU receive timeout 100 ms. No alive counter or application checksum.";
+CM_ BO_ 1024 "Dashboard request relayed by the bridge every 50 ms. Checksum is XOR of bytes 0 and 1.";
+CM_ BO_ 1280 "ECU executed status, suggested period 20 ms. Checksum is XOR of bytes 0 through 6.";
+CM_ SG_ 256 SpeedValid "Set only for a usable source sample no older than 250 ms. A saturated value is invalid.";
+CM_ SG_ 256 SpeedSaturated "Value was clamped to the signed CAN range; SpeedValid must be zero.";
+CM_ SG_ 512 SteeringValid "Set only for a usable source sample no older than 250 ms and within its active steering limit.";
+CM_ SG_ 512 SteeringSaturated "Value was clamped to the signed CAN range; SteeringValid must be zero.";
+CM_ SG_ 768 GridValid "Fresh complete usable grid. When zero, all sector occupancy and masks must be zero.";
+CM_ SG_ 768 PerceptionDegraded "Object scan or required vehicle geometry is unusable. When one, GridValid must be zero.";
+CM_ SG_ 768 ObjectListOverflow "Runner truncated its object list; GridValid must be zero.";
+CM_ SG_ 768 Sector00SubsectorMask "Cumulative mask: bit 0 farthest, bit 3 nearest. Legal raw values are 0, 1, 3, 7, 15; the same rule applies to all sectors.";
+CM_ SG_ 1280 AppliedDimSectorMask "Bits 0 through 9 report sectors with high-beam pixels switched off. Bits 10 through 15 must be zero.";
+
+BA_DEF_ BO_ "GenMsgCycleTime" INT 0 65535;
+BA_DEF_DEF_ "GenMsgCycleTime" 0;
+BA_ "GenMsgCycleTime" BO_ 256 20;
+BA_ "GenMsgCycleTime" BO_ 512 20;
+BA_ "GenMsgCycleTime" BO_ 768 20;
+BA_ "GenMsgCycleTime" BO_ 1024 50;
+BA_ "GenMsgCycleTime" BO_ 1280 20;
+
+VAL_ 1024 RequestedHeadlightPower 0 "Off" 1 "On" ;
+VAL_ 1024 RequestedHeadlightMode 0 "LowBeam_NoSwivel" 1 "LowBeam_Swivel" 2 "HighBeam_NoDimming" 3 "HighBeam_Dimming" ;
+VAL_ 1280 ExecutedMode 0 "Off" 1 "Safe_Default" 2 "LowBeam_NoSwivel" 3 "LowBeam_Swivel" 4 "HighBeam_NoDimming" 5 "HighBeam_Dimming" ;
+VAL_ 1280 HealthState 0 "OK" 1 "Degraded" 2 "Faulted" 3 "SafeFallback" ;
+VAL_ 768 Sector00SubsectorMask 0 "Clear" 1 "75_to_100_m" 3 "50_to_75_m" 7 "25_to_50_m" 15 "0_to_25_m" ;
+VAL_ 768 Sector01SubsectorMask 0 "Clear" 1 "75_to_100_m" 3 "50_to_75_m" 7 "25_to_50_m" 15 "0_to_25_m" ;
+VAL_ 768 Sector02SubsectorMask 0 "Clear" 1 "75_to_100_m" 3 "50_to_75_m" 7 "25_to_50_m" 15 "0_to_25_m" ;
+VAL_ 768 Sector03SubsectorMask 0 "Clear" 1 "75_to_100_m" 3 "50_to_75_m" 7 "25_to_50_m" 15 "0_to_25_m" ;
+VAL_ 768 Sector04SubsectorMask 0 "Clear" 1 "75_to_100_m" 3 "50_to_75_m" 7 "25_to_50_m" 15 "0_to_25_m" ;
+VAL_ 768 Sector05SubsectorMask 0 "Clear" 1 "75_to_100_m" 3 "50_to_75_m" 7 "25_to_50_m" 15 "0_to_25_m" ;
+VAL_ 768 Sector06SubsectorMask 0 "Clear" 1 "75_to_100_m" 3 "50_to_75_m" 7 "25_to_50_m" 15 "0_to_25_m" ;
+VAL_ 768 Sector07SubsectorMask 0 "Clear" 1 "75_to_100_m" 3 "50_to_75_m" 7 "25_to_50_m" 15 "0_to_25_m" ;
+VAL_ 768 Sector08SubsectorMask 0 "Clear" 1 "75_to_100_m" 3 "50_to_75_m" 7 "25_to_50_m" 15 "0_to_25_m" ;
+VAL_ 768 Sector09SubsectorMask 0 "Clear" 1 "75_to_100_m" 3 "50_to_75_m" 7 "25_to_50_m" 15 "0_to_25_m" ;

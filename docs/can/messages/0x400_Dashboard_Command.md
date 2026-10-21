@@ -96,4 +96,4 @@ HEX:  14 07 13
 - If `RequestedHeadlightPower = Off`, command headlights off or standby and ignore `RequestedHeadlightMode` for output selection.
 - If `RequestedHeadlightPower = On`, evaluate `RequestedHeadlightMode` and the required fresh inputs for that mode.
 - Treat `ClearFaultRequest` as edge-triggered, usually on a `0` to `1` transition, and clear only faults that are safe to clear.
-- If this message times out or fails alive-counter checks, enter the configured safe default and set `DashboardStale` in `0x100 AFS_Status`.
+- If this message times out or fails alive-counter checks, enter the configured safe default and set `DashboardStale` in `0x500 AFS_Status`.

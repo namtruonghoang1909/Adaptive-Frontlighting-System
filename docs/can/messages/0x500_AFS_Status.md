@@ -1,4 +1,4 @@
-# 0x100 AFS_Status
+# 0x500 AFS_Status
 
 `AFS_Status` is transmitted by the STM32F407VE AFS ECU to the C++ bridge CAN module. The CAN interface decodes it and stores a status snapshot that the Dashboard interface and log tools can expose. It reports what the ECU is actually executing, whether required inputs are fresh enough, which faults are active, the measured servo positions, and the beam dimming pattern actually applied by the ECU.
 
@@ -6,7 +6,7 @@
 
 | Field | Value |
 |---|---|
-| CAN ID | `0x100` |
+| CAN ID | `0x500` |
 | Name | `AFS_Status` |
 | Producer | AFS ECU |
 | Bus consumer | C++ bridge CAN module |
@@ -19,7 +19,7 @@
 
 ## Status Intent
 
-`0x100` is an executed-status frame, not a command frame. The Dashboard provides requested headlight power and mode through the C++ bridge IPC interface, the C++ bridge CAN module publishes `0x400 Dashboard_Command`, and `ExecutedMode` reports the state or mode the ECU actually selected after checking input freshness, decoding validity, hardware health, and fallback rules.
+`0x500` is an executed-status frame, not a command frame. Its larger identifier gives it lower bus priority than steering, speed, vehicle-grid, and dashboard-command traffic. Status reporting is informational and does not need to delay those inputs. The Dashboard provides requested headlight power and mode through the C++ bridge IPC interface, the C++ bridge CAN module publishes `0x400 Dashboard_Command`, and `ExecutedMode` reports the state or mode the ECU actually selected after checking input freshness, decoding validity, hardware health, and fallback rules.
 
 `RequiredInputsValid` means the messages required for the requested behavior have fresh accepted data inside the configured timeout threshold. The ECU uses only fresh accepted inputs when deciding the current output action.
 
@@ -29,12 +29,12 @@ Examples:
 |---|---|
 | `RequestedHeadlightPower = Off` | `0x400 Dashboard_Command` |
 | `LowBeam_NoSwivel` | `0x400 Dashboard_Command` |
-| `LowBeam_Swivel` | `0x400 Dashboard_Command`, `0x200 Vehicle_Steering`, `0x300 Vehicle_Speed` |
+| `LowBeam_Swivel` | `0x400 Dashboard_Command`, `0x200 Vehicle_Steering`, `0x100 Vehicle_Speed` |
 | `HighBeam_NoDimming` | `0x400 Dashboard_Command` |
-| `HighBeam_Dimming` | `0x400 Dashboard_Command`, both `0x310 Vehicle_Object` groups for a usable grid sample |
+| `HighBeam_Dimming` | `0x400 Dashboard_Command`, one fresh valid `0x300 Vehicle_Object` grid frame |
 | forced fallback after lost command | no requested command is valid, so `RequiredInputsValid = 0` |
 
-A fresh complete `0x310 Vehicle_Object` grid with `GridValid = 1` and all sector distance codes set to `0` is still a valid input for `HighBeam_Dimming`; it means no relevant vehicle is currently detected and the applied dim mask may be `0x0000`. A stale, incomplete, undecodable, or `GridValid = 0` `0x310` sample is not a valid ADB input.
+A fresh `0x300 Vehicle_Object` frame with `GridValid = 1` and all ten sector records clear is still a valid input for `HighBeam_Dimming`; it means no relevant vehicle is currently detected and the applied dim mask may be `0x0000`. A stale, undecodable, or `GridValid = 0` `0x300` frame is not a valid ADB input. See the [0x300 specification](0x300_Vehicle_Object.md) for its occupancy and cumulative subsector masks.
 
 ## Byte Layout
 
@@ -50,9 +50,9 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 | 1 | 0..2 | `ExecutedMode` | enum | State or mode currently executed by the ECU |
 | 1 | 3 | `Reserved` | bool | Transmit `0` |
 | 1 | 4..7 | `HealthState` | enum | Overall ECU health summary derived from flags and faults |
-| 2 | 0 | `SteeringStale` | bool | No fresh accepted `0x200 Vehicle_Steering` inside the timeout |
-| 2 | 1 | `SpeedStale` | bool | No fresh accepted `0x300 Vehicle_Speed` inside the timeout |
-| 2 | 2 | `ObjectStale` | bool | No fresh accepted `0x310 Vehicle_Object` inside the timeout |
+| 2 | 0 | `SteeringStale` | bool | Steering is unusable (`SteeringValid=0`) or no accepted `0x200 Vehicle_Steering` frame arrived within 100 ms |
+| 2 | 1 | `SpeedStale` | bool | Speed is unusable (`SpeedValid=0`) or no accepted `0x100 Vehicle_Speed` frame arrived within 100 ms |
+| 2 | 2 | `ObjectStale` | bool | Grid is unusable (`GridValid=0`) or no accepted `0x300 Vehicle_Object` frame arrived within 100 ms |
 | 2 | 3 | `DashboardStale` | bool | No fresh accepted `0x400 Dashboard_Command` inside the timeout |
 | 2 | 4 | `ServoControlLost` | bool | ECU cannot command the servo control path |
 | 2 | 5 | `ServoMismatch` | bool | Servo feedback does not match the ECU target within tolerance |
@@ -160,7 +160,7 @@ Byte 0 bits: [7] [6]      [5]    [4]       [3 2 1 0]
              res fallback fault inputs-ok alive
 ```
 
-`AppliedDimSectorMask` uses the same 10-sector horizontal beam grid as `0x310 Vehicle_Object`. Bit `n` corresponds to logical sector `n`; `1` means the ECU switched off the high-beam matrix pixels mapped to that sector. The low-beam base remains active. In low-beam modes the mask is `0x0000` because rows 1–4 are disabled by mode rather than ADB. Bits `10..15` are reserved and transmitted as zero. This is a logical summary, not a per-pixel report for the 128 LEDs.
+`AppliedDimSectorMask` uses the same 10-sector horizontal beam grid as `0x300 Vehicle_Object`. Bit `n` corresponds to logical sector `n`; `1` means the ECU switched off the high-beam matrix pixels mapped to that sector. The low-beam base remains active. In low-beam modes the mask is `0x0000` because rows 1–4 are disabled by mode rather than ADB. Bits `10..15` are reserved and transmitted as zero. This is a logical summary, not a per-pixel report for the 128 LEDs.
 
 ```text
 Sector: 00 01 02 03 04 05 06 07 08 09
@@ -172,7 +172,7 @@ Mask:   b0 b1 b2 b3 b4 b5 b6 b7 b8 b9
 Two vehicles have caused the ECU to dim sectors `02,03,04,07,08`. Both servos report centered feedback values, required inputs are fresh, and no faults are present.
 
 ```text
-ID:   0x100
+ID:   0x500
 DLC:  8
 HEX:  12 05 00 00 00 9C 01 8A
 BIN:  00010010 00000101 00000000 00000000 00000000 10011100 00000001 10001010
@@ -194,10 +194,10 @@ BIN:  00010010 00000101 00000000 00000000 00000000 10011100 00000001 10001010
 
 ## Example B: Object Input Stale Forces Fallback
 
-The Dashboard requested high-beam dimming, but the ECU did not receive fresh accepted `0x310 Vehicle_Object` data before the timeout. The ECU forced conservative fallback lighting.
+The Dashboard requested high-beam dimming, but the ECU did not receive a fresh accepted `0x300 Vehicle_Object` grid frame before the timeout. The ECU forced conservative fallback lighting.
 
 ```text
-ID:   0x100
+ID:   0x500
 DLC:  8
 HEX:  63 31 04 00 00 00 00 56
 BIN:  01100011 00110001 00000100 00000000 00000000 00000000 00000000 01010110

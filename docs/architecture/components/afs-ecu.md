@@ -14,16 +14,25 @@ The two main behaviors are low-beam AFS swivel and high-beam ADB beam dodging.
 - Drive the left/right swivel servos and both 8x8 headlight matrices. In low-beam swivel mode, only rows 5–8 shine while both servos follow steering. In high-beam modes, center both servos, keep rows 5–8 on, and enable rows 1–4 only after centered feedback is accepted.
 - Read servo feedback and detect control-path or feedback faults.
 - Enter a conservative safe output when required inputs or hardware paths are not trusted.
-- Publish executed status, faults, feedback, and applied beam output on `0x100 AFS_Status`.
+- Publish executed status, faults, feedback, and applied beam output on `0x500 AFS_Status`.
+
+## Firmware Platform
+
+The planned STM32 firmware uses Zephyr RTOS with C application code. The exact
+development board is not yet confirmed, so its Zephyr board target and pin
+assignments remain open. Zephyr documents a [`black_f407ve` target](https://docs.zephyrproject.org/latest/boards/others/black_f407ve/doc/index.html)
+for the STM32F407VET6; the board page currently marks it as not actively
+maintained. Use that target only if it matches the physical board in this
+project.
 
 ## Inputs Needed
 
 | Input | Source | Used for |
 |---|---|---|
 | Requested headlight power, requested mode, command validity, and clear-fault request | `0x400 Dashboard_Command` | Turn headlights off/on, select requested behavior, and handle safe fault clearing |
-| Steering angle, steering rate, validity, freshness | `0x200 Vehicle_Steering` | Compute low-beam swivel target |
-| Vehicle speed, acceleration, validity, freshness | `0x300 Vehicle_Speed` | Gate behavior and scale/smooth swivel response |
-| Object-grid validity, sector group, grid sample counter, and nearest vehicle distance per sector | `0x310 Vehicle_Object` | Decide which calibrated high-beam matrix columns to mask |
+| Steering angle and validity/freshness | `0x200 Vehicle_Steering` | Compute low-beam swivel target; 100 ms receive timeout |
+| Vehicle speed and validity/freshness | `0x100 Vehicle_Speed` | Gate behavior and scale/smooth swivel response; 100 ms receive timeout |
+| Grid validity/quality and one occupancy bit plus a cumulative four-bit subsector mask per sector | `0x300 Vehicle_Object` | Decide which calibrated high-beam matrix pixels to mask; clear grid after a 100 ms receive timeout |
 | Left/right servo feedback voltage | STM32 ADC inputs | Confirm physical swivel position |
 | Hardware driver state | I2C/PWM/SPI driver checks | Detect servo or matrix control-path faults |
 
@@ -31,7 +40,7 @@ The two main behaviors are low-beam AFS swivel and high-beam ADB beam dodging.
 
 | Output | Destination | Used for |
 |---|---|---|
-| `0x100 AFS_Status` | C++ bridge CAN module; Dashboard and logs receive it through the Dashboard interface | Executed mode, health, faults, servo feedback, and applied logical-sector mask |
+| `0x500 AFS_Status` | C++ bridge CAN module; Dashboard and logs receive it through the Dashboard interface | Executed mode, health, faults, servo feedback, and applied logical-sector mask |
 | Servo PWM commands | Servo PCA9685 board | Left/right low-beam swivel or centered high-beam target |
 | Matrix pixel rows | Left/right MAX7219 8x8 modules over SPI | Low-beam base, high-beam extension, and ADB pixel masking |
 | Safe fallback lighting | Headlight rig | Conservative visible output when behavior is not trusted |
@@ -53,7 +62,7 @@ The two main behaviors are low-beam AFS swivel and high-beam ADB beam dodging.
 
 ## Hardware Fault Reporting
 
-The ECU should report hardware/control-path problems on `0x100 AFS_Status`:
+The ECU should report hardware/control-path problems on `0x500 AFS_Status`:
 
 | Fault | Meaning |
 |---|---|
