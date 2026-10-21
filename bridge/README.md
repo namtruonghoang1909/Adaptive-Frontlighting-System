@@ -2,7 +2,7 @@
 
 Native Linux gateway between the Python simulation runner, Python Dashboard, and the CAN network.
 
-The bridge is a C++17 application built with CMake. It owns Unix Domain Socket IPC, current cross-thread state, CAN conversion and scheduling, raw SocketCAN TX/RX, communication diagnostics, and graceful lifecycle handling as those modules are implemented.
+The bridge is a C++17 application built with CMake. It owns Unix Domain Socket IPC and the host CAN boundary. Runner IPC reception, transport-independent signal validation/projection, and DBC-generated in-memory frame encoding for `0x100`, `0x200`, and `0x300` are implemented. Production scheduling, SocketCAN TX/RX, Dashboard IPC, ECU status reception, and runtime CAN diagnostics remain future work.
 
 ## Module Layout
 
@@ -12,20 +12,39 @@ src/
 |-- app/                  # composition, configuration, startup, shutdown
 |-- ipc/                  # simulation and Dashboard Unix-socket endpoints
 |-- state/                # complete current snapshots and synchronization
-|-- can/                  # CAN conversion, scheduling, SocketCAN TX/RX
+|-- can/                  # DBC schema; runtime CAN code lives under src/can/
 `-- diagnostics/          # freshness, health, counters, and logging
-scripts/                  # CMake build-and-run launcher
+scripts/                  # bridge launch and encoder smoke scripts
 tests/                    # unit and Linux integration tests
 ```
 
 The runner receiver validates messages on its IPC thread and replaces one
-mutex-protected current scene. CAN worker, SocketCAN, Dashboard, and decoded ECU
-status behavior are future modules. The bridge does not own the AFS/ADB control
-algorithm; STM32 remains responsible for lighting decisions and physical output.
+mutex-protected current scene. The standalone `CanEncoder` validates freshness
+and source values, advances alive counters, and projects vehicle footprints
+into the agreed 10-sector signal model. `CanFrameEncoder` uses the generated C
+codec from [can/afs.dbc](can/afs.dbc) to produce in-memory `{CAN ID, DLC,
+payload}` values. The production bridge executable does not call these APIs;
+the separate diagnostic logger uses them to verify live samples. The bridge
+does not own the AFS/ADB control algorithm; STM32 remains responsible for
+lighting decisions and physical output.
 
 The runner IPC boundary is implemented: `afs_runner_bridge` receives versioned
-scene packets and retains the newest valid scene. CAN conversion, SocketCAN,
-Dashboard IPC, and ECU status remain unimplemented.
+scene packets and retains the newest valid scene. CAN signal validation,
+vehicle-grid projection, and DBC-generated in-memory frame packing are available
+as pure APIs. SocketCAN, Dashboard IPC, scheduling, and ECU status remain
+unimplemented.
+
+Run the headless MetaDrive CAN encoding smoke check with:
+
+```bash
+bash bridge/scripts/run_can_frame_smoke.sh
+```
+
+It receives live runner scenes, encodes the three runner-derived frames every
+20 ms, and prints representative payloads with decoded signal values. Every
+batch is checked with the generated C codec and captured for an independent
+cantools check against the DBC. It uses no CAN interface; set
+`AFS_CAN_SMOKE_STEPS` to change the number of headless simulation steps.
 
 Build and start the runner receiver with one command:
 

@@ -11,6 +11,7 @@ says otherwise.
 | `simulation_runner/scripts/check_simulation_requirements.sh` | Simulation runner | Checks the Python environment, MetaDrive imports and assets, and selected display requirements without launching MetaDrive. |
 | `simulation_runner/scripts/start_metadrive_simulation.sh` | Simulation runner | Launches `metadrive_runner` and forwards all runner options. Runner-to-bridge publishing starts automatically. |
 | `bridge/scripts/run_runner_bridge.sh` | C++ bridge | Configures and builds `afs_runner_bridge`, then runs the receiver in the foreground. |
+| `bridge/scripts/run_can_frame_smoke.sh` | C++ bridge / CAN | Runs headless MetaDrive through the diagnostic frame logger and independently checks captured payloads against the DBC with cantools. |
 | `tools/system_visualization/start_system_visualization.sh` | System Visualization | Serves the Code graph, static System in Action page, and High beam visual / Low beam visual tabs on localhost. |
 
 The scripts under `simulation_runner/scripts/` use
@@ -85,6 +86,21 @@ receiver; it does not require CAN hardware:
 bash bridge/tests/runner_ipc_live_smoke.sh
 ```
 
+To also run the standalone signal and DBC frame encoders against live runner
+scenes, use the CAN frame smoke check. It logs representative CAN IDs, payload
+bytes, and decoded signals, checks every batch with the generated C decoder,
+then cross-checks every captured frame using cantools and `bridge/can/afs.dbc`:
+
+```bash
+bash bridge/scripts/run_can_frame_smoke.sh
+```
+
+The script uses the configured MetaDrive Python environment and expects
+cantools to be importable there. Set `CANTOOLS_PYTHON` and
+`CANTOOLS_PYTHONPATH` if cantools is installed in a different environment;
+set `AFS_CAN_SMOKE_STEPS` to change the default 10 simulation steps. This is a
+diagnostic smoke path and does not transmit on SocketCAN.
+
 See [bridge/tests/README.md](../bridge/tests/README.md) for coverage and
 [verification/testing.md](verification/testing.md) for the broader
 verification plan.
@@ -118,20 +134,23 @@ Python 3.
 Check the generated source inventory, graph data, and viewer JavaScript:
 
 ```bash
-python3 tools/system_visualization/build_index.py --check
-node tools/system_visualization/validate.mjs
-node --check tools/system_visualization/graph-data.js
-node --check tools/system_visualization/code-index.js
-node --check tools/system_visualization/viewer.js
-node --check tools/system_visualization/functionality-data.js
-node --check tools/system_visualization/functionality-overlay.js
-node --check tools/system_visualization/beam-model.js
-node --check tools/system_visualization/beam-segments.js
-node tools/system_visualization/beam-model.test.cjs
-node tools/system_visualization/beam-segments.test.cjs
+python3 tools/system_visualization/code-graph/build_index.py --check
+node tools/system_visualization/code-graph/validate.mjs
+node --check tools/system_visualization/code-graph/graph-data.js
+node --check tools/system_visualization/code-graph/code-index.js
+node --check tools/system_visualization/code-graph/viewer.js
+node --check tools/system_visualization/code-graph/functionality-data.js
+node --check tools/system_visualization/code-graph/functionality-overlay.js
+node --check tools/system_visualization/code-graph/validate.mjs
+node --check tools/system_visualization/beam-visual/beam-model.js
+node --check tools/system_visualization/beam-visual/beam-segments.js
+node --check tools/system_visualization/shared/code-timestamp.js
+node tools/system_visualization/tests/beam-model.test.cjs
+node tools/system_visualization/tests/beam-segments.test.cjs
+node tools/system_visualization/tests/code-timestamp.test.cjs
 ```
 
-Run `python3 tools/system_visualization/build_index.py` to regenerate the
+Run `python3 tools/system_visualization/code-graph/build_index.py` to regenerate the
 source inventory after source files or indexed symbols change. The detailed
 viewer instructions are in
 [tools/system_visualization/README.md](../tools/system_visualization/README.md).
@@ -139,5 +158,7 @@ viewer instructions are in
 ## Components Without A Runnable Entry Point
 
 `dashboard/` is currently a package scaffold, and `firmware/` does not yet
-have an implemented application. CAN runtime support is also planned. There
-are no launch scripts for these parts yet.
+have an implemented application. The bridge can validate/project runner data
+and pack DBC-generated in-memory CAN frames; the diagnostic smoke script above
+checks this path without SocketCAN. Production CAN scheduling and transmission
+are not implemented. Dashboard and firmware do not have launch scripts yet.
