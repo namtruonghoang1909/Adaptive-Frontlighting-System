@@ -1,30 +1,30 @@
 # ADB Road Grid And Two-Headlamp Mapping
 
-The [High beam visual preview](../../tools/system_visualization/beam-segments.html)
-illustrates the data path below. It is a design preview; CAN projection and ECU
-lamp control have not yet been implemented.
+The [High beam visual preview](../../tools/system_visualization/beam-visual/beam-segments.html)
+illustrates the data path below. Bridge-side CAN projection is implemented;
+ECU lamp control remains planned.
 
 ```text
 ego-relative vehicles (forward, left, length, width, heading)
-  -> bridge: nearest vehicle distance per logical road sector
-  -> 0x310: 10 distance codes in two frames
-  -> ECU: 10 logical mask bits with angular safety margin
+  -> bridge: project vehicle footprints into logical sectors and four distance bands
+  -> 0x300: 10 occupancy-plus-subsector-mask records in one frame
+  -> ECU: validate the sector grid and apply calibrated angular and row mapping
   -> calibrated 8-column footprints for each headlight
   -> two 8x8 matrices: lower four rows low beam, upper four rows high beam
-  -> ADB switches off distance-selected top rows in affected columns
-  -> 0x100: logical sectors actually dimmed
+  -> ADB switches off mapped high-beam pixels in affected columns and rows
+  -> 0x500: logical sectors actually dimmed
 ```
 
 ## Data Shapes
 
 | Stage | Suggested in-memory type | Meaning |
 |---|---|---|
-| Runner IPC observation | `RunnerObject { x_forward_m, y_left_m, length_m?, width_m?, relative_heading_rad? }` with scene validity flags | Current ego-relative contract; dimensions and heading may be absent. It does not include object height. |
-| Bridge grid | `SectorGrid { nearest_m[10], sample_id, source_time }` | `nearest_m[i] = infinity` means no vehicle; the nearest overlapping vehicle wins. |
-| CAN `0x310` | Eight 6-bit codes in group 0, two codes plus six zero padding slots in group 1 | `0` is empty, `1..62` represent about 4 m per step, and `63` is saturated or unknown. Both groups share one sample counter. |
-| ECU road decision | `uint16_t requested_mask` with bits `0..9` used | Bit `i` means logical sector `i` requires a high-beam reduction; upper six bits are zero. |
+| Runner IPC observation | `RunnerObject { x_forward_m, y_left_m, length_m?, width_m?, relative_heading_rad? }` with scene validity flags | Current ego-relative contract; dimensions and heading may be absent. If a relevant vehicle lacks usable length, width, or heading, the whole grid is invalidated. It does not include object height. |
+| Bridge grid | `SectorGrid { occupied[10], subsector_mask[10], source_time }` | Each sector records presence and a four-bit cumulative mask. The nearest vehicle's stronger mask dominates by bitwise OR. |
+| CAN `0x300` | One DLC 8 frame with ten 5-bit sector records | Each record contains `SectorOccupied` and four cumulative subsector-mask bits. `GridValid` and quality flags describe the latest grid; byte 0 is reserved. |
+| ECU road decision | Validated 10-sector occupancy/mask grid | The ECU applies calibrated sector-to-column and subsector-to-high-row mapping; exact pixel output remains firmware behavior. |
 | ECU lamp output | `uint8_t pixel_rows[2][8]` | One 8x8 bitmap per headlight. Each byte is one row; bits `0..7` select its eight horizontal columns. Rows `0..3` are the high-beam extension; rows `4..7` form the low-beam base. |
-| ECU feedback | `0x100 AppliedDimSectorMask` | Logical road sectors whose mapped high-beam pixels were switched off. It does not report the full 128-pixel output state. |
+| ECU feedback | `0x500 AppliedDimSectorMask` | Logical road sectors whose mapped high-beam pixels were switched off. It does not report the full 128-pixel output state. |
 
 The sector grid is **road space**. A matrix pixel is an **optical output**.
 Both lamps cover some of the same road space, so one logical road bit can
@@ -37,7 +37,7 @@ ADB mask to those rows.
 The mode rule is fixed for this proposed rig: normal low-beam swivel uses only
 rows 5–8 and steers the two platforms to different angles; high-beam modes
 center both platforms, retain rows 5–8, and enable rows 1–4. The
-[Low beam visual](../../tools/system_visualization/beam-segments.html?mode=low)
+[Low beam visual](../../tools/system_visualization/beam-visual/beam-segments.html?mode=low)
 shows a shorter, wider footprint that moves with its steering wheel control.
 The outside matrix turns three times farther than the inside matrix, and its speed bar
 reduces both angles as speed rises. The preview's 40 m / ±18° low beam,
@@ -54,25 +54,33 @@ brightness levels within a matrix. See the
 
 ## Geometry And Calibration
 
-Project each vehicle's four corners into the ego-relative polar grid. Mark
-every sector touched by its angular interval and retain the nearest distance
-per sector. The ECU expands the occupied interval by its configured margin.
-Rotate the rectangle by `relative_heading_rad` when it is available. If
-dimensions or heading are absent, use a documented conservative envelope or
-mark the observation degraded; do not treat an unknown width as zero.
-For each masked sector, project its angular interval from the reported vehicle
-distance to **each** lamp's optical origin. Switch off each high-beam column
-whose measured footprint intersects that interval. This projection matters
+Project each vehicle's full footprint into the ego-relative polar grid.
+Mark every sector touched by its footprint and every 25 m distance band the
+footprint overlaps. Compute radial extent as the nearest Euclidean distance
+from the ego reference point to the footprint and the farthest distance to its
+boundary, then clip the interval to 0–100 m. A partly out-of-range footprint
+contributes its in-range portion; a wholly out-of-range footprint is ignored.
+The resulting per-sector mask is cumulative: `0001` for
+75–100 m, `0011` for 50–75 m, `0111` for 25–50 m, and `1111` for 0–25 m;
+combine masks from multiple vehicles in the same sector with bitwise OR. Wire
+bit 0 is the farthest subsector and bit 3 is the nearest. The ECU expands the
+occupied interval by its configured margin. Rotate the rectangle by
+`relative_heading_rad`. If any relevant vehicle lacks a usable length, width,
+or relative heading, invalidate and clear the entire grid; do not approximate
+the footprint. The ECU maps the received
+subsector mask to high-beam rows and projects the occupied horizontal interval
+from **each** lamp's optical origin. It switches off each high-beam pixel whose
+measured footprint intersects the relevant interval. This projection matters
 most for nearby vehicles because the two lamps are laterally separated.
 
 The preview uses eight overlapping horizontal column footprints per lamp,
 both extending across the road center. It independently projects the logical
 mask onto the left and right matrices. The matrix panels show the proposed row
-allocation: four high-beam rows above four low-beam rows. The preview applies
-a distance heuristic to the top rows: example distances 30/50/70/100 m switch
-off 4/3/2/1 rows in affected columns. The current `0x310` input has distance
-but no target height, so this is only a coarse vertical approximation and
-cannot calculate a vehicle-shaped shadow. The three
+allocation: four high-beam rows above four low-beam rows. The `0x300` cumulative
+mask describes the rows to dim by nearest distance band; it does not encode
+object height or command pixels directly. The ECU's calibrated mapping from
+mask bits to matrix rows remains firmware behavior. This cannot calculate a
+vehicle-shaped vertical shadow. The three
 test cars use configurable axis-aligned rectangles. Their colors identify
 columns for debugging; physical output is white.
 
@@ -85,29 +93,43 @@ coarse educational model, not Audi photometry.
 
 ## Contract Decisions Before CAN Implementation
 
-- The [0x310 proposal](../can/messages/0x310_Vehicle_Object.md) and preview
-  now use **10 logical sectors**: old `03–12`, renumbered `00–09`. Their far
+- The [0x300 design](../can/messages/0x300_Vehicle_Object.md) and preview
+  use **10 logical sectors**: old `03–12`, renumbered `00–09`. Their far
   boundaries and cell widths are unchanged. The far edges are about ±14.223°;
   the first and last cells reach ±18° at close range to include the outer lamp
-  spill. The removed outer sectors `00–02` and `13–15` were dark at 15–100 m
-  under the illustrative lamp model; the former `02` and `13` received some
-  light at 5–10 m. Exact angles and distance rules still require bench
-  measurement and a shared versioned geometry table before CAN implementation.
-- Two `0x310` frames remain necessary for 10 six-bit distances plus sample and
-  validity fields. Group 1 uses two slots and reserves six as zero padding.
-- The current 6-bit `0x310` code represents detailed distances only through
-  about **248 m** (`62 × 4 m`). The preview can display 300 m or more, but the
-  CAN format would need a revised scale or saturation handling to preserve
-  that range.
-- The `0x100` logical mask should reflect real lamp output. With overlapping
+  spill. This existing visualization geometry is the software projection
+  contract; physical lamp calibration remains future bench work.
+- The agreed `0x300` design carries all 10 sectors in one DLC 8 frame. It uses
+  one occupancy bit and a four-bit cumulative subsector mask per sector, an
+  validity/quality flags, byte 0 reserved, and reserved tail bits. The ECU
+  consumes the latest valid grid without comparing it to prior grid contents.
+- The 100 m supported range uses four equal bands: 0–25, 25–50, 50–75, and
+  75–100 m. Use the vehicle footprint's nearest and farthest Euclidean
+  distances from ego, clip the interval to 0–100 m, and include every band it
+  overlaps. A footprint wholly outside the range contributes no sector
+  records.
+- Any detected transfer, parse, validation, freshness, or perception-quality
+  fault makes `GridValid=0` and clears every sector record. Expected IPC
+  sequence gaps are allowed. A fresh accepted scene is required to restore a
+  valid grid. Object-scan or required-geometry faults set
+  `PerceptionDegraded=1`; transfer, parse, and freshness faults alone do not.
+- `PerceptionDegraded=1` always requires `GridValid=0`; the ECU rejects a frame
+  that claims both a valid grid and degraded perception.
+- `ObjectListOverflow=1` means the runner exceeded its configured object-list
+  capacity and dropped candidate objects. It is not a per-sector vehicle count.
+- If a relevant vehicle lacks usable length, width, or relative heading, the
+  entire grid is invalidated and cleared; the bridge does not approximate its
+  footprint.
+- The `0x500` logical mask should reflect real lamp output. With overlapping
   footprints, a sector counts as dimmed only when all high-beam pixels that
   materially illuminate it have been switched off. The low-beam base remains
   active.
-- `0x100` cannot show the state of 128 individual matrix pixels. Define
+- `0x500` cannot show the state of 128 individual matrix pixels. Define
   separate applied left/right matrix feedback before building a Dashboard view
   of the complete physical output; do not infer every pixel from the logical
   road mask.
-- The preview's distance-to-row bands are illustrative and are not a firmware
-  decision. Existing `0x310` distance can drive this coarse heuristic, but
-  accurate vertical shadow placement needs object height bounds and calibrated
-  row optics. Final thresholds need bench measurement and decision hysteresis.
+- The `0x300` subsector mask indicates the cumulative dimming depth within each
+  sector; it does not directly command pixels. The ECU still needs calibrated
+  row optics and the mapping from mask bits to high-beam rows. Accurate
+  vehicle-shaped vertical shadows would need object height bounds, which the
+  runner currently does not provide.

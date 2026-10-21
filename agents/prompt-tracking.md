@@ -13,331 +13,371 @@ Future agents should read this file with the rest of `agents/` before making cha
 
 ## Entries
 
-### 2026-10-19 - Add Runner-to-Bridge IPC Tests
+### 2026-10-20 - Verify DBC Frame Encoding With Headless MetaDrive
 
 **User prompt**
 
-User asked for test scripts or test cases for IPC.
+User asked to run MetaDrive headless and add a simple logger to check the CAN
+encoder output against the agreed DBC.
 
 **Agent changes**
 
-- Added five dependency-free tests for Python scene projection, nearest-object
-  truncation, invalid versus valid empty scans, packet limits, and socket path
-  selection.
-- Added a CTest process test that runs the real Python publisher against the
-  C++ bridge with synthetic scenes. It checks publisher-first retry, decoded
-  ego and surrounding fields, full replacement by an empty scan, and sequence
-  continuity after restarting the bridge.
-- Added an optional script for a short real MetaDrive-to-bridge smoke run and
-  documented all three IPC test levels.
+- Added a diagnostic C++ frame logger and shell launcher that receives live
+  runner IPC, encodes frames at 20 ms intervals, prints representative IDs,
+  payload bytes, and decoded signal values, and captures each batch.
+- Added generated-C round-trip checks for every batch and an independent
+  cantools verifier that decodes captured bytes against `bridge/can/afs.dbc`.
+- Documented the smoke command and recorded the current result. The diagnostic
+  path does not open SocketCAN and does not wire encoders into the production
+  bridge executable.
 
 **Files modified**
 
-- `bridge/CMakeLists.txt`, `bridge/tests/README.md`,
-  `bridge/tests/runner_ipc_end_to_end.py`,
-  `bridge/tests/runner_ipc_live_smoke.sh`,
-  `simulation_runner/tests/test_ipc_publisher.py`,
-  `simulation_runner/src/ipc_adapter/README.md`, `docs/development.md`,
-  `docs/verification/testing.md`, `agents/working-context.md`,
+- `bridge/include/afs_bridge/can_frame_logger.hpp`,
+  `bridge/src/app/can_frame_logger.cpp`,
+  `bridge/src/app/can_frame_logger_main.cpp`,
+  `bridge/scripts/run_can_frame_smoke.sh`,
+  `bridge/scripts/verify_can_frame_capture.py`, `bridge/CMakeLists.txt`,
+  `bridge/README.md`, `bridge/src/can/README.md`, `bridge/tests/README.md`,
+  `README.md`, `docs/development.md`, `docs/verification/testing.md`,
+  `docs/can/README.md`, `docs/architecture/components/bridge.md`,
+  `docs/architecture/data-flow.md`,
+  `agents/plan/feat-bridge-can-encoding.md`, `agents/working-context.md`,
+  `agents/prompt-tracking.md`,
+  `tools/system_visualization/code-graph/build_index.py`,
+  `tools/system_visualization/code-graph/code-index.js`,
+  `tools/system_visualization/code-graph/graph-data.js`,
+  `tools/system_visualization/code-graph/functionality-data.js`
+
+**Verification**
+
+- Headless MetaDrive 0.4.3 completed 10 steps with 11 valid scenes. The logger
+  encoded 48 scheduled batches (144 frames); generated C round-trip checks
+  passed for every batch, and cantools matched all 144 frames to the DBC with
+  reserved fields zero. The sample `0x300` payload was `00 01 00 00 00 C0 39 00`.
+- The logger target built; shell and Python syntax checks passed. Code graph,
+  inventory freshness (163 nodes), graph validation (49 visible nodes, 48
+  interactions, seven layers, eight paths), JavaScript syntax, 95 Markdown
+  links across 12 checked files, and `git diff --check` passed. A Firefox
+  screenshot could not be captured: the existing profile was unresponsive and
+  a separate headless profile timed out on the compositor framebuffer error.
+
+### 2026-10-20 - Add DBC-Generated In-Memory CAN Frames
+
+**User prompt**
+
+User said to continue the CAN branch after the DBC was created and noted that
+cantools was already installed by the parallel session.
+
+**Agent changes**
+
+- Generated and checked in the cantools C codec for the project DBC, then added
+  a C++ frame interface/encoder for `0x100`, `0x200`, and `0x300`.
+- Added the generated codec and C++ wrapper to CMake. The frame API preserves
+  reserved zeros and returns frames in speed, steering, object order. Runtime
+  scheduling, SocketCAN, and executable integration remain out of scope.
+- Updated bridge/CAN/architecture status docs, the branch plan, working
+  context, and the Code graph. Adjusted the inventory builder to index C/C++
+  type definitions once instead of duplicating generated-header references.
+
+**Files modified**
+
+- `bridge/CMakeLists.txt`, `bridge/include/afs_bridge/can_frame_encoder.hpp`,
+  `bridge/src/can/can_frame_encoder.cpp`,
+  `bridge/src/can/generated/afs.c`, `bridge/src/can/generated/afs.h`,
+  `bridge/README.md`, `bridge/src/can/README.md`,
+  `bridge/tests/README.md`, `README.md`, `docs/can/README.md`,
+  `docs/architecture/overview.md`, `docs/architecture/data-flow.md`,
+  `docs/architecture/components/bridge.md`, `docs/development.md`,
+  `agents/plan/feat-bridge-can-encoding.md`, `agents/roadmap.md`,
+  `agents/working-context.md`, `agents/prompt-tracking.md`,
+  `tools/system_visualization/code-graph/build_index.py`,
+  `tools/system_visualization/code-graph/code-index.js`,
+  `tools/system_visualization/code-graph/graph-data.js`,
+  `tools/system_visualization/code-graph/functionality-data.js`
+
+**Verification**
+
+- cantools 45.0.0 generated `afs.c` and `afs.h` from `bridge/can/afs.dbc`.
+- CMake compiled `afs_can_encoding` and `afs_runner_bridge` successfully.
+- Code inventory freshness (155 nodes), graph validation (47 visible nodes,
+  44 interactions, seven layers, eight paths), JavaScript syntax, and
+  `git diff --check` passed. No tests were added or run.
+
+### 2026-10-20 - Create The Five-Message CAN DBC
+
+**User prompt**
+
+User asked for `afs.dbc` so they could avoid entering every CAN signal manually
+in Vector CANdb++.
+
+**Agent changes**
+
+- Created `bridge/can/afs.dbc` with the current `0x100` through `0x500`
+  message IDs, transmitters, receivers, DLCs, cycles, bit layouts, scaling,
+  value tables, and distinct names for reserved fields within each message.
+- Updated CAN, bridge, architecture, and agent notes to identify the DBC as
+  present while generated C payload packing and CAN transport remain pending.
+
+**Files modified**
+
+- `bridge/can/afs.dbc`, `bridge/README.md`, `bridge/src/can/README.md`,
+  `README.md`, `docs/README.md`, `docs/can/README.md`,
+  `docs/architecture/overview.md`, `docs/architecture/data-flow.md`,
+  `docs/architecture/components/bridge.md`,
+  `docs/temporary/desired_file_system.md`,
+  `agents/plan/feat-bridge-can-encoding.md`, `agents/working-context.md`,
   `agents/prompt-tracking.md`
 
 **Verification**
 
-- CTest passes both receiver and Python-to-C++ process tests. All five Python
-  publisher cases pass, along with Python compilation, shell syntax, Code
-  inventory freshness, graph validation, JavaScript syntax, and Git whitespace
-  checks.
-- The optional MetaDrive live smoke passes with 11 accepted scenes over 10
-  headless steps. Local AF_UNIX tests needed execution outside the sandbox;
-  CTest passes both cases there.
+- Strict cantools parsing accepts all five messages and 69 signals. The
+  documented example payloads were checked against the DBC bit positions.
+  Code inventory freshness, graph validation, JavaScript syntax, Markdown
+  links/fences, and Git whitespace checks pass. Generated C payload
+  integration and live CAN behavior remain separate work.
 
-### 2026-10-19 - Rename The System Visualization Launcher
+### 2026-10-20 - Reassign CAN Message IDs
 
 **User prompt**
 
-User pointed out that the Code graph is one part of System Visualization and
-asked to rename the start command accordingly.
+User assigned speed `0x100`, steering `0x200`, vehicle objects `0x300`,
+dashboard command `0x400`, and ECU status `0x500`.
 
 **Agent changes**
 
-- Renamed the launcher to `start_system_visualization.sh` and updated the
-  command, script index, and viewer descriptions across project documentation
-  and agent working context.
-- Regenerated the source inventory for the new script path.
+- Updated CAN message specs, architecture references, branch notes, and viewer
+  labels to the agreed identifiers.
+- Renamed the speed and vehicle-object message spec files and updated links,
+  viewer ordering, and its ID expectations.
 
 **Files modified**
 
-- `tools/system_visualization/start_code_graph.sh` (renamed to
-  `start_system_visualization.sh`), `tools/system_visualization/code-index.js`
-- `README.md`, `tools/README.md`, `tools/system_visualization/README.md`,
-  `docs/development.md`, `agents/working-context.md`,
-  `agents/prompt-tracking.md`
-
-**Verification**
-
-- Launcher syntax and help output, source-inventory freshness, graph
-  validation, documentation links/fences, and Git whitespace checks pass.
-
-### 2026-10-19 - Put Project Design Before Tools In Root README
-
-**User prompt**
-
-User asked to describe the project design, system components, visuals, and
-hardware before introducing tools such as the Code graph.
-
-**Agent changes**
-
-- Reorganized the README to lead with system design, an explicit component and
-  hardware table, the matrix-beam design, and the high/low-beam visual gallery.
-- Moved Code graph and viewer instructions into a later Development tools
-  section and kept the real hardware photo placeholder and concept-view note.
-
-**Files modified**
-
-- `README.md`, `agents/prompt-tracking.md`
-
-**Verification**
-
-- Markdown links and fenced code blocks, prompt-history limit, and Git
-  whitespace checks pass. No source code changed.
-
-### 2026-10-18 - Show Code Update Time And Reduce Swivel Imbalance
-
-**User prompt**
-
-User asked for an updated-code timestamp beside the visualization tabs so a
-reload makes the served version easier to identify. They also asked to keep
-the overall swivel modest while making the outside matrix turn much farther
-than the inside matrix.
-
-**Agent changes**
-
-- Added a shared **Code updated** label beside the tabs on all three pages. It
-  checks the page and its local CSS/JavaScript `Last-Modified` headers without
-  using cached metadata, then shows the newest time in local time.
-- Reduced the low-beam outside-matrix limit from 8° to 6° and changed the
-  inside matrix to one third of that target. Full wheel input now gives
-  outside/inside angles of 6°/2° at 0 km/h, 3.75°/1.25° at 60 km/h, and
-  1.5°/0.5° at 120 km/h.
-- Updated the preview, tests, root README, viewer guide, headlight and hardware
-  design notes, and working context.
-
-**Files modified**
-
-- `tools/system_visualization/code-timestamp.js`, `code-timestamp.test.cjs`,
-  `index.html`, `system-in-action.html`, `beam-segments.html`, `styles.css`,
-  `beam-model.js`, `beam-model.test.cjs`, `beam-segments.js`,
-  `beam-segments.test.cjs`, `code-index.js`
-- `README.md`, `tools/system_visualization/README.md`,
+- `docs/can/README.md`, `docs/can/messages/0x100_Vehicle_Speed.md`,
+  `docs/can/messages/0x200_Vehicle_Steering.md`,
+  `docs/can/messages/0x300_Vehicle_Object.md`,
+  `docs/can/messages/0x400_Dashboard_Command.md`,
+  `docs/can/messages/0x500_AFS_Status.md`,
   `docs/architecture/adb-grid-and-lamps.md`,
-  `docs/architecture/components/headlights.md`, `docs/hardware/hardware.md`,
-  `agents/working-context.md`, `agents/prompt-tracking.md`
-
-**Verification**
-
-- All 10 beam geometry tests, 12 preview interaction tests, and 4 timestamp
-  tests pass. Inventory freshness passes at 125 nodes; graph validation passes
-  with 43 visible nodes, 40 interactions, seven layers, and seven paths.
-  JavaScript syntax, Markdown link/fence checks, and Git whitespace checks pass.
-- Local HTTP server startup was denied by the sandbox, so browser rendering and
-  real HTTP header behavior could not be reviewed here. Unit checks cover the
-  timestamp metadata selection and page wiring. The curated graph and paths
-  remain unchanged because this work adds viewer status and adjusts preview
-  geometry, not an AFS runtime path.
-
-### 2026-10-18 - Reduce And Split Low-Beam Swivel
-
-**User prompt**
-
-User asked for different left/right matrix swivel angles, with the inside lamp
-turning less, and a smaller overall response at higher speed.
-
-**Agent changes**
-
-- Reduced the preview's maximum outside-matrix swivel from 12° to 8°.
-- Set the inside matrix to 65% of the outside angle. A left turn now moves the
-  left matrix less than the right; right turns mirror the behavior.
-- Made speed reduce the outer target to 62.5% at half speed and 25% at maximum
-  speed. The dashboard now shows each matrix angle separately.
-- Updated the root README, visualization guide, headlight and ADB design docs,
-  hardware guide, and working context.
-
-**Files modified**
-
-- `tools/system_visualization/beam-model.js`, `beam-model.test.cjs`,
-  `beam-segments.js`, `beam-segments.html`, `beam-segments.test.cjs`
-- `tools/system_visualization/code-index.js`
-- `README.md`, `tools/system_visualization/README.md`,
-  `docs/architecture/adb-grid-and-lamps.md`,
-  `docs/architecture/components/headlights.md`, `docs/hardware/hardware.md`,
-  `agents/working-context.md`, `agents/prompt-tracking.md`
-
-**Verification**
-
-- The beam model tests (10) and page interaction tests (12) pass. JavaScript
-  syntax, Code inventory freshness (124 nodes), graph validation (43 visible
-  nodes, 40 interactions, seven layers, seven paths), and Git whitespace
-  checks pass. Markdown links and fences pass in all seven updated documents.
-  The curated graph and functionality paths are unchanged because this behavior
-  belongs to the visualization model, not the AFS runtime graph.
-
-### 2026-10-18 - Revise README Visual Gallery For Reader Scenarios
-
-**User prompt**
-
-User asked to remove System in Action concept imagery from the root README,
-leave a blank spot for a real hardware photo, and include two high-beam and two
-low-beam scenario pictures for a quick project overview.
-
-**Agent changes**
-
-- Removed the concept render from the README and left a marked slot for a photo
-  of the built hardware. Kept a text link to System in Action as a design-only
-  concept view.
-- Added four named README screenshot slots: one and two cars in high beam, and
-  full right steering at 50 and 10 km/h in low beam.
-- Retried after `snapd.apparmor` became active. Firefox still reports
-  `RenderCompositorSWGL failed mapping default framebuffer` and times out even
-  on `about:blank`, so it cannot capture the four preview states in this shell.
-
-**Files modified**
-
-- `README.md`, `agents/prompt-tracking.md`
-
-**Verification**
-
-- Confirmed screenshot slots and the real-system photo placeholder in the
-  README. Tested Firefox on both the AFS page and a blank page; the headless
-  graphics backend failed, so no screenshot files were produced.
-
-### 2026-10-18 - Remove Unrelated Root Installer And Empty Folder
-
-**User prompt**
-
-User asked for a quick file and folder review and to delete items that are spare
-or unrelated to current project work.
-
-**Agent changes**
-
-- Removed the untracked root `fix-npm.sh`, a machine-level helper that changes
-  global npm directory ownership and installs Codex; it is unrelated to AFS.
-- Removed the empty root `tests/` directory. The component test directories
-  remain in place.
-- Kept `build/bridge` because the run guides use its built receiver, kept both
-  bench images because the System in Action page uses them, and kept the empty
-  `firmware/` component directory because firmware is part of the planned rig.
-
-**Files modified**
-
-- `fix-npm.sh` (deleted), empty `tests/` directory (removed),
-  `agents/prompt-tracking.md`
-
-**Verification**
-
-- Confirmed the npm script contents, checked file references and ignored build
-  status, and verified the root `tests/` directory was empty. No tests were run.
-
-### 2026-10-18 - Refresh Root README For Two-Matrix Design
-
-**User prompt**
-
-User asked for the root README to reflect the agreed design and explain it more
-visually, with placeholders where they can later paste screenshots of the
-System Visualization tabs.
-
-**Agent changes**
-
-- Reorganized the root README around the current two-matrix architecture,
-  explicit implemented/planned boundaries, an 8×8 row diagram, and a low/high
-  beam comparison table.
-- Embedded the existing bench concept render and added clearly marked,
-  copy-ready screenshot placeholders for all four visualization tabs.
-- Kept the viewer, simulation, test, and documentation entry points visible.
-
-**Files modified**
-
-- `README.md`, `agents/prompt-tracking.md`
-
-**Verification**
-
-- README links, code fences, screenshot asset path, stale names, and Git
-  whitespace were checked. No runtime code changed.
-
-### 2026-10-18 - Add Low-Beam Driving Dashboard And Speed Response
-
-**User prompt**
-
-User asked for a steering wheel and adjustable speed bar in the Low beam
-visual tab, with a simple algorithm that changes swivel behavior by speed
-while the car stays fixed.
-
-**Agent changes**
-
-- Added a low-beam dashboard with a rotating steering wheel drawing, wheel
-  slider, draggable speed bar, speed readout, response percentage, and actual
-  matrix swivel readout. The high-beam tab keeps the dashboard hidden and
-  both matrices centered.
-- Added a preview rule: clamp wheel input to ±90° and speed to 0–120 km/h,
-  then set yaw to `(wheel / 90°) × 12° × (1 − 0.5 × speed / 120)`. Full wheel
-  input gives 12° at 0 km/h, 9° at 60 km/h, and 6° at 120 km/h. The road and
-  ego car remain stationary. These are illustrative values, not ECU firmware.
-- Updated the viewer, project, component, hardware, mapping, tool, and agent
-  guides. Regenerated the Code graph inventory; the curated graph and
-  functionality paths remain unchanged because the dashboard is preview
-  tooling rather than an implemented AFS runtime path.
-
-**Files modified**
-
-- `tools/system_visualization/beam-model.js`, `beam-model.test.cjs`,
-  `beam-segments.html`, `beam-segments.css`, `beam-segments.js`,
-  `beam-segments.test.cjs`, `code-index.js`,
-  `tools/system_visualization/README.md`
-- `README.md`, `docs/tools/tools.md`,
+  `docs/architecture/data-flow.md`,
+  `docs/architecture/runner-bridge-communication.md`,
+  `docs/architecture/components/bridge.md`,
+  `docs/architecture/components/afs-ecu.md`,
   `docs/architecture/components/headlights.md`,
-  `docs/architecture/adb-grid-and-lamps.md`, `docs/hardware/visual.md`,
+  `docs/architecture/components/metadrive.md`,
+  `agents/working-context.md`, `agents/plan/feat-bridge-can-encoding.md`,
+  `tools/system_visualization/README.md`,
+  `tools/system_visualization/can-messages/index.html`,
+  `tools/system_visualization/can-messages/can-messages.js`,
+  `tools/system_visualization/tests/can-messages.test.cjs`,
+  `tools/system_visualization/beam-visual/beam-segments.html`,
+  `agents/prompt-tracking.md`
+
+**Verification**
+
+- No old `0x310` ID or superseded speed/object spec path remains in active files.
+  Markdown link and fence checks, code inventory freshness, graph validation,
+  viewer JavaScript syntax, and `git diff --check` pass. Tests were not run.
+
+### 2026-10-20 - Lower AFS Status CAN Priority
+
+**User prompt**
+
+User requested that `AFS_Status` have a larger CAN identifier than steering,
+speed, vehicle-grid, and dashboard-command frames because status reporting is
+not critical.
+
+**Agent changes**
+
+- Changed the status identifier from `0x100` to `0x500`, giving it lower bus
+  arbitration priority than `0x200`, `0x300`, `0x310`, and `0x400`.
+- Updated the message specification, CAN overview, architecture references,
+  branch context, and static CAN viewer to show the new identifier and order.
+
+**Files modified**
+
+- `docs/can/README.md`, `docs/can/messages/0x200_Vehicle_Steering.md`,
+  `docs/can/messages/0x300_Vehicle_Speed.md`,
+  `docs/can/messages/0x500_AFS_Status.md`,
+  `docs/can/messages/0x400_Dashboard_Command.md`,
+  `docs/architecture/adb-grid-and-lamps.md`,
+  `docs/architecture/components/afs-ecu.md`,
+  `docs/architecture/components/headlights.md`,
+  `docs/architecture/data-flow.md`, `agents/working-context.md`,
+  `agents/plan/feat-bridge-can-encoding.md`,
+  `tools/system_visualization/README.md`,
+  `tools/system_visualization/can-messages/`,
+  `agents/prompt-tracking.md`
+
+**Verification**
+
+- At that point, no stale AFS_Status use of `0x100` remained in active files.
+  Code inventory freshness, graph validation, CAN viewer JavaScript syntax,
+  and `git diff --check` pass; tests were not run.
+
+### 2026-10-20 - Implement CAN Signal Validation And Projection
+
+**User prompt**
+
+User asked for validation and encoding from the agreed CAN formats while
+creating the DBC in a parallel session, and asked how generated C codecs fit
+the transmit path.
+
+**Agent changes**
+
+- Clarified that C++ validates and prepares signal values, cantools generates
+  C signal encoders/message packers from the CANdb++ DBC, and a later
+  SocketCAN layer sends `{ID, DLC, payload}` frames.
+- Added a standalone `CanEncoder` API for freshness/validity, steering and
+  speed quantization/saturation, alive counters, and 10-sector full-footprint
+  vehicle projection. It is not wired into the executable and does not create
+  payload bytes until the DBC and generated codec are available.
+- Updated the plan, bridge/CAN documentation, and code graph to distinguish
+  implemented signal preparation from pending DBC payload packing/transport.
+
+**Files modified**
+
+- `bridge/CMakeLists.txt`, `bridge/include/afs_bridge/can_encoder.hpp`,
+  `bridge/src/can/can_encoder.cpp`, `bridge/tests/can_encoder_test.cpp`,
+  `bridge/README.md`, `bridge/src/can/README.md`, `bridge/tests/README.md`,
+  `README.md`,
+  `docs/architecture/components/bridge.md`, `docs/can/README.md`,
+  `docs/development.md`, `agents/plan/feat-bridge-can-encoding.md`,
+  `agents/working-context.md`,
+  `tools/system_visualization/code-graph/graph-data.js`,
+  `agents/prompt-tracking.md`
+
+**Verification**
+
+- The bridge compiles. Code inventory freshness, graph validation, graph-data
+  JavaScript syntax, and `git diff --check` pass. Signal validation/projection
+  CTest cases passed before the final saturation endpoint adjustment; they
+  were not rerun after that small change. Firefox could not start because the
+  installed Snap requires the unavailable `snapd.apparmor` service, so the
+  graph was checked through its validator but not opened visually. The
+  DBC-generated payload and golden-frame checks are pending the DBC.
+
+
+### 2026-10-20 - Keep CAN Schema And Runtime Under Bridge
+
+**User prompt**
+
+User specified that laptop-side CAN implementation belongs under `bridge/`,
+that there should be no root `can/` directory, and that Vector CANdb++ will
+create/edit the DBC.
+
+**Agent changes**
+
+- Removed the handwritten DBC draft and the now-empty root `can/` directory.
+- Updated project docs to place the CANdb++-authored DBC at
+  `bridge/can/afs.dbc`; the approved cantools workflow checks generated C files
+  into `bridge/src/can/generated/`.
+- No CAN runtime implementation was added.
+
+**Files modified**
+
+- `README.md`, `docs/README.md`, `docs/temporary/desired_file_system.md`,
+  `docs/can/README.md`, `docs/architecture/components/bridge.md`,
+  `agents/plan/feat-bridge-can-encoding.md`, `agents/working-context.md`,
+  `agents/prompt-tracking.md`
+
+**Verification**
+
+- Relative Markdown links and fenced blocks pass in the eight updated
+  documents. `git diff --check` passes; no runtime code changed.
+
+
+### 2026-10-20 - Select Zephyr For STM32 Firmware
+
+**User prompt**
+
+User said they want to use Zephyr with the STM32 ECU.
+
+**Agent changes**
+
+- Recorded Zephyr RTOS with C application code as the planned MCU firmware
+  platform, while keeping firmware implementation status unchanged.
+- Documented that the exact development board must be confirmed before
+  selecting a Zephyr target or assigning peripheral pins. The official
+  `black_f407ve` target is available for STM32F407VET6 but is not actively
+  maintained.
+
+**Files modified**
+
+- `README.md`, `docs/architecture/overview.md`,
+  `docs/architecture/components/afs-ecu.md`, `docs/can/README.md`,
+  `docs/hardware/hardware.md`, `docs/temporary/desired_file_system.md`,
+  `agents/roadmap.md`, `agents/working-context.md`,
+  `agents/prompt-tracking.md`
+
+**Verification**
+
+- Checked changed Markdown links, fenced blocks, and whitespace. No firmware
+  code or tests were changed.
+
+### 2026-10-20 - Document CAN Editing And Monitoring Tools
+
+**User prompt**
+
+User asked to document Vector CANdb++ for DBC editing and SavvyCAN for
+visualizing DBC-decoded CAN traffic from the host.
+
+**Agent changes**
+
+- Documented CANdb++ as the DBC editor and SavvyCAN as the live CAN viewer for
+  SocketCAN interfaces. Clarified that live viewing needs a transmitting node
+  and a compatible USB-CAN adapter, and that the project CAN runtime and DBC
+  are not implemented yet.
+- Added the SocketCAN compatibility constraint to the planned hardware list.
+
+**Files modified**
+
+- `docs/can/README.md`, `docs/hardware/hardware.md`,
+  `agents/prompt-tracking.md`
+
+**Verification**
+
+- Relative Markdown links and code-fence pairing pass for all three updated
+  documents. `git diff --check` passes.
+
+### 2026-10-20 - Show Byte Maps In The CAN Messages Tab
+
+**User prompt**
+
+User confirmed that an out-of-range value should be marked invalid, and asked
+for an eight-byte visual map with bit arrows linked to the current signal names.
+
+**Agent changes**
+
+- Kept saturated steering and speed values invalid so the ECU ignores the
+  clamped payload values.
+- Added a panel per payload byte, split into bit 7 through bit 0, with sample
+  bit values and signal callouts linking to the existing table rows. DLC 8
+  messages show eight panels; the three-byte `0x400` shows three.
+- Updated the CAN page description, project/tool README, working context, and
+  added tests for full bit coverage, sample bits, multi-byte signals, and links.
+
+**Files modified**
+
+- `docs/can/messages/0x200_Vehicle_Steering.md`,
+  `docs/can/messages/0x300_Vehicle_Speed.md`,
+  `agents/plan/feat-bridge-can-encoding.md`,
+  `README.md`, `tools/system_visualization/README.md`,
+  `tools/system_visualization/can-messages/index.html`,
+  `tools/system_visualization/can-messages/can-messages.css`,
+  `tools/system_visualization/can-messages/can-messages.js`,
+  `tools/system_visualization/tests/can-messages.test.cjs`,
+  `tools/system_visualization/code-graph/code-index.js`,
   `agents/working-context.md`, `agents/prompt-tracking.md`
 
 **Verification**
 
-- Twelve page interaction tests and ten lamp-model tests pass, including
-  speed response, wheel direction, full-swivel viewport, fixed car position,
-  high-beam centering, and configurable dashboard limits.
-- Inventory freshness passes at 124 nodes; graph validation passes with 43
-  visible nodes, 40 interactions, seven layers, and seven functionality paths.
-  JavaScript syntax and Git whitespace checks pass. Browser screenshot review
-  remains unavailable in this shell; interaction tests cover the dashboard.
-
-### 2026-10-18 - Zoom Low-Beam Road Preview
-
-**User prompt**
-
-User asked to zoom in the Low beam visual because its 40 m shine occupied too
-little of the 100 m road map.
-
-**Agent changes**
-
-- Cropped the low-beam SVG view to the first 60 m by default and narrowed the
-  view width so the beam appears 25% larger on screen. The high-beam view and
-  light geometry remain unchanged. The crop width accounts for both full
-  steering extremes to keep the beam visible.
-- Moved the low-beam range cap, sector labels, and grid debug panel into the
-  close-up. Updated the range readout and explanatory text to identify the
-  visible depth and note that farther vehicles leave the frame.
-- Updated the project, tool, and agent context guides. Regenerated the Code
-  graph inventory; curated graph and functionality paths remain unchanged
-  because the zoom affects only explanatory preview tooling.
-
-**Files modified**
-
-- `tools/system_visualization/beam-segments.js`, `beam-segments.test.cjs`,
-  `code-index.js`, `tools/system_visualization/README.md`
-- `README.md`, `agents/working-context.md`, `agents/prompt-tracking.md`
-
-**Verification**
-
-- Ten page interaction tests and nine lamp geometry tests pass. The new test
-  checks the low-beam viewport, range label, and both full-swivel footprints.
-- Inventory freshness passes at 124 nodes; graph validation passes with 43
-  visible nodes, 40 interactions, seven layers, and seven functionality paths.
-  JavaScript syntax and Git whitespace checks pass. Graphical browser review
-  remains unavailable in this shell; DOM geometry tests cover the close-up.
+- All four System Visualization test files pass. CAN byte-map tests verify all
+  sample bits map to signals and callouts link to the matching table rows.
+- Inventory freshness and graph validation pass (135 source entries, 43
+  visible nodes, 40 interactions, seven layers, seven paths). JavaScript
+  syntax checks, Markdown links/fences, and `git diff --check` pass. The curated
+  graph is unchanged because this tool-page change adds no system runtime path.
+- A browser preview could not run: local server binding is denied in the
+  sandbox, and Firefox Snap refuses to launch because `snapd.apparmor` is not
+  active.

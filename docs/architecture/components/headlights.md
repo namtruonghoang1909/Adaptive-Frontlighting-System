@@ -67,7 +67,7 @@ Expected behavior:
 
 ## High-Beam ADB Beam Dodging
 
-High-beam beam dodging uses accepted surrounding-object input from `0x310 Vehicle_Object`. The ECU uses later-defined ADB logic, calibrated glare thresholds, and hysteresis to decide which matrix columns to mask.
+High-beam beam dodging uses accepted surrounding-object input from `0x300 Vehicle_Object`. The ECU uses later-defined ADB logic, calibrated glare thresholds, and hysteresis to decide which matrix columns to mask.
 
 Expected behavior:
 
@@ -113,7 +113,7 @@ detected vehicle moves near a decision boundary or distance threshold.
 
 ## Logical Input And Physical Zones
 
-`0x310 Vehicle_Object` provides surrounding-object input, and
+`0x300 Vehicle_Object` provides surrounding-object input, and
 `AppliedDimSectorMask` reports logical sectors whose mapped high-beam pixels
 were switched off. The proposed physical bench uses one 8x8 matrix per
 headlight. The High beam visual preview uses distance to choose a coarse count of
@@ -140,7 +140,7 @@ level shifting for the selected modules.
 
 ## Status Observability
 
-The Dashboard should be able to visualize the headlight state from decoded `0x100 AFS_Status` provided through the C++ bridge IPC interface:
+The Dashboard should be able to visualize the headlight state from decoded `0x500 AFS_Status` provided through the C++ bridge IPC interface:
 
 | Status data | Meaning |
 |---|---|

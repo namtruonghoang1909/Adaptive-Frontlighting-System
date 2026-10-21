@@ -6,7 +6,7 @@ links.
 
 | Tool | Purpose |
 |---|---|
-| [system_visualization/](system_visualization/README.md) | [Code graph](system_visualization/), static [System in Action](system_visualization/system-in-action.html) 3D view, [High beam visual](system_visualization/beam-segments.html), and [Low beam visual](system_visualization/beam-segments.html?mode=low) |
+| [system_visualization/](system_visualization/README.md) | [Code graph](system_visualization/code-graph/index.html), static [System in Action](system_visualization/system-in-action/index.html) 3D view, [High beam visual](system_visualization/beam-visual/beam-segments.html), and [Low beam visual](system_visualization/beam-visual/beam-segments.html?mode=low) |
 
 Start System Visualization with
 `bash tools/system_visualization/start_system_visualization.sh` and open the

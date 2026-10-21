@@ -105,7 +105,10 @@ def make_scene(state: dict[str, Any]) -> SceneSnapshot:
         kinematics=EgoKinematicsSnapshot(
             velocity_mps=(state["speed_mps"], 0.0), heading_rad=0.0
         ),
-        action=EgoActionSnapshot(steering_deg=state["steering_deg"]),
+        action=EgoActionSnapshot(
+            steering_deg=state["steering_deg"],
+            max_steering_deg=state["max_steering_deg"],
+        ),
         source="ipc-e2e-test",
         seed=31,
         episode_step=state["episode_step"],
@@ -147,6 +150,7 @@ def run(executable: str) -> None:
     state: dict[str, Any] = {
         "episode_step": 4,
         "steering_deg": 12.5,
+        "max_steering_deg": 60.0,
         "speed_mps": 8.0,
         "objects": [{"id": "vehicle-a", "x": 28.0, "y": -2.0}],
     }
@@ -181,7 +185,9 @@ def run(executable: str) -> None:
             first = bridge.wait_for_scene()
             if first["sequence"] < 1 or first["sample"]["episode_step"] != 4:
                 raise AssertionError(f"unexpected first scene sample: {first}")
-            if first["ego"]["steering_deg"] != 12.5 or first["ego"]["longitudinal_speed_mps"] != 8.0:
+            if (first["ego"]["steering_deg"] != 12.5
+                    or first["ego"]["max_steering_deg"] != 60.0
+                    or first["ego"]["longitudinal_speed_mps"] != 8.0):
                 raise AssertionError(f"ego fields did not cross IPC correctly: {first['ego']}")
             if len(first["objects"]) != 1 or first["objects"][0]["id"] != "vehicle-a":
                 raise AssertionError(f"surrounding objects did not cross IPC correctly: {first['objects']}")

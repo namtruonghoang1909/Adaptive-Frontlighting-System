@@ -7,9 +7,9 @@ progress.
 
 The repository's interactive architecture and code-navigation tool lives in
 [`tools/system_visualization/`](../tools/system_visualization/README.md). Its authoritative graph
-model is `tools/system_visualization/graph-data.js`. Keep tool implementation under `tools/`;
+model is `tools/system_visualization/code-graph/graph-data.js`. Keep tool implementation under `tools/`;
 project documentation should contain only concise descriptions and links to the viewer.
-The source inventory is generated separately in `tools/system_visualization/code-index.js`
+The source inventory is generated separately in `tools/system_visualization/code-graph/code-index.js`
 by `build_index.py`; regenerate it as part of every code-change task. It
 supports source-path and graph-mapping validation. Curated implemented classes,
 important entry functions, their methods or fields, and their interactions in
@@ -20,7 +20,7 @@ runtime classes exist. Its `layout` gives each parent node a local position
 within its layer panel. Place new parents near their callers and outputs, with
 room for expanded members and interaction arrows.
 Ordered paths for the Functionalities section live in
-`tools/system_visualization/functionality-data.js`. Keep its steps and evidence
+`tools/system_visualization/code-graph/functionality-data.js`. Keep its steps and evidence
 aligned with implemented calls and data handoffs. The overlay uses the same
 graph nodes and does not replace the normal graph interaction model.
 
@@ -56,7 +56,7 @@ wherever the change affects what a reader needs to understand:
 | Add or change an implemented feature path | Update affected ordered steps in `functionality-data.js`; add a new listed functionality when it is important to understanding the system. |
 | Move a planned layer into runtime code | Add only implemented classes and relationships, and update the layer status. |
 
-Update `tools/system_visualization/graph-data.js` for affected descriptions, nodes,
+Update `tools/system_visualization/code-graph/graph-data.js` for affected descriptions, nodes,
 edges, statuses, links, and mappings. Regenerating the inventory
 alone does not capture behavior or data-flow changes. If new source locations or
 implementation milestones outgrow the generator's
@@ -98,7 +98,7 @@ Before finishing any task that changes code:
 
 1. Review the code changes.
 2. Review the inventory and curated graph against every code change, including behavior-only changes.
-3. Update affected descriptions, relationships, statuses, source links, and mappings in `tools/system_visualization/graph-data.js`, and affected ordered paths in `functionality-data.js`. If neither curated model changes, record why the existing representation remains accurate.
+3. Update affected descriptions, relationships, statuses, source links, and mappings in `tools/system_visualization/code-graph/graph-data.js`, and affected ordered paths in `functionality-data.js`. If neither curated model changes, record why the existing representation remains accurate.
 4. Regenerate the source inventory, then run its freshness check, graph validator, and JavaScript syntax checks.
 5. Open the viewer and check affected class/member expansion, direct-connection
    focus, functionality selection and clearing, search, layer filtering,
@@ -112,14 +112,14 @@ Before finishing any task that changes code:
 Run this from the repository root:
 
 ```bash
-python3 tools/system_visualization/build_index.py
-python3 tools/system_visualization/build_index.py --check
-node tools/system_visualization/validate.mjs
-node --check tools/system_visualization/graph-data.js
-node --check tools/system_visualization/code-index.js
-node --check tools/system_visualization/viewer.js
-node --check tools/system_visualization/functionality-data.js
-node --check tools/system_visualization/functionality-overlay.js
-node --check tools/system_visualization/validate.mjs
+python3 tools/system_visualization/code-graph/build_index.py
+python3 tools/system_visualization/code-graph/build_index.py --check
+node tools/system_visualization/code-graph/validate.mjs
+node --check tools/system_visualization/code-graph/graph-data.js
+node --check tools/system_visualization/code-graph/code-index.js
+node --check tools/system_visualization/code-graph/viewer.js
+node --check tools/system_visualization/code-graph/functionality-data.js
+node --check tools/system_visualization/code-graph/functionality-overlay.js
+node --check tools/system_visualization/code-graph/validate.mjs
 git diff --check
 ```

@@ -919,6 +919,26 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "bridge/src/app/can_frame_logger.cpp",
+    "label": "can_frame_logger.cpp",
+    "parent": "bridge/src/app",
+    "kind": "file",
+    "path": "bridge/src/app/can_frame_logger.cpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/app/can_frame_logger_main.cpp",
+    "label": "can_frame_logger_main.cpp",
+    "parent": "bridge/src/app",
+    "kind": "file",
+    "path": "bridge/src/app/can_frame_logger_main.cpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
     "id": "bridge/src/app/runner_bridge_main.cpp",
     "label": "runner_bridge_main.cpp",
     "parent": "bridge/src/app",
@@ -934,6 +954,106 @@ globalThis.CODE_INDEX = [
     "parent": "bridge",
     "kind": "module",
     "path": "bridge/src/can",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/generated",
+    "label": "generated",
+    "parent": "bridge/src/can",
+    "kind": "module",
+    "path": "bridge/src/can/generated",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/generated/afs.c",
+    "label": "afs.c",
+    "parent": "bridge/src/can/generated",
+    "kind": "file",
+    "path": "bridge/src/can/generated/afs.c",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/generated/afs.h",
+    "label": "afs.h",
+    "parent": "bridge/src/can/generated",
+    "kind": "file",
+    "path": "bridge/src/can/generated/afs.h",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/generated/afs.h#afs_vehicle_speed_t",
+    "label": "afs_vehicle_speed_t",
+    "parent": "bridge/src/can/generated/afs.h",
+    "kind": "class",
+    "path": "bridge/src/can/generated/afs.h",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/generated/afs.h#afs_vehicle_steering_t",
+    "label": "afs_vehicle_steering_t",
+    "parent": "bridge/src/can/generated/afs.h",
+    "kind": "class",
+    "path": "bridge/src/can/generated/afs.h",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/generated/afs.h#afs_vehicle_object_t",
+    "label": "afs_vehicle_object_t",
+    "parent": "bridge/src/can/generated/afs.h",
+    "kind": "class",
+    "path": "bridge/src/can/generated/afs.h",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/generated/afs.h#afs_dashboard_command_t",
+    "label": "afs_dashboard_command_t",
+    "parent": "bridge/src/can/generated/afs.h",
+    "kind": "class",
+    "path": "bridge/src/can/generated/afs.h",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/generated/afs.h#afs_afs_status_t",
+    "label": "afs_afs_status_t",
+    "parent": "bridge/src/can/generated/afs.h",
+    "kind": "class",
+    "path": "bridge/src/can/generated/afs.h",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/can_encoder.cpp",
+    "label": "can_encoder.cpp",
+    "parent": "bridge/src/can",
+    "kind": "file",
+    "path": "bridge/src/can/can_encoder.cpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/can_frame_encoder.cpp",
+    "label": "can_frame_encoder.cpp",
+    "parent": "bridge/src/can",
+    "kind": "file",
+    "path": "bridge/src/can/can_frame_encoder.cpp",
     "status": "implemented",
     "color": "#82c6a0",
     "description": ""
@@ -979,6 +1099,126 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "bridge/include/afs_bridge/can_encoder.hpp",
+    "label": "can_encoder.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/can_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_encoder.hpp#SteeringCanSignals",
+    "label": "SteeringCanSignals",
+    "parent": "bridge/include/afs_bridge/can_encoder.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_encoder.hpp#SpeedCanSignals",
+    "label": "SpeedCanSignals",
+    "parent": "bridge/include/afs_bridge/can_encoder.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_encoder.hpp#VehicleSectorSignals",
+    "label": "VehicleSectorSignals",
+    "parent": "bridge/include/afs_bridge/can_encoder.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_encoder.hpp#VehicleObjectCanSignals",
+    "label": "VehicleObjectCanSignals",
+    "parent": "bridge/include/afs_bridge/can_encoder.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_encoder.hpp#CanSignalValues",
+    "label": "CanSignalValues",
+    "parent": "bridge/include/afs_bridge/can_encoder.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_encoder.hpp#CanEncoder",
+    "label": "CanEncoder",
+    "parent": "bridge/include/afs_bridge/can_encoder.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_frame_encoder.hpp",
+    "label": "can_frame_encoder.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/can_frame_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_frame_encoder.hpp#CanFrame",
+    "label": "CanFrame",
+    "parent": "bridge/include/afs_bridge/can_frame_encoder.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_frame_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_frame_encoder.hpp#CanFrameEncoder",
+    "label": "CanFrameEncoder",
+    "parent": "bridge/include/afs_bridge/can_frame_encoder.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_frame_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_frame_logger.hpp",
+    "label": "can_frame_logger.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/can_frame_logger.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_frame_logger.hpp#CanFrameLogger",
+    "label": "CanFrameLogger",
+    "parent": "bridge/include/afs_bridge/can_frame_logger.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_frame_logger.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
     "id": "bridge/include/afs_bridge/runner_ipc.hpp",
     "label": "runner_ipc.hpp",
     "parent": "bridge",
@@ -1017,6 +1257,47 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#82c6a0",
     "description": ""
+  },
+  {
+    "id": "bridge/scripts/run_can_frame_smoke.sh",
+    "label": "run_can_frame_smoke.sh",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/scripts/run_can_frame_smoke.sh",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/scripts/run_runner_bridge.sh",
+    "label": "run_runner_bridge.sh",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/scripts/run_runner_bridge.sh",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/scripts/verify_can_frame_capture.py",
+    "label": "verify_can_frame_capture.py",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/scripts/verify_can_frame_capture.py",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/scripts/verify_can_frame_capture.py#main",
+    "label": "main",
+    "parent": "bridge/scripts/verify_can_frame_capture.py",
+    "kind": "function",
+    "path": "bridge/scripts/verify_can_frame_capture.py",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": "",
+    "line": 14
   },
   {
     "id": "dashboard",
@@ -1099,41 +1380,263 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
-    "id": "tools/system_visualization/assets",
-    "label": "assets",
+    "id": "tools/system_visualization/beam-visual",
+    "label": "beam-visual",
     "parent": "tools/system_visualization",
     "kind": "module",
-    "path": "tools/system_visualization/assets",
+    "path": "tools/system_visualization/beam-visual",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
   },
   {
-    "id": "tools/system_visualization/assets/system-in-action",
-    "label": "system-in-action",
-    "parent": "tools/system_visualization/assets",
-    "kind": "module",
-    "path": "tools/system_visualization/assets/system-in-action",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "tools/system_visualization/beam-model.js",
+    "id": "tools/system_visualization/beam-visual/beam-model.js",
     "label": "beam-model.js",
-    "parent": "tools/system_visualization",
+    "parent": "tools/system_visualization/beam-visual",
     "kind": "file",
-    "path": "tools/system_visualization/beam-model.js",
+    "path": "tools/system_visualization/beam-visual/beam-model.js",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
   },
   {
-    "id": "tools/system_visualization/beam-segments.css",
+    "id": "tools/system_visualization/beam-visual/beam-segments.css",
     "label": "beam-segments.css",
-    "parent": "tools/system_visualization",
+    "parent": "tools/system_visualization/beam-visual",
     "kind": "file",
-    "path": "tools/system_visualization/beam-segments.css",
+    "path": "tools/system_visualization/beam-visual/beam-segments.css",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/beam-visual/beam-segments.html",
+    "label": "beam-segments.html",
+    "parent": "tools/system_visualization/beam-visual",
+    "kind": "file",
+    "path": "tools/system_visualization/beam-visual/beam-segments.html",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/beam-visual/beam-segments.js",
+    "label": "beam-segments.js",
+    "parent": "tools/system_visualization/beam-visual",
+    "kind": "file",
+    "path": "tools/system_visualization/beam-visual/beam-segments.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/can-messages",
+    "label": "can-messages",
+    "parent": "tools/system_visualization",
+    "kind": "module",
+    "path": "tools/system_visualization/can-messages",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/can-messages/can-messages.css",
+    "label": "can-messages.css",
+    "parent": "tools/system_visualization/can-messages",
+    "kind": "file",
+    "path": "tools/system_visualization/can-messages/can-messages.css",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/can-messages/can-messages.js",
+    "label": "can-messages.js",
+    "parent": "tools/system_visualization/can-messages",
+    "kind": "file",
+    "path": "tools/system_visualization/can-messages/can-messages.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/can-messages/index.html",
+    "label": "index.html",
+    "parent": "tools/system_visualization/can-messages",
+    "kind": "file",
+    "path": "tools/system_visualization/can-messages/index.html",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/code-graph",
+    "label": "code-graph",
+    "parent": "tools/system_visualization",
+    "kind": "module",
+    "path": "tools/system_visualization/code-graph",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/code-graph/build_index.py",
+    "label": "build_index.py",
+    "parent": "tools/system_visualization/code-graph",
+    "kind": "file",
+    "path": "tools/system_visualization/code-graph/build_index.py",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/code-graph/build_index.py#build_index",
+    "label": "build_index",
+    "parent": "tools/system_visualization/code-graph/build_index.py",
+    "kind": "function",
+    "path": "tools/system_visualization/code-graph/build_index.py",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": "",
+    "line": 24
+  },
+  {
+    "id": "tools/system_visualization/code-graph/build_index.py#main",
+    "label": "main",
+    "parent": "tools/system_visualization/code-graph/build_index.py",
+    "kind": "function",
+    "path": "tools/system_visualization/code-graph/build_index.py",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": "",
+    "line": 99
+  },
+  {
+    "id": "tools/system_visualization/code-graph/functionality-data.js",
+    "label": "functionality-data.js",
+    "parent": "tools/system_visualization/code-graph",
+    "kind": "file",
+    "path": "tools/system_visualization/code-graph/functionality-data.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/code-graph/functionality-overlay.js",
+    "label": "functionality-overlay.js",
+    "parent": "tools/system_visualization/code-graph",
+    "kind": "file",
+    "path": "tools/system_visualization/code-graph/functionality-overlay.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/code-graph/graph-data.js",
+    "label": "graph-data.js",
+    "parent": "tools/system_visualization/code-graph",
+    "kind": "file",
+    "path": "tools/system_visualization/code-graph/graph-data.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/code-graph/index.html",
+    "label": "index.html",
+    "parent": "tools/system_visualization/code-graph",
+    "kind": "file",
+    "path": "tools/system_visualization/code-graph/index.html",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/code-graph/validate.mjs",
+    "label": "validate.mjs",
+    "parent": "tools/system_visualization/code-graph",
+    "kind": "file",
+    "path": "tools/system_visualization/code-graph/validate.mjs",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/code-graph/viewer.js",
+    "label": "viewer.js",
+    "parent": "tools/system_visualization/code-graph",
+    "kind": "file",
+    "path": "tools/system_visualization/code-graph/viewer.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/shared",
+    "label": "shared",
+    "parent": "tools/system_visualization",
+    "kind": "module",
+    "path": "tools/system_visualization/shared",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/shared/code-timestamp.js",
+    "label": "code-timestamp.js",
+    "parent": "tools/system_visualization/shared",
+    "kind": "file",
+    "path": "tools/system_visualization/shared/code-timestamp.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/shared/styles.css",
+    "label": "styles.css",
+    "parent": "tools/system_visualization/shared",
+    "kind": "file",
+    "path": "tools/system_visualization/shared/styles.css",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/system-in-action",
+    "label": "system-in-action",
+    "parent": "tools/system_visualization",
+    "kind": "module",
+    "path": "tools/system_visualization/system-in-action",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/system-in-action/assets",
+    "label": "assets",
+    "parent": "tools/system_visualization/system-in-action",
+    "kind": "module",
+    "path": "tools/system_visualization/system-in-action/assets",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/system-in-action/index.html",
+    "label": "index.html",
+    "parent": "tools/system_visualization/system-in-action",
+    "kind": "file",
+    "path": "tools/system_visualization/system-in-action/index.html",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/system-in-action/system-in-action.css",
+    "label": "system-in-action.css",
+    "parent": "tools/system_visualization/system-in-action",
+    "kind": "file",
+    "path": "tools/system_visualization/system-in-action/system-in-action.css",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
@@ -1144,88 +1647,6 @@ globalThis.CODE_INDEX = [
     "parent": "tools/system_visualization",
     "kind": "file",
     "path": "tools/system_visualization/beam-segments.html",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "tools/system_visualization/beam-segments.js",
-    "label": "beam-segments.js",
-    "parent": "tools/system_visualization",
-    "kind": "file",
-    "path": "tools/system_visualization/beam-segments.js",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "tools/system_visualization/build_index.py",
-    "label": "build_index.py",
-    "parent": "tools/system_visualization",
-    "kind": "file",
-    "path": "tools/system_visualization/build_index.py",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "tools/system_visualization/build_index.py#build_index",
-    "label": "build_index",
-    "parent": "tools/system_visualization/build_index.py",
-    "kind": "function",
-    "path": "tools/system_visualization/build_index.py",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": "",
-    "line": 24
-  },
-  {
-    "id": "tools/system_visualization/build_index.py#main",
-    "label": "main",
-    "parent": "tools/system_visualization/build_index.py",
-    "kind": "function",
-    "path": "tools/system_visualization/build_index.py",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": "",
-    "line": 96
-  },
-  {
-    "id": "tools/system_visualization/code-timestamp.js",
-    "label": "code-timestamp.js",
-    "parent": "tools/system_visualization",
-    "kind": "file",
-    "path": "tools/system_visualization/code-timestamp.js",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "tools/system_visualization/functionality-data.js",
-    "label": "functionality-data.js",
-    "parent": "tools/system_visualization",
-    "kind": "file",
-    "path": "tools/system_visualization/functionality-data.js",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "tools/system_visualization/functionality-overlay.js",
-    "label": "functionality-overlay.js",
-    "parent": "tools/system_visualization",
-    "kind": "file",
-    "path": "tools/system_visualization/functionality-overlay.js",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "tools/system_visualization/graph-data.js",
-    "label": "graph-data.js",
-    "parent": "tools/system_visualization",
-    "kind": "file",
-    "path": "tools/system_visualization/graph-data.js",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
@@ -1251,51 +1672,11 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
-    "id": "tools/system_visualization/styles.css",
-    "label": "styles.css",
-    "parent": "tools/system_visualization",
-    "kind": "file",
-    "path": "tools/system_visualization/styles.css",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "tools/system_visualization/system-in-action.css",
-    "label": "system-in-action.css",
-    "parent": "tools/system_visualization",
-    "kind": "file",
-    "path": "tools/system_visualization/system-in-action.css",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
     "id": "tools/system_visualization/system-in-action.html",
     "label": "system-in-action.html",
     "parent": "tools/system_visualization",
     "kind": "file",
     "path": "tools/system_visualization/system-in-action.html",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "tools/system_visualization/validate.mjs",
-    "label": "validate.mjs",
-    "parent": "tools/system_visualization",
-    "kind": "file",
-    "path": "tools/system_visualization/validate.mjs",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "tools/system_visualization/viewer.js",
-    "label": "viewer.js",
-    "parent": "tools/system_visualization",
-    "kind": "file",
-    "path": "tools/system_visualization/viewer.js",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""

@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { newestCodeModification, formatLocalTimestamp } = require("./code-timestamp.js");
+const { newestCodeModification, formatLocalTimestamp } = require("../shared/code-timestamp.js");
 
 const responseWithDate = (value) => ({
   ok: true,
@@ -10,9 +10,9 @@ const responseWithDate = (value) => ({
 test("the timestamp uses the newest modification reported for the page and its local assets", async () => {
   const requested = [];
   const updated = await newestCodeModification({
-    pageUrl: "http://127.0.0.1:8000/tools/system_visualization/beam-segments.html?mode=low",
+    pageUrl: "http://127.0.0.1:8000/tools/system_visualization/beam-visual/beam-segments.html?mode=low",
     pageLastModified: "Sun, 18 Oct 2026 09:00:00 GMT",
-    assetUrls: ["styles.css", "beam-segments.js", "https://cdn.example/app.js"],
+    assetUrls: ["../shared/styles.css", "beam-segments.js", "https://cdn.example/app.js"],
     fetcher: async (url, options) => {
       requested.push({ url, options });
       if (url.endsWith("beam-segments.js")) return responseWithDate("Sun, 18 Oct 2026 10:05:06 GMT");
@@ -28,9 +28,9 @@ test("the timestamp uses the newest modification reported for the page and its l
 
 test("the timestamp falls back to the page date when asset metadata is unavailable", async () => {
   const updated = await newestCodeModification({
-    pageUrl: "http://127.0.0.1:8000/index.html",
+    pageUrl: "http://127.0.0.1:8000/tools/system_visualization/code-graph/index.html",
     pageLastModified: "Sun, 18 Oct 2026 09:00:00 GMT",
-    assetUrls: ["styles.css"],
+    assetUrls: ["../shared/styles.css"],
     fetcher: async () => { throw new Error("server unavailable"); },
   });
   assert.equal(updated.toISOString(), "2026-10-18T09:00:00.000Z");
@@ -48,9 +48,18 @@ test("local time formatting is explicit and invalid dates are reported as unavai
 test("each visualization tab includes the shared timestamp label and loader", () => {
   const fs = require("node:fs");
   const path = require("node:path");
-  for (const page of ["index.html", "system-in-action.html", "beam-segments.html"]) {
-    const html = fs.readFileSync(path.join(__dirname, page), "utf8");
+  const toolRoot = path.resolve(__dirname, "..");
+  for (const page of [
+    "code-graph/index.html",
+    "system-in-action/index.html",
+    "beam-visual/beam-segments.html",
+    "can-messages/index.html",
+  ]) {
+    const html = fs.readFileSync(path.join(toolRoot, page), "utf8");
     assert.match(html, /<time id="codeUpdated" class="code-updated"/);
-    assert.match(html, /<script defer src="code-timestamp\.js"><\/script>/);
+    assert.match(html, /<script defer src="\.\.\/shared\/code-timestamp\.js"><\/script>/);
+    if (page === "can-messages/index.html") {
+      assert.match(html, /<script defer src="can-messages\.js"><\/script>/);
+    }
   }
 });

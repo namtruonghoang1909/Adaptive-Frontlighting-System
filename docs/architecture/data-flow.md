@@ -69,15 +69,15 @@ The existing IDs below remain provisional design values, not new constraints int
 
 | CAN ID | Message | Bus producer | Bus consumer |
 |---:|---|---|---|
+| `0x100` | `Vehicle_Speed` | C++ gateway | AFS ECU |
 | `0x200` | `Vehicle_Steering` | C++ gateway | AFS ECU |
-| `0x300` | `Vehicle_Speed` | C++ gateway | AFS ECU |
-| `0x310` | `Vehicle_Object` | C++ gateway | AFS ECU |
+| `0x300` | `Vehicle_Object` | C++ gateway | AFS ECU |
 | `0x400` | `Dashboard_Command` | C++ gateway | AFS ECU |
-| `0x100` | `AFS_Status` | AFS ECU | C++ gateway |
+| `0x500` | `AFS_Status` | AFS ECU | C++ gateway |
 
-Python converts simulator-specific state into observations. C++ converts observations into the CAN representation, including object-grid compression where the contract requires it. STM32 performs the final swivel/dimming calculations and physical output selection.
+Python converts simulator-specific state into observations. C++ converts observations into the CAN representation, including the 10-sector `0x300` grid with one occupancy bit and a cumulative four-bit subsector mask per sector. One `0x300` frame carries the complete grid; the STM32 performs the final swivel/dimming calculations and physical output selection.
 
-The planned DBC defines CAN packing and signal meaning. Generated C pack/unpack functions can serve the C++ gateway and firmware; runtime transport is native SocketCAN. Counter handling, checksums, timeouts, and multi-frame assembly require explicit application behavior alongside the DBC.
+The [CAN DBC](../../bridge/can/afs.dbc) defines CAN packing and signal meaning. Cantools-generated C pack/unpack functions are checked in and used by a standalone C++ frame encoder for `0x100`–`0x300`. A separate diagnostic logger exercises the encoders against live runner scenes, round-trips each batch with generated C unpackers, and cross-checks captured payloads with cantools; the production bridge executable does not yet call the encoder APIs. Runtime transport is planned with native SocketCAN. Counter handling, checksums, and timeouts require explicit application behavior alongside the DBC. The agreed single-frame `0x300` format does not require multi-frame assembly.
 
 ## State, Timing, And Failures
 
@@ -90,4 +90,4 @@ The planned DBC defines CAN packing and signal meaning. Generated C pack/unpack 
 - STM32 independently validates incoming CAN and handles stale/invalid data even if the gateway crashes.
 - Waking and joining the CAN worker, closing sockets, and releasing owned resources belong to coordinated gateway shutdown.
 
-Runner IPC is implemented through validated latest-scene reception. Dashboard IPC, CAN scheduling and transport, DBC conversion, and firmware behavior remain planned.
+Runner IPC is implemented through validated latest-scene reception. Standalone CAN validation, projection, and DBC frame packing are implemented; Dashboard IPC, CAN scheduling and transport, and firmware behavior remain planned.

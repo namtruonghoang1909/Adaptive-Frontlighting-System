@@ -32,6 +32,8 @@ rotating headlight platforms
 The STM32F407VE provides the CAN controller. The MCP2551 provides the electrical interface
 between STM32 CAN TX/RX and the physical CAN bus. The rig uses two feedback servos for
 horizontal swivel; cover and tilt servos are intentionally out of scope for the first build.
+The planned firmware platform is Zephyr RTOS. Confirm the exact development board before
+choosing its Zephyr target and configuring CAN, ADC, I2C, and SPI pins.
 
 ## One Headlight Module
 
@@ -63,7 +65,7 @@ values and row optics need bench calibration.
 |---|---|
 | STM32F407VE board | AFS ECU controller |
 | MCP2551 CAN transceiver | CAN physical layer transceiver |
-| CAN-to-USB adapter | Linux host connection to the real CAN bus |
+| CAN-to-USB adapter | Linux host connection to the real CAN bus; select one that exposes SocketCAN for the planned gateway and SavvyCAN monitoring |
 | Servo PCA9685 board | Shared servo PWM driver over I2C at servo frequency |
 | Left 8x8 MAX7219 matrix module | Left low/high beam pixel output and ADB masking |
 | Right 8x8 MAX7219 matrix module | Right low/high beam pixel output and ADB masking |
@@ -97,3 +99,5 @@ object bounds and optical calibration.
 - The matrix modules are display hardware for a bench demonstration. Their brightness and optics need evaluation before treating them as headlight emitters.
 - Moving-platform wiring needs strain relief and bounded yaw travel to avoid twisting wires.
 - Servo calibration, mechanical limits, matrix pixel angles, low-beam cutoff, high-beam reach, and ADB shadow margins require hardware bring-up calibration.
+
+For the planned host-side CAN workflow, Vector CANdb++ edits the DBC and SavvyCAN displays decoded traffic. See [CAN DBC editing and monitoring](../can/README.md#dbc-editing-and-live-monitoring) for the DBC, SocketCAN, and live-traffic requirements.

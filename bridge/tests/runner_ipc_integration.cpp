@@ -11,6 +11,7 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -166,7 +167,8 @@ void expect_hello_ack(int fd, const std::string& session) {
 
 std::string scene_packet(const std::string& session, std::uint64_t sequence,
                          std::uint64_t captured_ns, double steering = 2.5,
-                         double speed = 8.75, std::size_t object_count = 1) {
+                         double speed = 8.75, std::size_t object_count = 1,
+                         std::optional<double> max_steering = 60.0) {
     std::ostringstream packet;
     packet.precision(17);
     const bool truncated = object_count > 128;
@@ -178,7 +180,10 @@ std::string scene_packet(const std::string& session, std::uint64_t sequence,
            << (truncated ? "true" : "false")
            << ",\"objects_truncated\":" << (truncated ? "true" : "false") << "}"
            << ",\"ego\":{\"steering_deg\":" << steering
-           << ",\"longitudinal_speed_mps\":" << speed << "},\"objects\":[";
+           << ",\"max_steering_deg\":";
+    if (max_steering) packet << *max_steering;
+    else packet << "null";
+    packet << ",\"longitudinal_speed_mps\":" << speed << "},\"objects\":[";
     for (std::size_t index = 0; index < object_count; ++index) {
         if (index != 0) packet << ',';
         packet << "{\"id\":\"vehicle-" << index
@@ -202,6 +207,7 @@ void assert_current_scene(afs_bridge::RunnerIpcServer& server, std::uint64_t seq
     require(server.has_scene(), "receiver unexpectedly cleared the accepted scene");
     const auto scene = server.latest_scene();
     require(scene.sequence == sequence, "rejected packet changed the latest accepted sequence");
+    require(scene.ipc_faulted, "rejected packet did not latch the IPC fault state");
     require(scene.has_speed && std::abs(scene.longitudinal_speed_mps - expected_speed) < 1e-9,
             "rejected packet changed the latest accepted scene values");
 }
@@ -225,6 +231,9 @@ void run_integration_scenario() {
             "stored sample metadata did not match the delivered scene");
     require(scene.ego_valid && scene.objects_valid && scene.has_steering && scene.has_speed,
             "stored scene validity or ego fields are incorrect");
+    require(scene.max_steering_deg && std::abs(*scene.max_steering_deg - 60.0) < 1e-9,
+            "stored steering limit did not match the delivered scene");
+    require(!scene.ipc_faulted, "accepted scene unexpectedly retained an IPC fault");
     require(std::abs(scene.steering_deg - 2.5) < 1e-9 &&
                 std::abs(scene.longitudinal_speed_mps - 8.75) < 1e-9,
             "stored ego values did not match the delivered scene");
@@ -254,16 +263,37 @@ void run_integration_scenario() {
     scene = receiver.server().latest_scene();
     require(std::abs(scene.longitudinal_speed_mps - 12.25) < 1e-9 && scene.objects.size() == 128,
             "receiver did not replace the prior scene with the newer scene");
+    require(!scene.ipc_faulted, "fresh accepted scene did not clear the IPC fault");
 
     send_packet(publisher, std::string(64 * 1024 + 1, 'x'));
     assert_current_scene(receiver.server(), 2, 12.25);
-    send_packet(publisher, scene_packet(kSession, 3, monotonic_ns(), 91.0, 12.25));
-    assert_current_scene(receiver.server(), 2, 12.25);
-    send_packet(publisher, scene_packet(kSession, 3, monotonic_ns(), 2.5, 12.25, 129));
-    assert_current_scene(receiver.server(), 2, 12.25);
+    send_packet(publisher, scene_packet(kSession, 3, monotonic_ns(), 92.0, 12.25, 1, 100.0));
+    wait_for_sequence(receiver.server(), 3);
+    scene = receiver.server().latest_scene();
+    require(scene.has_steering && scene.max_steering_deg &&
+                std::abs(scene.steering_deg - 92.0) < 1e-9 &&
+                std::abs(*scene.max_steering_deg - 100.0) < 1e-9,
+            "receiver applied a fixed steering limit instead of the active MetaDrive limit");
+    require(!scene.ipc_faulted, "valid wide-range steering scene retained an IPC fault");
+
+    send_packet(publisher, scene_packet(kSession, 4, monotonic_ns(), 92.0, 12.25, 1, std::nullopt));
+    wait_for_sequence(receiver.server(), 4);
+    scene = receiver.server().latest_scene();
+    require(scene.has_steering && !scene.max_steering_deg,
+            "receiver did not preserve an unavailable steering limit as null");
+    require(!scene.ipc_faulted, "null steering limit was treated as a malformed IPC packet");
+
+    send_packet(publisher, scene_packet(kSession, 5, monotonic_ns(), 101.0, 12.25, 1, 100.0));
+    assert_current_scene(receiver.server(), 4, 12.25);
+    send_packet(publisher, scene_packet(kSession, 5, monotonic_ns(), 2.5, 12.25, 1, 0.0));
+    assert_current_scene(receiver.server(), 4, 12.25);
+    send_packet(publisher, scene_packet(kSession, 5, monotonic_ns(), 2.5, 12.25, 129));
+    assert_current_scene(receiver.server(), 4, 12.25);
 
     ::close(publisher);
     wait_for([&] { return !receiver.server().has_scene(); }, "disconnect to clear scene availability");
+    require(receiver.server().latest_scene().ipc_faulted,
+            "publisher disconnect did not invalidate the runner IPC source");
 
     const int invalid_publisher = connect_publisher(receiver.socket_path());
     send_packet(invalid_publisher, "{}");

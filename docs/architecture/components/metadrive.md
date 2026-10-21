@@ -62,9 +62,9 @@ The Python adapter filters simulator observations and normalizes coordinates. Th
 | Output | Consumer | Used for |
 |---|---|---|
 | Ego steering state/input | Python IPC adapter, then C++ bridge | `0x200 Vehicle_Steering` source |
-| Ego speed | Python IPC adapter, then C++ bridge | `0x300 Vehicle_Speed` source |
+| Ego speed | Python IPC adapter, then C++ bridge | `0x100 Vehicle_Speed` source |
 | Ego pose or heading, if needed | Python adapter | Coordinate conversion and diagnostics |
-| Surrounding-vehicle relative position | Python IPC adapter, then C++ bridge | `0x310 Vehicle_Object` source data |
+| Surrounding-vehicle relative position | Python IPC adapter, then C++ bridge | `0x300 Vehicle_Object` source data |
 | Surrounding-vehicle presence/type, if available | Python adapter | Filtering, diagnostics, and scenario validation |
 | Scenario name/state | Bridge or Dashboard | Logs and user observation |
 

@@ -33,6 +33,8 @@ Adaptive-Frontlighting-System/
 |-- bridge/
 |   |-- README.md
 |   |-- CMakeLists.txt               # C++17 baseline
+|   |-- can/
+|   |   `-- afs.dbc                  # shared CAN signal dictionary
 |   |-- include/afs_bridge/          # future public interfaces and value types
 |   |-- src/
 |   |   |-- app/                     # lifecycle and composition
@@ -50,7 +52,7 @@ Adaptive-Frontlighting-System/
 |   |   `-- models/                  # future UI-facing values
 |   `-- tests/
 |-- firmware/
-|   `-- afs_ecu/                     # future STM32F407VE Embedded C firmware
+|   `-- afs_ecu/                     # future STM32F407VE Zephyr firmware (C)
 |       |-- Core/                    # Cube-generated application code, if used
 |       |-- Drivers/                 # HAL/CMSIS, if used
 |       `-- afs/
@@ -61,8 +63,6 @@ Adaptive-Frontlighting-System/
 |           `-- calibration/         # servo and LED-zone calibration
 |-- simulation/
 |   `-- metadrive/                   # ignored upstream/local dependency
-|-- can/
-|   `-- afs.dbc                      # future shared CAN signal dictionary
 |-- contracts/
 |   `-- ipc/                         # future Python/C++ message specification
 |-- docs/
@@ -82,7 +82,7 @@ Adaptive-Frontlighting-System/
 | Simulator-independent observations and IPC publishing | `simulation_runner/src/ipc_adapter/` |
 | Local client IPC, current bridge state, and communication health | `bridge/` |
 | CAN conversion, scheduling, and SocketCAN | `bridge/src/can/` |
-| CAN signal packing, units, scaling, and enums | Future `can/afs.dbc` |
+| CAN signal packing, units, scaling, and enums | `bridge/can/afs.dbc` |
 | Operator requests and presentation | `dashboard/` |
 | Final lighting decision and hardware control | `firmware/afs_ecu/` |
 | Development helper implementations | `tools/` |

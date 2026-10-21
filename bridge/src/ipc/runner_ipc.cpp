@@ -189,8 +189,11 @@ RunnerScene parse_scene(const std::string& packet, const std::string& session, s
     result.objects_degraded=quality.at("objects_degraded").boolean(); result.objects_truncated=quality.at("objects_truncated").boolean();
     if(result.objects_truncated && !result.objects_degraded) throw std::runtime_error("truncated scans must be degraded");
     const auto& ego=root.at("ego"); result.has_steering=nullable_number(ego.at("steering_deg"),result.steering_deg);
+    result.max_steering_deg=optional_number(ego.at("max_steering_deg"));
     result.has_speed=nullable_number(ego.at("longitudinal_speed_mps"),result.longitudinal_speed_mps);
-    if(result.has_steering && std::abs(result.steering_deg)>90.0) throw std::runtime_error("steering out of range");
+    if(result.max_steering_deg && *result.max_steering_deg<=0.0) throw std::runtime_error("maximum steering angle must be positive");
+    if(result.has_steering && result.max_steering_deg &&
+       std::abs(result.steering_deg)>*result.max_steering_deg) throw std::runtime_error("steering out of range");
     if(result.has_speed && std::abs(result.longitudinal_speed_mps)>150.0) throw std::runtime_error("speed out of range");
     const auto& sample=root.at("sample");
     result.source=sample.at("source").string();
@@ -211,6 +214,7 @@ RunnerScene parse_scene(const std::string& packet, const std::string& session, s
            (o.relative_heading_rad&&std::abs(*o.relative_heading_rad)>6.3)) throw std::runtime_error("object geometry out of range");
         result.objects.push_back(std::move(o));
     }
+    result.ipc_faulted=false;
     return result;
 }
 std::string handshake_session(const std::string& packet) {
@@ -227,7 +231,8 @@ std::string handshake_session(const std::string& packet) {
 }
 }  // namespace
 
-RunnerIpcServer::RunnerIpcServer(std::string path) : path_(std::move(path)) {
+RunnerIpcServer::RunnerIpcServer(std::string path, bool log_scenes)
+    : path_(std::move(path)), log_scenes_(log_scenes) {
     if(path_.empty() || path_[0]!='/' || path_.size()>=sizeof(sockaddr_un::sun_path)) throw std::invalid_argument("socket path must be absolute and fit sun_path");
 }
 RunnerIpcServer::~RunnerIpcServer() { stop(); const int fd=listen_fd_.exchange(-1); if(fd>=0) ::close(fd); }
@@ -290,6 +295,7 @@ void RunnerIpcServer::run() {
             if(::send(client,reply.data(),reply.size(),MSG_NOSIGNAL)<0) throw std::runtime_error("hello reply failed");
             std::cout << "runner connected session=" << session << std::endl;
             std::uint64_t sequence=0; RunnerScene empty; { std::lock_guard<std::mutex> lock(state_lock_); scene_=empty; has_scene_=false; }
+            auto mark_ipc_fault=[&] { std::lock_guard<std::mutex> lock(state_lock_); scene_.ipc_faulted=true; };
             while(!stopping_.load()&&!shutdown_requested) {
                 pollfd events[2]{{client,POLLIN,0},{listen_fd_.load(),POLLIN,0}};
                 const int ready=::poll(events,2,250);
@@ -319,7 +325,7 @@ void RunnerIpcServer::run() {
                     continue;
                 }
                 n=recv_packet();
-                if(n==-2) { std::cerr << "runner scene rejected: packet exceeds 64 KiB" << std::endl; continue; }
+                if(n==-2) { mark_ipc_fault(); std::cerr << "runner scene rejected: packet exceeds 64 KiB" << std::endl; continue; }
                 if(n<=0) { if(n<0&&errno==EINTR&&shutdown_requested) break; break; }
                 try {
                     const std::string payload(buffer,static_cast<std::size_t>(n));
@@ -328,15 +334,23 @@ void RunnerIpcServer::run() {
                     const auto now_ns=std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
                     const auto source_ns=next.captured_monotonic_ns;
                     if(source_ns>static_cast<std::uint64_t>(now_ns)+10000000ULL ||
-                       (source_ns<=static_cast<std::uint64_t>(now_ns) && static_cast<std::uint64_t>(now_ns)-source_ns>250000000ULL)) continue;
+                       (source_ns<=static_cast<std::uint64_t>(now_ns) && static_cast<std::uint64_t>(now_ns)-source_ns>250000000ULL)) {
+                        mark_ipc_fault();
+                        std::cerr << "runner scene rejected: source timestamp outside freshness window" << std::endl;
+                        continue;
+                    }
                     sequence=next.sequence;
                     {
                         std::lock_guard<std::mutex> lock(state_lock_);
                         scene_=std::move(next);
                         has_scene_=true;
                     }
-                    std::cout << "runner scene received seq=" << sequence << " json=" << payload << std::endl;
+                    if (log_scenes_) {
+                        std::cout << "runner scene received seq=" << sequence
+                                  << " json=" << payload << std::endl;
+                    }
                 } catch(const std::exception& error) {
+                    mark_ipc_fault();
                     std::cerr << "runner scene rejected: " << error.what() << std::endl;
                 }
             }
@@ -346,7 +360,7 @@ void RunnerIpcServer::run() {
             ::send(client,reject.data(),reject.size(),MSG_NOSIGNAL);
         }
         ::close(client);
-        { std::lock_guard<std::mutex> lock(state_lock_); has_scene_=false; }
+        { std::lock_guard<std::mutex> lock(state_lock_); has_scene_=false; scene_.ipc_faulted=true; }
     }
     const int listening_fd=listen_fd_.exchange(-1); if(listening_fd>=0) ::close(listening_fd);
     ::unlink(path_.c_str());

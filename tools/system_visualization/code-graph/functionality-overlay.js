@@ -176,7 +176,7 @@
       const source = sources.get(step.evidence);
       if (source) {
         const link = html("a", "functionality-source", "Source");
-        link.href = "../../" + source.path + (source.line ? "#L" + source.line : "");
+        link.href = "../../../" + source.path + (source.line ? "#L" + source.line : "");
         link.target = "_blank";
         link.rel = "noopener";
         item.append(link);

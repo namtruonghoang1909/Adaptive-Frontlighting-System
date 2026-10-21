@@ -64,15 +64,15 @@ from this first illustration.
 
 | Path | Change |
 |---|---|
-| `tools/system_visualization/system-in-action.html` | Static bench image, LED explanation, connection guide. |
-| `tools/system_visualization/system-in-action.css` | Static layout and responsive styling. |
-| `tools/system_visualization/assets/system-in-action/workbench.png` | Remove the outdated headlamp picture. |
-| `tools/system_visualization/assets/system-in-action/bench-3d-matrix.png` | Render the static 3D tabletop hardware scene with two matrix headlights. |
-| `tools/system_visualization/assets/system-in-action/README.md` | Record the final artwork components and screenshot source. |
+| `tools/system_visualization/system-in-action/index.html` | Static bench image, LED explanation, connection guide. |
+| `tools/system_visualization/system-in-action/system-in-action.css` | Static layout and responsive styling. |
+| `tools/system_visualization/system-in-action/assets/workbench.png` | Remove the outdated headlamp picture. |
+| `tools/system_visualization/system-in-action/assets/bench-3d-matrix.png` | Render the static 3D tabletop hardware scene with two matrix headlights. |
+| `tools/system_visualization/system-in-action/assets/README.md` | Record the final artwork components and screenshot source. |
 | `tools/system_visualization/system-in-action.mjs` | Remove the playback controller. |
 | `tools/system_visualization/system-in-action-story.mjs` | Remove the timeline model. |
 | `tools/system_visualization/system-in-action.test.mjs` | Remove tests for the removed animation. |
-| `tools/system_visualization/code-index.js` | Regenerate the source inventory. |
+| `tools/system_visualization/code-graph/code-index.js` | Regenerate the source inventory. |
 | `tools/system_visualization/README.md`, `tools/README.md`, `README.md`, `docs/tools/tools.md`, `docs/architecture/overview.md` | Explain the static visitor view and actual LED prototype. |
 | `agents/working-context.md`, `agents/prompt-tracking.md` | Record the revised scope and verification. |
 

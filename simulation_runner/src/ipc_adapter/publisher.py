@@ -121,6 +121,7 @@ def scene_message(scene: Any, session: str, sequence: int, captured_ns: int) -> 
                     "objects_degraded": surrounding.degraded or truncated,
                     "objects_truncated": truncated},
         "ego": {"steering_deg": ego.action.steering_deg,
+                "max_steering_deg": ego.action.max_steering_deg,
                 "longitudinal_speed_mps": longitudinal_speed},
         "objects": [{"id": item.object_id[:64], "type": item.object_type[:32],
                      "x_forward_m": item.relative_position_m[0],
