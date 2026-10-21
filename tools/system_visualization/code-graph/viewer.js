@@ -349,7 +349,7 @@
     target.replaceChildren();
     if (source) {
       const link = html("a", "source-link", source.path + (source.line ? ":" + source.line : ""));
-      link.href = "../../" + source.path + (source.line ? "#L" + source.line : "");
+      link.href = "../../../" + source.path + (source.line ? "#L" + source.line : "");
       link.target = "_blank";
       link.rel = "noopener";
       target.append(link);

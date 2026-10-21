@@ -8,11 +8,11 @@ from pathlib import Path
 
 
 TOOL = Path(__file__).resolve().parent
-ROOT = TOOL.parent.parent
+ROOT = TOOL.parent.parent.parent
 OUTPUT = TOOL / "code-index.js"
 COMPONENTS = [
     ("simulation_runner", ("simulation_runner/src", "simulation_runner/scripts"), "#73b8f4", "implemented"),
-    ("bridge", ("bridge/src", "bridge/include/afs_bridge"), "#82c6a0", "implemented"),
+    ("bridge", ("bridge/src", "bridge/include/afs_bridge", "bridge/scripts"), "#82c6a0", "implemented"),
     ("dashboard", ("dashboard/src/afs_dashboard",), "#b69bea", "planned"),
     ("firmware", ("firmware",), "#e7b877", "planned"),
     ("tools", ("tools",), "#dc93ae", "implemented"),
@@ -79,7 +79,10 @@ def build_index():
                                     method, f"{symbol.name}.{method.name}")
                 elif path.suffix in {".h", ".hpp"}:
                     source = path.read_text(encoding="utf-8")
-                    for match in re.finditer(r"\b(?:class|struct)\s+(\w+)", source):
+                    # Match definitions rather than every pointer/reference use
+                    # in generated C headers' function prototypes.
+                    for match in re.finditer(
+                            r"^\s*(?:class|struct)\s+(\w+)\s*\{", source, re.MULTILINE):
                         name = match.group(1)
                         add(path, child, color, status, "class", name,
                             qualified=name)
@@ -102,7 +105,7 @@ def main():
     content += "globalThis.CODE_INDEX = " + json.dumps(nodes, indent=2, ensure_ascii=False) + ";\n"
     if args.check:
         if not OUTPUT.exists() or OUTPUT.read_text(encoding="utf-8") != content:
-            parser.exit(1, "Code inventory is stale. Run python3 tools/system_visualization/build_index.py\n")
+            parser.exit(1, "Code inventory is stale. Run python3 tools/system_visualization/code-graph/build_index.py\n")
         print(f"Code inventory current: {len(nodes)} nodes.")
     else:
         OUTPUT.write_text(content, encoding="utf-8")

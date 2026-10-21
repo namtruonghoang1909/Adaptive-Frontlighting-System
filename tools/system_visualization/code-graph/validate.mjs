@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
 const toolDirectory = dirname(fileURLToPath(import.meta.url));
-const repositoryRoot = resolve(toolDirectory, "../..");
+const repositoryRoot = resolve(toolDirectory, "../../..");
 const context = vm.createContext({});
 context.globalThis = context;
 for (const file of ["code-index.js", "graph-data.js", "functionality-data.js"]) {
