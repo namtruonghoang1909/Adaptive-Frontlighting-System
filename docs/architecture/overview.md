@@ -2,7 +2,7 @@
 
 Simulated driving and operator requests feed a physical STM32 controller. In low-beam swivel mode, only matrix rows 5–8 shine and both platforms follow steering. In high-beam modes, both platforms return to center, rows 5–8 stay on, and rows 1–4 add the longer beam with optional pixel masking around vehicles. The Dashboard displays the ECU's reported output and faults.
 
-This flowchart shows the target runtime after the component reorganization. The Python runner, controls, ego/surrounding extraction, in-process latest-scene interface, optional development display, and runner-to-bridge IPC are implemented. Standalone CAN signal validation/projection and DBC frame packing APIs are also implemented, but are not connected to runtime scheduling or transport. Dashboard runtime and Zephyr-based STM32 firmware remain planned.
+This flowchart shows the target runtime after the component reorganization. The Python runner, controls, ego/surrounding extraction, in-process latest-scene interface, optional development display, and runner-to-bridge IPC are implemented. The native Tkinter Dashboard also exchanges requests and status with the bridge. Standalone CAN signal validation/projection and DBC frame packing APIs are implemented, but are not connected to runtime scheduling or transport. Decoded ECU status and Zephyr-based STM32 firmware remain planned.
 
 Use the [interactive code map](../../tools/system_visualization/code-graph/index.html) to
 explore implemented classes and their interactions. Nodes are clustered by
@@ -69,10 +69,10 @@ A process is a separately running program with its own memory. Threads are execu
 | Application process | Application work | Communication |
 |---|---|---|
 | Python simulation + adapter | Run MetaDrive, extract and retain the latest scene, automatically publish it to the gateway, optionally serve the development display | Lock-protected local scene access; local HTTP for the optional observer; Unix socket IPC to the gateway |
-| C++ gateway | Runner IPC receiver; standalone CAN validation/projection and DBC frame packing APIs; future CAN TX/RX worker | Mutex-protected latest scene; runner Unix socket implemented; Dashboard socket and SocketCAN planned |
-| Python Dashboard | Planned UI interaction and gateway client | Planned Unix socket IPC to the gateway |
+| C++ gateway | Runner receiver, Dashboard command/status server, standalone CAN validation/projection and DBC frame packing APIs; future CAN TX/RX worker | Mutex-protected latest scene; separate runner and Dashboard Unix sockets; SocketCAN planned |
+| Python Dashboard | Native window for command entry, fresh runner ego fields/nearby vehicles, and simulated ECU status | Reconnecting Unix socket client to gateway; local simulated ECU and fallback model |
 
-The process numbers identify applications, not startup order or dedicated CPU cores. MetaDrive and UI libraries may use additional internal threads. For a browser-based Dashboard, its Python backend owns the Unix socket; the browser communicates with that backend.
+The process numbers identify applications, not startup order or dedicated CPU cores. MetaDrive and UI libraries may use additional internal threads. The Dashboard window and its Unix socket client belong to the same Python process. A future combined launcher can start the simulation and Dashboard windows together.
 
 See [data-flow.md](data-flow.md) for the gateway thread diagram and the distinction between socket IPC and in-process state.
 The [ADB grid and two-headlamp mapping](adb-grid-and-lamps.md) describes the
@@ -92,8 +92,8 @@ proposed logical sector and physical lamp data types.
 
 - The Python implementation is under `simulation_runner/`. Its runner constructs a matching ego and ground-truth surrounding `SceneSnapshot` after every reset and step, atomically replaces a process-local latest value, preserves the existing ego-only callback, and can serve the read-only `scene_display` development observer.
 - `bridge/` contains the C++17/CMake runner socket receiver and latest source-state retention, plus standalone CAN validation/projection and DBC-generated frame packing APIs.
-- `dashboard/` now contains the Python package scaffold; no UI or gateway-client behavior exists yet.
-- The runner publisher and C++ receiver implement versioned local socket IPC and latest source-state retention. Generated payload packing is available as a standalone API; runtime bus transport, Dashboard IPC, and Zephyr-based STM32 firmware are not implemented.
+- `dashboard/` contains a native Tkinter window and reconnecting gateway client. Mode/power requests reach the bridge; fresh runner ego fields and nearby vehicle positions replace demo values. ECU status and the proximity grid are simulated and labeled.
+- The runner publisher and C++ receiver implement versioned local socket IPC and latest source-state retention. The bridge also serves Dashboard request/status IPC. Generated payload packing is available as a standalone API; runtime bus transport and Zephyr-based STM32 firmware are not implemented.
 - The runner observation boundary uses C++17/CMake and Unix Domain Sockets with `SOCK_SEQPACKET` carrying versioned JSON. The [runner–bridge communication contract](runner-bridge-communication.md) documents the implemented fields, limits, and recovery policy.
 - The established component layout and future deeper structure are documented in [desired_file_system.md](../temporary/desired_file_system.md).
 

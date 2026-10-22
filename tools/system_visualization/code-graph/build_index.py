@@ -13,7 +13,7 @@ OUTPUT = TOOL / "code-index.js"
 COMPONENTS = [
     ("simulation_runner", ("simulation_runner/src", "simulation_runner/scripts"), "#73b8f4", "implemented"),
     ("bridge", ("bridge/src", "bridge/include/afs_bridge", "bridge/scripts"), "#82c6a0", "implemented"),
-    ("dashboard", ("dashboard/src/afs_dashboard",), "#b69bea", "planned"),
+    ("dashboard", ("dashboard/src/afs_dashboard", "dashboard/scripts"), "#b69bea", "implemented"),
     ("firmware", ("firmware",), "#e7b877", "planned"),
     ("tools", ("tools",), "#dc93ae", "implemented"),
 ]

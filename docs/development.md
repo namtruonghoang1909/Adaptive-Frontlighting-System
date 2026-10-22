@@ -12,13 +12,16 @@ says otherwise.
 | `simulation_runner/scripts/start_metadrive_simulation.sh` | Simulation runner | Launches `metadrive_runner` and forwards all runner options. Runner-to-bridge publishing starts automatically. |
 | `bridge/scripts/run_runner_bridge.sh` | C++ bridge | Configures and builds `afs_runner_bridge`, then runs the receiver in the foreground. |
 | `bridge/scripts/run_can_frame_smoke.sh` | C++ bridge / CAN | Runs headless MetaDrive through the diagnostic frame logger and independently checks captured payloads against the DBC with cantools. |
+| `dashboard/scripts/start_dashboard.sh` | Dashboard | Opens the native Tkinter Dashboard window with the configured Python environment. |
 | `tools/system_visualization/start_system_visualization.sh` | System Visualization | Serves the Code graph, static System in Action page, and High beam visual / Low beam visual tabs on localhost. |
 
 The scripts under `simulation_runner/scripts/` use
 `simulation/metadrive/metadrive_venv/bin/python` by default. Set
 `METADRIVE_PYTHON=/path/to/python` to use another environment. The bridge
 launcher uses `build/bridge` and a `Release` CMake build by default; override
-these with `AFS_BRIDGE_BUILD_DIR` and `AFS_BRIDGE_BUILD_TYPE`.
+these with `AFS_BRIDGE_BUILD_DIR` and `AFS_BRIDGE_BUILD_TYPE`. The Dashboard
+launcher also defaults to the MetaDrive environment; use `DASHBOARD_PYTHON` to
+select another Tkinter-capable Python.
 
 ## Run The Simulation And Bridge
 
@@ -155,10 +158,24 @@ source inventory after source files or indexed symbols change. The detailed
 viewer instructions are in
 [tools/system_visualization/README.md](../tools/system_visualization/README.md).
 
+## Run The Local Dashboard
+
+Open the native Dashboard window from the repository root:
+
+```bash
+bash dashboard/scripts/start_dashboard.sh
+```
+
+The window needs a graphical Linux session and uses no localhost port. Start
+the bridge with `bash bridge/scripts/run_runner_bridge.sh` in another terminal.
+Fresh runner ego fields and nearby vehicles appear when available; mode and power requests
+reach the bridge. ECU values remain simulated and no CAN traffic is sent. See
+the [Dashboard guide](../dashboard/README.md).
+
 ## Components Without A Runnable Entry Point
 
-`dashboard/` is currently a package scaffold, and `firmware/` does not yet
-have an implemented application. The bridge can validate/project runner data
+`firmware/` does not yet have an implemented application. Live ECU status
+delivery remains planned. The bridge can validate/project runner data
 and pack DBC-generated in-memory CAN frames; the diagnostic smoke script above
 checks this path without SocketCAN. Production CAN scheduling and transmission
-are not implemented. Dashboard and firmware do not have launch scripts yet.
+are not implemented. Firmware does not yet have a launch script.

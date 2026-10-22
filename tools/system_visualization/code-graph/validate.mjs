@@ -93,10 +93,14 @@ for (const node of graph.nodes) {
       && point.every((value) => Number.isFinite(value) && value > 0),
     node.id + ": missing or invalid layout position");
     if (source?.kind === "file") {
-      requireValue(node.kind === "function" && source.path.endsWith(".js"), node.id + ": only browser functions may map to a file");
+      requireValue(node.kind === "function" && (source.path.endsWith(".js") || source.path.endsWith(".sh")),
+        node.id + ": only browser functions or shell entry scripts may map to a file");
       if (source.path.endsWith(".js")) {
         const text = readFileSync(resolve(repositoryRoot, source.path), "utf8");
         requireValue(text.includes("function " + node.label.replace(/\(\)$/, "(")), node.id + ": browser function missing from source");
+      }
+      if (source.path.endsWith(".sh")) {
+        requireValue(node.label === source.path.split("/").at(-1), node.id + ": shell entry label differs from source file");
       }
     } else {
       requireValue(source?.kind === node.kind, node.id + ": source kind differs from graph kind");
