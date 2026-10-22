@@ -18,7 +18,9 @@ This is the main guide for repository work. The root [AGENTS.md](../AGENTS.md) p
 | [rules/](rules/rules.md) | Category-specific instructions |
 | [working-context.md](working-context.md) | Current implementation and resume point |
 | [prompt-tracking.md](prompt-tracking.md) | Recent context-changing requests |
-| [plan/feat-bridge-can-encoding.md](plan/feat-bridge-can-encoding.md) | Active checklist for the current CAN encoding branch |
+| [plan/feat-dashboard.md](plan/feat-dashboard.md) | Active checklist for the current Dashboard branch |
+| [plan/feat-bridge-socketcan.md](plan/feat-bridge-socketcan.md) | Planned SocketCAN gateway work |
+| [plan/feat-bridge-can-encoding.md](plan/feat-bridge-can-encoding.md) | Checklist for the preceding CAN encoding branch |
 | [roadmap.md](roadmap.md) | Proposed order and open design decisions |
 | `plans/` | Component plans and historical implementation notes |
 | [code_visualize.md](code_visualize.md) | Required maintenance for code changes |
