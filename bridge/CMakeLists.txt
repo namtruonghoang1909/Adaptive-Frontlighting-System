@@ -27,7 +27,7 @@ target_link_libraries(afs_can_encoding PUBLIC afs_runner_ipc PRIVATE afs_can_dbc
 target_compile_options(afs_can_encoding PRIVATE -Wall -Wextra -Wpedantic)
 
 add_executable(afs_runner_bridge src/app/runner_bridge_main.cpp)
-target_link_libraries(afs_runner_bridge PRIVATE afs_runner_ipc)
+target_link_libraries(afs_runner_bridge PRIVATE afs_runner_ipc Threads::Threads)
 
 add_executable(afs_can_frame_logger
     src/app/can_frame_logger.cpp

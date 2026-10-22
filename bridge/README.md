@@ -2,7 +2,7 @@
 
 Native Linux gateway between the Python simulation runner, Python Dashboard, and the CAN network.
 
-The bridge is a C++17 application built with CMake. It owns Unix Domain Socket IPC and the host CAN boundary. Runner IPC reception, transport-independent signal validation/projection, and DBC-generated in-memory frame encoding for `0x100`, `0x200`, and `0x300` are implemented. Production scheduling, SocketCAN TX/RX, Dashboard IPC, ECU status reception, and runtime CAN diagnostics remain future work.
+The bridge is a C++17 application built with CMake. It owns Unix Domain Socket IPC and the host CAN boundary. Runner scene reception, Dashboard request/status IPC, transport-independent signal validation/projection, and DBC-generated in-memory frame encoding for `0x100`, `0x200`, and `0x300` are implemented. Production scheduling, SocketCAN TX/RX, ECU status reception, and runtime CAN diagnostics remain future work.
 
 ## Module Layout
 
@@ -28,11 +28,14 @@ the separate diagnostic logger uses them to verify live samples. The bridge
 does not own the AFS/ADB control algorithm; STM32 remains responsible for
 lighting decisions and physical output.
 
-The runner IPC boundary is implemented: `afs_runner_bridge` receives versioned
-scene packets and retains the newest valid scene. CAN signal validation,
-vehicle-grid projection, and DBC-generated in-memory frame packing are available
-as pure APIs. SocketCAN, Dashboard IPC, scheduling, and ECU status remain
-unimplemented.
+`afs_runner_bridge` receives versioned runner scenes and serves a separate
+Dashboard socket. It reports fresh ego fields and a bounded list of nearby
+runner vehicles, stores the latest accepted power/mode request and its ID,
+and rejects clear-fault until ECU control exists. Bridge
+acceptance does not mean a CAN frame was sent or an ECU mode was executed.
+CAN signal validation, vehicle-grid projection, and DBC-generated in-memory
+frame packing are available as pure APIs. SocketCAN, scheduling, and ECU
+status remain unimplemented. See the [Dashboard IPC contract](../docs/architecture/dashboard-bridge-communication.md).
 
 Run the headless MetaDrive CAN encoding smoke check with:
 
@@ -53,7 +56,8 @@ bash bridge/scripts/run_runner_bridge.sh
 ```
 
 The script configures and compiles the receiver, then runs it in the foreground.
-Pass `--socket PATH` after the script name to override the socket path. Set
+Pass `--socket PATH` for the runner socket or `--dashboard-socket PATH` for
+the Dashboard socket after the script name. Set
 `AFS_BRIDGE_BUILD_DIR` or `AFS_BRIDGE_BUILD_TYPE` to customize the CMake build.
 
 Run the receiver integration test with:
@@ -70,3 +74,7 @@ applications use `$XDG_RUNTIME_DIR/afs/runner-bridge.sock`, falling back to
 `/tmp/afs-<uid>/runner-bridge.sock` when `XDG_RUNTIME_DIR` is unset.
 The receiver prints each accepted scene packet as JSON in its terminal so you
 can inspect the messages while testing.
+
+The Dashboard connects to `$XDG_RUNTIME_DIR/afs/dashboard-bridge.sock`, or
+`/tmp/afs-<uid>/dashboard-bridge.sock` without `XDG_RUNTIME_DIR`. Set
+`AFS_DASHBOARD_SOCKET` in both processes for a custom shared path.

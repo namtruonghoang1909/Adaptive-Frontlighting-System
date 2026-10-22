@@ -104,8 +104,13 @@ def scene_message(scene: Any, session: str, sequence: int, captured_ns: int) -> 
     velocity = ego.kinematics.velocity_mps
     heading = ego.kinematics.heading_rad
     longitudinal_speed = None
-    if velocity is not None and heading is not None:
+    if (velocity is not None and len(velocity) >= 2 and heading is not None
+            and all(math.isfinite(value) for value in (velocity[0], velocity[1], heading))):
         longitudinal_speed = velocity[0] * math.cos(heading) + velocity[1] * math.sin(heading)
+    position = ego.kinematics.position_m
+    position_valid = (position is not None and len(position) >= 2
+                      and math.isfinite(position[0]) and math.isfinite(position[1]))
+    heading_deg = math.degrees(heading) if heading is not None and math.isfinite(heading) else None
     selected = sorted(surrounding.objects, key=lambda item: (item.distance_m, item.object_id))
     truncated = len(selected) > MAX_OBJECTS
     selected = selected[:MAX_OBJECTS]
@@ -122,7 +127,10 @@ def scene_message(scene: Any, session: str, sequence: int, captured_ns: int) -> 
                     "objects_truncated": truncated},
         "ego": {"steering_deg": ego.action.steering_deg,
                 "max_steering_deg": ego.action.max_steering_deg,
-                "longitudinal_speed_mps": longitudinal_speed},
+                "longitudinal_speed_mps": longitudinal_speed,
+                "position_x_m": position[0] if position_valid else None,
+                "position_y_m": position[1] if position_valid else None,
+                "heading_deg": heading_deg},
         "objects": [{"id": item.object_id[:64], "type": item.object_type[:32],
                      "x_forward_m": item.relative_position_m[0],
                      "y_left_m": item.relative_position_m[1],

@@ -1,6 +1,6 @@
 # Data Flow
 
-The target runtime has three Linux application processes. Runner observation IPC is implemented over a local Unix socket; Dashboard IPC and CAN gateway runtime remain planned. Only the C++ gateway will open SocketCAN for production AFS traffic. See [overview.md](overview.md) for the whole-system flowchart.
+The target runtime has three Linux application processes. Runner observation and Dashboard command/status IPC use separate local Unix sockets. The native Dashboard consumes fresh runner ego fields and nearby vehicle positions from the bridge and labels the proximity grid and ECU values as simulated. CAN gateway runtime remains planned. Only the C++ gateway will open SocketCAN for production AFS traffic. See [overview.md](overview.md) for the whole-system flowchart.
 
 ## Inside The Gateway
 
@@ -27,7 +27,7 @@ flowchart LR
     CAN <-->|"SocketCAN: TX / RX"| BUS["can0: physical CAN<br/>or vcan0: virtual test bus"]
 ```
 
-Thread A handles the local Python clients. Thread B owns CAN transmission and reception. Both use short locks to exchange whole snapshots inside the C++ process. The Python processes never share the C++ state object.
+The diagram shows the target CAN runtime. Today the bridge handles runner IPC in its main thread and Dashboard IPC in a second thread. There is no CAN worker or decoded ECU status yet. The Python processes never share the C++ state object.
 
 A single event loop could handle the initial traffic; the proposed two-thread split isolates IPC parsing and Dashboard activity from scheduled CAN work. It is not a hard real-time guarantee. Use `poll()` and monotonic deadlines for the CAN worker; a separate RX thread or condition variable is not required by this design.
 
@@ -41,7 +41,7 @@ MetaDrive reset/step
   -> replace the latest in-process scene under a short lock
   -> invoke the preserved ego-only callback
   -> optional scene_display reads the latest scene from its HTTP thread
-  -> later: project and publish through the adapter's IPC client
+  -> project and publish through the adapter's IPC client
   -> continue the simulation loop
 ```
 
@@ -49,7 +49,7 @@ The extraction, scene store, and optional `scene_display` are implemented within
 
 ## Cross-Process Contract
 
-The runner transport uses Unix Domain Sockets, `SOCK_SEQPACKET`, with versioned JSON messages. Simulation and Dashboard use separate client connections to a gateway-owned server. The runner observation fields, sample identity, source freshness, and reconnect behavior are in [runner-bridge-communication.md](runner-bridge-communication.md). The Dashboard contract remains separate design work.
+Runner and Dashboard use separate gateway-owned Unix Domain Sockets, `SOCK_SEQPACKET`, with versioned JSON messages. The native Dashboard sends commands and polls status on its socket. The [runner contract](runner-bridge-communication.md) and [Dashboard contract](dashboard-bridge-communication.md) document message fields, freshness, and reconnect behavior.
 
 | Message kind | Producer | Consumer | Meaning |
 |---|---|---|---|
@@ -57,11 +57,11 @@ The runner transport uses Unix Domain Sockets, `SOCK_SEQPACKET`, with versioned 
 | Object state | Python adapter | C++ gateway | Ego-relative observed geometry, dimensions, validity, and sample identity |
 | Dashboard command | Python Dashboard | C++ gateway | Requested power/mode or an identified clear-fault action |
 | Command result | C++ gateway | Python Dashboard | Gateway accepted or rejected a request |
-| System status | C++ gateway | Python Dashboard | ECU-reported output/faults, current source state, freshness, and gateway health |
+| System status | C++ gateway | Python Dashboard | Current runner ego fields/nearby vehicles and freshness, retained request ID/state, and ECU unavailable flag; decoded ECU status planned |
 
-Gateway acceptance is not confirmation of physical execution. The Dashboard must distinguish the operator's request, gateway acceptance, and ECU-reported executed state.
+Gateway acceptance is not confirmation of physical execution. The Dashboard distinguishes the operator's request, gateway acceptance, and simulated ECU state; ECU-reported execution awaits CAN reception.
 
-Use complete current snapshots for continuous observations and persistent requests. Use identified, bounded pending actions for momentary commands so they are not silently overwritten. Keep outgoing status bounded and replaceable so a slow Dashboard cannot block CAN.
+Current runner observations use latest-state replacement. Dashboard mode/power commands store the latest request; identified clear-fault actions receive an explicit rejection while the ECU path is absent. The client does not replay pending actions after disconnect.
 
 ## CAN Transfer
 
@@ -86,8 +86,8 @@ The [CAN DBC](../../bridge/can/afs.dbc) defines CAN packing and signal meaning. 
 - Keep source age distinct from CAN alive counters and IPC connection liveness. Receiving or transmitting another copy of an old sample must not make the observation fresh again.
 - Track sample/session identity and simulation time separately from host monotonic time. Define restart, reset, pause, backlog, and unpaced-simulation behavior before HIL integration.
 - Use bounded buffering; avoid replaying a queue of outdated vehicle states. Define queue-age checks as part of detailed IPC design.
-- Missing simulation updates invalidate source data. Dashboard disconnects follow an explicit command-lifetime policy. Missing ECU status makes the displayed status stale.
+- Missing simulation updates invalidate source data. Dashboard disconnects fail pending actions locally, with no replay. ECU status remains marked simulated until reception exists.
 - STM32 independently validates incoming CAN and handles stale/invalid data even if the gateway crashes.
 - Waking and joining the CAN worker, closing sockets, and releasing owned resources belong to coordinated gateway shutdown.
 
-Runner IPC is implemented through validated latest-scene reception. Standalone CAN validation, projection, and DBC frame packing are implemented; Dashboard IPC, CAN scheduling and transport, and firmware behavior remain planned.
+Runner and Dashboard IPC are implemented. Standalone CAN validation, projection, and DBC frame packing are implemented; CAN scheduling and transport, decoded ECU status, and firmware behavior remain planned.
