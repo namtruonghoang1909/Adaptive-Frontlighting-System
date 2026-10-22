@@ -1,3 +1,7 @@
 # Gateway Client
 
-Future Unix Domain Socket client for versioned command, result, and status messages exchanged with the C++ bridge. It will hide transport and reconnect details from UI code.
+`client.py` implements the reconnecting versioned Dashboard socket client. It
+sends mode/power requests and clear-fault actions, polls bridge status, and
+merges fresh runner speed, steering, position, heading, and nearby vehicle positions with labeled
+simulated ECU and fallback values. Retained request IDs reconcile accepted
+commands after reconnect. See the [IPC contract](../../../../docs/architecture/dashboard-bridge-communication.md).

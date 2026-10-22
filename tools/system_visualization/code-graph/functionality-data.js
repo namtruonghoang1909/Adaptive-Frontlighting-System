@@ -5,6 +5,7 @@
   const B = "bridge/src/ipc/runner_ipc.cpp";
   const O = "simulation_runner/src/object_extraction/";
   const D = "simulation_runner/src/scene_display/";
+  const A = "dashboard/src/afs_dashboard/";
   const step = (from, to, action, detail, evidence) =>
     ({ from, to, action, detail, evidence });
 
@@ -94,7 +95,7 @@
       steps: [
         step("main", "publisher", "always starts", "RunnerPublisher(path) starts a dedicated reconnecting worker and retries until the bridge is available", R + "__main__.py#main"),
         step("publisher", "read", "reads current sample", "get_scene_snapshot() returns one matched ego and object scene", I + "#RunnerPublisher"),
-        step("publisher", "scene_message", "projects scene to protocol", "sequence, source monotonic timestamp, quality, steering angle and active limit, speed, and up to 128 objects", I + "#scene_message"),
+        step("publisher", "scene_message", "projects scene to protocol", "sequence, source monotonic timestamp, quality, steering/speed, optional position/heading, and up to 128 objects", I + "#scene_message"),
         step("scene_message", "bridge_server", "sends one packet", "SOCK_SEQPACKET UTF-8 JSON; hello handshake precedes scene packets", I + "#scene_message"),
         step("bridge_server", "runner_scene", "validates, logs, and replaces", "session, increasing sequence, packet bounds, fields, and source age before latest-state replacement; prints each accepted JSON packet to stdout", B),
       ],
@@ -113,6 +114,25 @@
         step("can_frame_encoder", "can_frames", "returns three frames", "standard CAN ID, DLC, and payload values in speed (0x100), steering (0x200), object (0x300) order; no scheduling or transmission", "bridge/src/can/can_frame_encoder.cpp"),
         step("can_frames", "can_frame_logger", "captures each payload", "writes every encoded frame and expected signals to temporary JSONL; generated C unpackers verify each batch", "bridge/src/app/can_frame_logger.cpp"),
         step("can_frame_logger", "can_capture_verifier", "checks the DBC independently", "the smoke shell script invokes cantools against bridge/can/afs.dbc and checks every decoded signal and reserved zero", "bridge/scripts/verify_can_frame_capture.py#main"),
+      ],
+    },
+    {
+      id: "dashboard_demo",
+      title: "Native Dashboard bridge IPC",
+      summary: "Launch the three-section Tkinter Dashboard, scroll its controls, preview forward beams with an unlit ADB sector, and merge fresh runner ego/vehicle status with simulated fallback/ECU values.",
+      steps: [
+        step("dashboard_launcher", "dashboard_start", "starts native Dashboard", "script selects the configured Python, sets PYTHONPATH, and execs afs_dashboard with forwarded arguments", "dashboard/scripts/start_dashboard.sh"),
+        step("dashboard_start", "dashboard_client", "starts IPC worker", "main() creates GatewayDashboardState with --socket or default path", A + "app/window.py#main"),
+        step("dashboard_start", "dashboard_window", "creates native GUI", "DashboardWindow uses the gateway client and enters Tk mainloop", A + "app/window.py#main"),
+        step("dashboard_client", "dashboard_server", "handshakes and polls", "SOCK_SEQPACKET v1 hello and get_status; reconnects after failure", A + "gateway_client/client.py#GatewayDashboardState"),
+        step("bridge_server", "dashboard_server", "supplies current scene", "RunnerIpcServer::current_scene() provides a matched optional scene under mutex", B),
+        step("dashboard_server", "dashboard_client", "returns status", "fresh speed/steering/pose, up to 24 nearby vehicles, retained request ID/state, ECU unavailable", B),
+        step("dashboard_window", "dashboard_client", "sends operator command", "local mode/power selection updates the lighting preview immediately; mode buttons disable when off; identified commands are sent to bridge when connected", A + "app/window.py#DashboardWindow"),
+        step("dashboard_client", "dashboard_server", "sends request packet", "request ID, power/mode or clear_fault; no replay after disconnect", A + "gateway_client/client.py#GatewayDashboardState"),
+        step("dashboard_server", "dashboard_client", "returns command result", "stores valid power/mode requests; rejects clear-fault while ECU is unavailable", B),
+        step("dashboard_client", "dashboard_state", "updates simulation", "accepted power/mode changes local simulated ECU state", A + "gateway_client/client.py#GatewayDashboardState"),
+        step("dashboard_state", "dashboard_client", "supplies fallback snapshot", "illustrative ego and surrounding objects plus simulated ECU fields", A + "models/state.py#DemoDashboardState.snapshot"),
+        step("dashboard_client", "dashboard_window", "supplies merged snapshot", "fresh runner ego and vehicles override demo fallback; ECU and proximity grid remain labeled simulated; wheel events scroll the native window", A + "gateway_client/client.py#GatewayDashboardState.snapshot"),
       ],
     },
   ];

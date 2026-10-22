@@ -163,9 +163,9 @@ load and displays the time in the browser's local timezone.
 The Code graph shows implemented classes and their interactions. Selected entry
 functions complete paths through the simulation loop, browser display, and
 runner-to-bridge socket. Files and folders are not graph nodes. Layer panels
-group nodes by source folder; the bridge panel shows the implemented runner
-receiver while CAN behavior remains planned. Dashboard and firmware remain
-planned.
+group nodes by source folder; the bridge panel shows runner and Dashboard IPC
+servers while runtime CAN remains planned. The Dashboard panel shows the native
+window, reconnecting client, and simulated ECU model; firmware remains planned.
 
 ## Open System Visualization
 
@@ -210,9 +210,10 @@ to the readable view. Press Escape to clear focus.
 
 ## Follow A Functionality
 
-The **Functionalities** section on the right lists seven implemented paths:
+The **Functionalities** section on the right lists nine implemented paths:
 runner startup, ego extraction, surrounding extraction, scene
-publication, browser display, manual driving control, and runner-to-bridge IPC. Select one to expand
+publication, browser display, manual driving control, runner-to-bridge IPC,
+the CAN frame smoke path, and native Dashboard bridge IPC. Select one to expand
 the required members, focus the start of its route, and light up numbered
 action arrows.
 The action list shows the function or class at each end, the values passed,

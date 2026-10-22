@@ -29,7 +29,7 @@ The runtime platform is Linux. Run commands from the repository root and use rep
 | Low beam visual | [Low beam visual](../../tools/system_visualization/beam-visual/beam-segments.html?mode=low) | Shorter, wider rows 5–8 footprint with a steering wheel and speed bar that set both matrix angles |
 | CAN messages | [CAN messages](../../tools/system_visualization/can-messages/index.html) | Signal names, byte/bit positions, meanings, and example values for the documented CAN frames |
 
-The Python runner, controls, ego extractor, and automatically started runner IPC publisher are under `simulation_runner/`. The C++ `bridge/` receives and retains the latest runner scene over a local Unix socket; CAN transport and Dashboard IPC remain planned. Runtime CAN transport will be native C++; Python DBC tooling runs during generation/testing, not inside the bridge's CAN loop. A browser Dashboard may additionally use HTTP/WebSocket between browser and Python backend.
+The Python runner, controls, ego extractor, and automatically started runner IPC publisher are under `simulation_runner/`. The C++ `bridge/` receives runner scenes and Dashboard requests on separate local Unix sockets; CAN transport remains planned. Runtime CAN transport will be native C++; Python DBC tooling runs during generation/testing, not inside the bridge's CAN loop. The Dashboard opens as a native Tkinter window with a reconnecting Python Unix-socket client.
 
 Development-tool implementations and their detailed maintenance instructions live under the
 repository-root `tools/` directory. This document provides only a concise index.

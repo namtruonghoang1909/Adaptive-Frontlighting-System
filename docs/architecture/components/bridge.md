@@ -1,6 +1,6 @@
 # C++ Bridge Component
 
-The bridge is the native Linux gateway between the Python simulation runner, Python Dashboard, and CAN network. Its runner-facing Unix socket receiver and latest source-state retention are implemented. Standalone APIs validate/project CAN signal values and pack the `0x100`, `0x200`, and `0x300` payloads through DBC-generated C. A separate diagnostic logger exercises those APIs with live runner IPC; the production bridge executable does not call them. Dashboard IPC and runtime CAN transport remain planned.
+The bridge is the native Linux gateway between the Python simulation runner, Python Dashboard, and CAN network. Its runner-facing scene receiver, Dashboard command/status socket, and latest source-state retention are implemented. Standalone APIs validate/project CAN signal values and pack the `0x100`, `0x200`, and `0x300` payloads through DBC-generated C. A separate diagnostic logger exercises those APIs with live runner IPC; the production bridge executable does not call them. Runtime CAN transport remains planned.
 
 ## Position In The System
 
@@ -34,28 +34,28 @@ uses cantools-generated C signal encoders and message packers to create
 in-memory frame values. The separate `afs_can_frame_logger` diagnostic
 executable runs this path against live runner scenes, verifies batches with
 generated C unpackers, and checks captured frames independently with cantools.
-Production application integration, Dashboard IPC, SocketCAN, and runtime CAN
+Production CAN integration, SocketCAN, and runtime CAN
 diagnostics remain future work.
 
 ## IPC Clients
 
-The simulation runner and Dashboard connect separately through Unix Domain Socket IPC. The runner boundary uses `SOCK_SEQPACKET` with versioned JSON messages. The [runner–bridge communication contract](../runner-bridge-communication.md) documents the implementation and current limits.
+The simulation runner and Dashboard connect on separate Unix Domain Sockets. Both use `SOCK_SEQPACKET` with versioned JSON messages. The [runner contract](../runner-bridge-communication.md) and [Dashboard contract](../dashboard-bridge-communication.md) document their implementations and limits.
 
 - Simulation sends complete vehicle and surrounding-object observations.
 - The runner includes the active MetaDrive steering limit with each ego sample;
   the receiver validates the angle against that limit and retains a missing
   limit as unavailable for CAN validity handling.
-- Dashboard sends persistent requested state and identified momentary actions.
-- Bridge returns command acceptance, ECU-reported status, source freshness, and bridge health.
-- Gateway acceptance and ECU execution are different states in the protocol and UI.
+- Dashboard sends persistent requested state and identified clear-fault actions.
+- Bridge stores accepted power/mode requests with IDs, rejects clear-fault while the ECU is unavailable, and reports current runner freshness, ego fields, and a bounded list of nearby vehicles.
+- Gateway acceptance and simulated ECU execution are different states in the UI. Decoded ECU status is not available yet.
 
 The bridge never reads MetaDrive objects or UI widgets directly.
 
 ## Internal Concurrency
 
-The proposed gateway has a main/IPC thread and one CAN TX/RX worker. They exchange complete value snapshots inside the C++ process with short `std::mutex`-protected copy/replacement operations. Parsing, network I/O, encoding, and logging occur after releasing the lock.
+The current bridge runs runner IPC in the main thread and Dashboard IPC in a second thread. The runner receiver copies its latest scene under a short mutex; socket I/O and JSON handling run outside that lock. A separate CAN worker is planned for runtime scheduling and transport.
 
-Continuous observations use latest-state replacement rather than a replay queue. Discrete actions use identifiers and bounded pending work. Additional threads, queues, or condition variables require a concrete workload need.
+Continuous observations use latest-state replacement rather than a replay queue. Dashboard requests carry identifiers, and the client does not replay pending actions after disconnect.
 
 ## CAN And Control Ownership
 

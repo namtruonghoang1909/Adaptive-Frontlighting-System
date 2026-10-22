@@ -91,7 +91,8 @@ the ECU. The proposed compact shape is:
   "sample": {"source": "metadrive", "seed": 21, "episode_step": 41, "sim_time_s": 2.46},
   "quality": {"ego_valid": true, "objects_valid": true, "objects_degraded": false, "objects_truncated": false},
   "ego": {"steering_deg": 3.2, "max_steering_deg": 60.0,
-          "longitudinal_speed_mps": 12.5},
+          "longitudinal_speed_mps": 12.5, "position_x_m": 128.6,
+          "position_y_m": 44.2, "heading_deg": 2.1},
   "objects": [
     {"id": "vehicle-7", "type": "VEHICLE", "x_forward_m": 28.0,
      "y_left_m": 3.1, "length_m": 4.5, "width_m": 1.8,
@@ -109,6 +110,7 @@ the ECU. The proposed compact shape is:
 | `ego.steering_deg` | Ego steering angle in degrees using MetaDrive's extracted sign and scale. The bridge preserves the sign without inversion or normalization. `null` means unavailable; the bridge does not invent a valid steering value. `0x200 SteeringValid` is also cleared when the source scene is older than 250 ms. |
 | `ego.max_steering_deg` | Active MetaDrive vehicle steering limit in degrees, captured with this ego sample. It must be a positive finite value when present. `null` means unavailable; a CAN encoder must mark the `0x200` steering input invalid. When both fields are present, the bridge validates `steering_deg` against `±max_steering_deg`. |
 | `ego.longitudinal_speed_mps` | Signed speed along ego heading, positive forward and negative reverse. `null` means direction cannot be established. The agreed `0x100` design carries this signed value with `0.01 m/s/bit` scaling in a signed 16-bit field and does not use a separate reverse bit. `SpeedValid` is cleared when the source scene is older than 250 ms. |
+| `ego.position_x_m`, `ego.position_y_m`, `ego.heading_deg` | Optional ego world position in metres and heading in degrees for Dashboard display. The publisher emits both position coordinates together or both as `null`; the bridge also accepts packets from earlier v1 publishers that omit these optional display fields. These values are not used for CAN frame encoding. |
 | `objects` | Complete list of selected registry objects in this sample. `x_forward_m` and `y_left_m` are ego-relative metres; positive left matches the proposed object-grid convention. Dimensions are metres; `relative_heading_rad` is relative to ego heading. Optional geometry fields may be `null`. |
 
 The Python adapter projects these fields from `SceneSnapshot`; it does not
@@ -120,7 +122,8 @@ the provisional vehicle-only ADB grid. IDs are for diagnostics and do not
 become CAN signals.
 
 All numeric values must be finite where present. Required keys must be present;
-nullable values use JSON `null`, not `NaN`, infinity, or omitted keys. The
+nullable values use JSON `null`, not `NaN` or infinity. The optional ego
+position and heading display fields may be omitted by an older v1 publisher. The
 bridge validates types, ranges, object count, string lengths, and packet size
 before replacing state. Proposed limits are **128 objects**, **64 bytes per
 object ID**, and a bounded type string. If more than 128 objects qualify, the

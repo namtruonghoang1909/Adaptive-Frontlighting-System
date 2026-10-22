@@ -1,5 +1,10 @@
 # IPC
 
+`RunnerIpcServer` receives and validates the latest runner scene on its own
+`SOCK_SEQPACKET` socket. `DashboardIpcServer` serves a separate same-user
+socket with versioned JSON requests, bridge acceptance results, and current
+runner freshness. See the [Dashboard contract](../../../docs/architecture/dashboard-bridge-communication.md).
+
 `RunnerIpcServer` owns the runner-facing `AF_UNIX/SOCK_SEQPACKET` server. It
 enforces same-UID peers, a private socket, protocol v1 handshake, packet and
 object bounds, finite numeric values, session and sequence ordering, and

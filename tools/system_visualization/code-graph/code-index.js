@@ -1219,6 +1219,26 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "bridge/include/afs_bridge/dashboard_ipc.hpp",
+    "label": "dashboard_ipc.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/dashboard_ipc.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/dashboard_ipc.hpp#DashboardIpcServer",
+    "label": "DashboardIpcServer",
+    "parent": "bridge/include/afs_bridge/dashboard_ipc.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/dashboard_ipc.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
     "id": "bridge/include/afs_bridge/runner_ipc.hpp",
     "label": "runner_ipc.hpp",
     "parent": "bridge",
@@ -1305,7 +1325,7 @@ globalThis.CODE_INDEX = [
     "parent": "repository",
     "kind": "component",
     "path": "dashboard",
-    "status": "planned",
+    "status": "implemented",
     "color": "#b69bea",
     "description": ""
   },
@@ -1315,9 +1335,51 @@ globalThis.CODE_INDEX = [
     "parent": "dashboard",
     "kind": "module",
     "path": "dashboard/src/afs_dashboard/app",
-    "status": "planned",
+    "status": "implemented",
     "color": "#b69bea",
     "description": ""
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/app/__init__.py",
+    "label": "__init__.py",
+    "parent": "dashboard/src/afs_dashboard/app",
+    "kind": "file",
+    "path": "dashboard/src/afs_dashboard/app/__init__.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": ""
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/app/window.py",
+    "label": "window.py",
+    "parent": "dashboard/src/afs_dashboard/app",
+    "kind": "file",
+    "path": "dashboard/src/afs_dashboard/app/window.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": ""
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/app/window.py#DashboardWindow",
+    "label": "DashboardWindow",
+    "parent": "dashboard/src/afs_dashboard/app/window.py",
+    "kind": "class",
+    "path": "dashboard/src/afs_dashboard/app/window.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "Draws the car-style cluster and sends commands through the gateway client.",
+    "line": 45
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/app/window.py#main",
+    "label": "main",
+    "parent": "dashboard/src/afs_dashboard/app/window.py",
+    "kind": "function",
+    "path": "dashboard/src/afs_dashboard/app/window.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "",
+    "line": 599
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client",
@@ -1325,9 +1387,85 @@ globalThis.CODE_INDEX = [
     "parent": "dashboard",
     "kind": "module",
     "path": "dashboard/src/afs_dashboard/gateway_client",
-    "status": "planned",
+    "status": "implemented",
     "color": "#b69bea",
     "description": ""
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/gateway_client/client.py",
+    "label": "client.py",
+    "parent": "dashboard/src/afs_dashboard/gateway_client",
+    "kind": "file",
+    "path": "dashboard/src/afs_dashboard/gateway_client/client.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": ""
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/gateway_client/client.py#default_socket_path",
+    "label": "default_socket_path",
+    "parent": "dashboard/src/afs_dashboard/gateway_client/client.py",
+    "kind": "function",
+    "path": "dashboard/src/afs_dashboard/gateway_client/client.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "",
+    "line": 21
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState",
+    "label": "GatewayDashboardState",
+    "parent": "dashboard/src/afs_dashboard/gateway_client/client.py",
+    "kind": "class",
+    "path": "dashboard/src/afs_dashboard/gateway_client/client.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "Presents bridge requests and runner fields with explicit demo fallbacks.",
+    "line": 30
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.close",
+    "label": "close",
+    "parent": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState",
+    "kind": "method",
+    "path": "dashboard/src/afs_dashboard/gateway_client/client.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "",
+    "line": 56
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.set_command",
+    "label": "set_command",
+    "parent": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState",
+    "kind": "method",
+    "path": "dashboard/src/afs_dashboard/gateway_client/client.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "",
+    "line": 60
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.clear_fault",
+    "label": "clear_fault",
+    "parent": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState",
+    "kind": "method",
+    "path": "dashboard/src/afs_dashboard/gateway_client/client.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "",
+    "line": 83
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.snapshot",
+    "label": "snapshot",
+    "parent": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState",
+    "kind": "method",
+    "path": "dashboard/src/afs_dashboard/gateway_client/client.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "",
+    "line": 101
   },
   {
     "id": "dashboard/src/afs_dashboard/models",
@@ -1335,9 +1473,73 @@ globalThis.CODE_INDEX = [
     "parent": "dashboard",
     "kind": "module",
     "path": "dashboard/src/afs_dashboard/models",
-    "status": "planned",
+    "status": "implemented",
     "color": "#b69bea",
     "description": ""
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/models/__init__.py",
+    "label": "__init__.py",
+    "parent": "dashboard/src/afs_dashboard/models",
+    "kind": "file",
+    "path": "dashboard/src/afs_dashboard/models/__init__.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": ""
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/models/state.py",
+    "label": "state.py",
+    "parent": "dashboard/src/afs_dashboard/models",
+    "kind": "file",
+    "path": "dashboard/src/afs_dashboard/models/state.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": ""
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/models/state.py#DemoDashboardState",
+    "label": "DemoDashboardState",
+    "parent": "dashboard/src/afs_dashboard/models/state.py",
+    "kind": "class",
+    "path": "dashboard/src/afs_dashboard/models/state.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "Holds operator requests and clearly simulated vehicle/ECU values.",
+    "line": 16
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/models/state.py#DemoDashboardState.set_command",
+    "label": "set_command",
+    "parent": "dashboard/src/afs_dashboard/models/state.py#DemoDashboardState",
+    "kind": "method",
+    "path": "dashboard/src/afs_dashboard/models/state.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "",
+    "line": 38
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/models/state.py#DemoDashboardState.clear_fault",
+    "label": "clear_fault",
+    "parent": "dashboard/src/afs_dashboard/models/state.py#DemoDashboardState",
+    "kind": "method",
+    "path": "dashboard/src/afs_dashboard/models/state.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "",
+    "line": 57
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/models/state.py#DemoDashboardState.snapshot",
+    "label": "snapshot",
+    "parent": "dashboard/src/afs_dashboard/models/state.py#DemoDashboardState",
+    "kind": "method",
+    "path": "dashboard/src/afs_dashboard/models/state.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": "",
+    "line": 70
   },
   {
     "id": "dashboard/src/afs_dashboard/__init__.py",
@@ -1345,7 +1547,27 @@ globalThis.CODE_INDEX = [
     "parent": "dashboard",
     "kind": "file",
     "path": "dashboard/src/afs_dashboard/__init__.py",
-    "status": "planned",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": ""
+  },
+  {
+    "id": "dashboard/src/afs_dashboard/__main__.py",
+    "label": "__main__.py",
+    "parent": "dashboard",
+    "kind": "file",
+    "path": "dashboard/src/afs_dashboard/__main__.py",
+    "status": "implemented",
+    "color": "#b69bea",
+    "description": ""
+  },
+  {
+    "id": "dashboard/scripts/start_dashboard.sh",
+    "label": "start_dashboard.sh",
+    "parent": "dashboard",
+    "kind": "file",
+    "path": "dashboard/scripts/start_dashboard.sh",
+    "status": "implemented",
     "color": "#b69bea",
     "description": ""
   },

@@ -33,9 +33,14 @@ struct RunnerScene {
     bool ipc_faulted{true};
     bool has_steering{};
     bool has_speed{};
+    bool has_position{};
+    bool has_heading{};
     double steering_deg{};
     std::optional<double> max_steering_deg;
     double longitudinal_speed_mps{};
+    double position_x_m{};
+    double position_y_m{};
+    double heading_deg{};
     std::string source;
     std::vector<RunnerObject> objects;
 };
@@ -52,6 +57,7 @@ public:
     void stop();
     bool has_scene() const;
     RunnerScene latest_scene() const;
+    std::optional<RunnerScene> current_scene() const;
     std::string socket_path() const;
 
 private:

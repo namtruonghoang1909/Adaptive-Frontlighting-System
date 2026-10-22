@@ -1,4 +1,5 @@
 #include "afs_bridge/runner_ipc.hpp"
+#include "afs_bridge/dashboard_ipc.hpp"
 
 #include <algorithm>
 #include <cerrno>
@@ -10,6 +11,8 @@
 #include <limits>
 #include <mutex>
 #include <stdexcept>
+#include <sstream>
+#include <iomanip>
 #include <sys/socket.h>
 #include <poll.h>
 #include <signal.h>
@@ -23,6 +26,7 @@ namespace afs_bridge {
 namespace {
 constexpr std::size_t kMaxPacket = 64 * 1024;
 constexpr std::size_t kMaxObjects = 128;
+constexpr std::size_t kMaxDashboardObjects = 24;
 volatile sig_atomic_t shutdown_requested=0;
 void request_shutdown(int) { shutdown_requested=1; }
 
@@ -36,6 +40,12 @@ struct Json {
         const auto it = object->find(key);
         if (it == object->end()) throw std::runtime_error("missing field: " + key);
         return it->second;
+    }
+    const Json* find(const std::string& key) const {
+        const auto* object = std::get_if<Object>(&value);
+        if (!object) throw std::runtime_error("expected object");
+        const auto it = object->find(key);
+        return it == object->end() ? nullptr : &it->second;
     }
     const Array& array() const {
         const auto* p = std::get_if<Array>(&value);
@@ -191,10 +201,27 @@ RunnerScene parse_scene(const std::string& packet, const std::string& session, s
     const auto& ego=root.at("ego"); result.has_steering=nullable_number(ego.at("steering_deg"),result.steering_deg);
     result.max_steering_deg=optional_number(ego.at("max_steering_deg"));
     result.has_speed=nullable_number(ego.at("longitudinal_speed_mps"),result.longitudinal_speed_mps);
+    const auto* position_x = ego.find("position_x_m");
+    const auto* position_y = ego.find("position_y_m");
+    if ((position_x == nullptr) != (position_y == nullptr))
+        throw std::runtime_error("incomplete ego position");
+    if (position_x) {
+        const bool has_x = nullable_number(*position_x, result.position_x_m);
+        const bool has_y = nullable_number(*position_y, result.position_y_m);
+        if (has_x != has_y) throw std::runtime_error("incomplete ego position");
+        result.has_position = has_x;
+    }
+    if (const auto* heading = ego.find("heading_deg"))
+        result.has_heading = nullable_number(*heading, result.heading_deg);
     if(result.max_steering_deg && *result.max_steering_deg<=0.0) throw std::runtime_error("maximum steering angle must be positive");
     if(result.has_steering && result.max_steering_deg &&
        std::abs(result.steering_deg)>*result.max_steering_deg) throw std::runtime_error("steering out of range");
     if(result.has_speed && std::abs(result.longitudinal_speed_mps)>150.0) throw std::runtime_error("speed out of range");
+    if(result.has_position && (std::abs(result.position_x_m)>1000000.0 ||
+                               std::abs(result.position_y_m)>1000000.0))
+        throw std::runtime_error("ego position out of range");
+    if(result.has_heading && std::abs(result.heading_deg)>360.0)
+        throw std::runtime_error("ego heading out of range");
     const auto& sample=root.at("sample");
     result.source=sample.at("source").string();
     if(result.source.empty()||result.source.size()>32) throw std::runtime_error("invalid sample source");
@@ -229,6 +256,91 @@ std::string handshake_session(const std::string& packet) {
     }
     return session;
 }
+
+bool valid_dashboard_id(const std::string& id) {
+    if (id.empty() || id.size() > 64) return false;
+    return std::all_of(id.begin(), id.end(), [](char c) {
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+               (c >= '0' && c <= '9') || c == '-' || c == '_';
+    });
+}
+
+bool valid_mode(const std::string& mode) {
+    return mode == "low_beam_no_swivel" || mode == "low_beam_swivel" ||
+           mode == "high_beam_no_dimming" || mode == "high_beam_dimming";
+}
+
+bool send_dashboard_packet(int fd, const std::string& packet) {
+    const auto sent = ::send(fd, packet.data(), packet.size(), MSG_NOSIGNAL);
+    return sent >= 0 && static_cast<std::size_t>(sent) == packet.size();
+}
+
+std::string dashboard_status(const RunnerIpcServer& runner, bool has_request,
+                             const std::string& request_id, bool power_on,
+                             const std::string& mode) {
+    const auto current = runner.current_scene();
+    const bool connected = current.has_value();
+    const RunnerScene scene = current.value_or(RunnerScene{});
+    const auto now = std::chrono::steady_clock::now().time_since_epoch();
+    const auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
+    const auto source_ns = scene.captured_monotonic_ns;
+    const bool timestamp_valid = connected && source_ns <= static_cast<std::uint64_t>(now_ns) + 10000000ULL;
+    const auto age_ns = timestamp_valid && source_ns <= static_cast<std::uint64_t>(now_ns)
+                            ? static_cast<std::uint64_t>(now_ns) - source_ns : 0ULL;
+    const bool fresh = timestamp_valid && !scene.ipc_faulted &&
+                       source_ns <= static_cast<std::uint64_t>(now_ns) && age_ns <= 250000000ULL;
+    std::ostringstream out;
+    out << std::setprecision(12) << "{\"protocol_version\":1,\"type\":\"status\",\"runner\":{"
+        << "\"connected\":" << (connected ? "true" : "false")
+        << ",\"fresh\":" << (fresh ? "true" : "false")
+        << ",\"age_ms\":";
+    if (timestamp_valid && source_ns <= static_cast<std::uint64_t>(now_ns)) out << age_ns / 1000000ULL;
+    else out << "null";
+    out << ",\"speed_kmh\":";
+    if (fresh && scene.ego_valid && scene.has_speed) out << scene.longitudinal_speed_mps * 3.6;
+    else out << "null";
+    out << ",\"steering_deg\":";
+    if (fresh && scene.ego_valid && scene.has_steering) out << scene.steering_deg;
+    else out << "null";
+    out << ",\"position_x_m\":";
+    if (fresh && scene.ego_valid && scene.has_position) out << scene.position_x_m;
+    else out << "null";
+    out << ",\"position_y_m\":";
+    if (fresh && scene.ego_valid && scene.has_position) out << scene.position_y_m;
+    else out << "null";
+    out << ",\"heading_deg\":";
+    if (fresh && scene.ego_valid && scene.has_heading) out << scene.heading_deg;
+    else out << "null";
+    const bool objects_valid = fresh && scene.objects_valid && !scene.objects_degraded;
+    std::vector<const RunnerObject*> display_objects;
+    if (objects_valid) {
+        for (const auto& object : scene.objects) {
+            if (object.type == "VEHICLE" && object.x_forward_m >= 0.0 &&
+                object.x_forward_m <= 100.0 && std::abs(object.y_left_m) <= 12.0)
+                display_objects.push_back(&object);
+        }
+        std::sort(display_objects.begin(), display_objects.end(), [](const auto* left, const auto* right) {
+            return std::hypot(left->x_forward_m, left->y_left_m) <
+                   std::hypot(right->x_forward_m, right->y_left_m);
+        });
+    }
+    out << ",\"objects_valid\":" << (objects_valid ? "true" : "false")
+        << ",\"objects_limited\":" << (display_objects.size() > kMaxDashboardObjects ? "true" : "false")
+        << ",\"objects\":[";
+    for (std::size_t index = 0; index < std::min(display_objects.size(), kMaxDashboardObjects); ++index) {
+        if (index) out << ',';
+        out << "{\"x_forward_m\":" << display_objects[index]->x_forward_m
+            << ",\"y_left_m\":" << display_objects[index]->y_left_m << '}';
+    }
+    out << "]},\"request\":{\"present\":" << (has_request ? "true" : "false")
+        << ",\"request_id\":";
+    if (has_request) out << '"' << request_id << '"';
+    else out << "null";
+    out
+        << ",\"power_on\":" << (power_on ? "true" : "false")
+        << ",\"mode\":\"" << mode << "\"},\"ecu\":{\"available\":false}}";
+    return out.str();
+}
 }  // namespace
 
 RunnerIpcServer::RunnerIpcServer(std::string path, bool log_scenes)
@@ -239,6 +351,10 @@ RunnerIpcServer::~RunnerIpcServer() { stop(); const int fd=listen_fd_.exchange(-
 std::string RunnerIpcServer::socket_path() const { return path_; }
 bool RunnerIpcServer::has_scene() const { std::lock_guard<std::mutex> lock(state_lock_); return has_scene_; }
 RunnerScene RunnerIpcServer::latest_scene() const { std::lock_guard<std::mutex> lock(state_lock_); return scene_; }
+std::optional<RunnerScene> RunnerIpcServer::current_scene() const {
+    std::lock_guard<std::mutex> lock(state_lock_);
+    return has_scene_ ? std::optional<RunnerScene>(scene_) : std::nullopt;
+}
 void RunnerIpcServer::stop() { stopping_.store(true); const int fd=listen_fd_.load(); if(fd>=0) ::shutdown(fd,SHUT_RDWR); }
 void RunnerIpcServer::run() {
     struct sigaction action{}; action.sa_handler=request_shutdown; sigemptyset(&action.sa_mask); action.sa_flags=0;
@@ -363,6 +479,153 @@ void RunnerIpcServer::run() {
         { std::lock_guard<std::mutex> lock(state_lock_); has_scene_=false; scene_.ipc_faulted=true; }
     }
     const int listening_fd=listen_fd_.exchange(-1); if(listening_fd>=0) ::close(listening_fd);
+    ::unlink(path_.c_str());
+}
+
+DashboardIpcServer::DashboardIpcServer(std::string socket_path, const RunnerIpcServer& runner)
+    : path_(std::move(socket_path)), runner_(runner) {
+    if (path_.empty() || path_[0] != '/' || path_.size() >= sizeof(sockaddr_un::sun_path))
+        throw std::invalid_argument("dashboard socket path must be absolute and fit sun_path");
+}
+
+DashboardIpcServer::~DashboardIpcServer() {
+    stop();
+    const int client = client_fd_.exchange(-1);
+    if (client >= 0) ::close(client);
+    const int listener = listen_fd_.exchange(-1);
+    if (listener >= 0) ::close(listener);
+}
+
+std::string DashboardIpcServer::socket_path() const { return path_; }
+
+void DashboardIpcServer::stop() {
+    stopping_.store(true);
+    const int client = client_fd_.load();
+    if (client >= 0) ::shutdown(client, SHUT_RDWR);
+    const int listener = listen_fd_.load();
+    if (listener >= 0) ::shutdown(listener, SHUT_RDWR);
+}
+
+void DashboardIpcServer::run() {
+    const auto slash = path_.find_last_of('/');
+    const std::string dir = slash == 0 ? "/" : path_.substr(0, slash);
+    struct stat st{};
+    if (::lstat(dir.c_str(), &st) != 0 && errno == ENOENT) {
+        const auto parent_slash = dir.find_last_of('/');
+        const std::string parent = parent_slash == 0 ? "/" : dir.substr(0, parent_slash);
+        struct stat parent_st{};
+        if (::lstat(parent.c_str(), &parent_st) != 0 || !S_ISDIR(parent_st.st_mode))
+            throw std::runtime_error("dashboard socket parent must be a directory");
+        const bool safe_tmp = parent == "/tmp" && (parent_st.st_mode & S_ISVTX) && (parent_st.st_mode & S_IWOTH);
+        if (parent_st.st_uid != ::getuid() && !safe_tmp)
+            throw std::runtime_error("untrusted dashboard socket parent");
+        if (::mkdir(dir.c_str(), 0700) != 0 && errno != EEXIST)
+            throw std::runtime_error("cannot create dashboard socket directory");
+    }
+    if (::lstat(dir.c_str(), &st) != 0 || !S_ISDIR(st.st_mode) ||
+        st.st_uid != ::getuid() || (st.st_mode & 0777) != 0700)
+        throw std::runtime_error("dashboard socket directory must be private and owned by this user");
+    struct stat existing{};
+    if (::lstat(path_.c_str(), &existing) == 0) {
+        if (!S_ISSOCK(existing.st_mode) || existing.st_uid != ::getuid())
+            throw std::runtime_error("refusing to replace dashboard socket path");
+        const int probe = ::socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0);
+        sockaddr_un probe_addr{}; probe_addr.sun_family = AF_UNIX;
+        std::strncpy(probe_addr.sun_path, path_.c_str(), sizeof(probe_addr.sun_path) - 1);
+        const bool active = probe >= 0 && ::connect(probe, reinterpret_cast<sockaddr*>(&probe_addr), sizeof(probe_addr)) == 0;
+        const int connect_error = errno;
+        if (probe >= 0) ::close(probe);
+        if (active) throw std::runtime_error("dashboard IPC socket is already active");
+        if (connect_error != ECONNREFUSED && connect_error != ENOENT)
+            throw std::runtime_error("cannot determine whether dashboard socket is stale");
+        if (::unlink(path_.c_str()) != 0) throw std::runtime_error("cannot remove stale dashboard socket");
+    } else if (errno != ENOENT) throw std::runtime_error("cannot inspect dashboard socket path");
+    const int listener = ::socket(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0);
+    if (listener < 0) throw std::runtime_error("dashboard socket creation failed");
+    listen_fd_ = listener;
+    sockaddr_un addr{}; addr.sun_family = AF_UNIX;
+    std::strncpy(addr.sun_path, path_.c_str(), sizeof(addr.sun_path) - 1);
+    if (::bind(listener, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0)
+        throw std::runtime_error("dashboard socket bind failed: " + std::string(std::strerror(errno)));
+    if (::chmod(path_.c_str(), 0600) != 0 || ::listen(listener, 4) != 0)
+        throw std::runtime_error("dashboard socket listen failed");
+
+    while (!stopping_.load() && !shutdown_requested) {
+        pollfd ready{listener, POLLIN, 0};
+        const int polled = ::poll(&ready, 1, 250);
+        if (polled < 0) { if (errno == EINTR) continue; break; }
+        if (polled == 0 || !(ready.revents & POLLIN)) continue;
+        const int client = ::accept4(listener, nullptr, nullptr, SOCK_CLOEXEC);
+        if (client < 0) { if (errno == EINTR) continue; break; }
+        client_fd_ = client;
+        ucred cred{}; socklen_t cred_len = sizeof(cred);
+        if (::getsockopt(client, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) != 0 || cred.uid != ::getuid()) {
+            ::close(client); client_fd_ = -1; continue;
+        }
+        char buffer[4096];
+        auto receive = [&]() -> std::string {
+            iovec iov{buffer, sizeof(buffer)}; msghdr msg{};
+            msg.msg_iov = &iov; msg.msg_iovlen = 1;
+            const auto length = ::recvmsg(client, &msg, 0);
+            if (length <= 0 || (msg.msg_flags & MSG_TRUNC)) throw std::runtime_error("dashboard connection closed or packet too large");
+            return std::string(buffer, static_cast<std::size_t>(length));
+        };
+        try {
+            pollfd handshake{client, POLLIN, 0};
+            if (::poll(&handshake, 1, 2000) <= 0 || !(handshake.revents & POLLIN))
+                throw std::runtime_error("dashboard hello timeout");
+            const auto hello_packet = receive();
+            require_utf8(hello_packet);
+            const auto hello = JsonParser(hello_packet).parse();
+            if (uint_field(hello, "protocol_version") != 1 || hello.at("type").string() != "hello" ||
+                hello.at("role").string() != "dashboard") throw std::runtime_error("unsupported dashboard hello");
+            if (!send_dashboard_packet(client, "{\"protocol_version\":1,\"type\":\"hello_ack\",\"role\":\"dashboard\"}"))
+                throw std::runtime_error("dashboard hello reply failed");
+            while (!stopping_.load() && !shutdown_requested) {
+                pollfd event{client, POLLIN, 0};
+                const int polled_client = ::poll(&event, 1, 250);
+                if (polled_client < 0) { if (errno == EINTR) continue; break; }
+                if (polled_client == 0) continue;
+                if (!(event.revents & POLLIN)) break;
+                const auto packet = receive();
+                try {
+                    require_utf8(packet);
+                    const auto request = JsonParser(packet).parse();
+                    if (uint_field(request, "protocol_version") != 1)
+                        throw std::runtime_error("unsupported protocol version");
+                    const auto type = request.at("type").string();
+                    std::string reply;
+                    if (type == "get_status") {
+                        reply = dashboard_status(runner_, has_request_, request_id_, power_on_, mode_);
+                    } else if (type == "command" || type == "clear_fault") {
+                        const auto id = request.at("request_id").string();
+                        if (!valid_dashboard_id(id)) throw std::runtime_error("invalid request ID");
+                        if (type == "command") {
+                            const auto power = request.at("power_on").boolean();
+                            const auto mode = request.at("mode").string();
+                            if (!valid_mode(mode)) throw std::runtime_error("invalid headlight mode");
+                            has_request_ = true; request_id_ = id; power_on_ = power; mode_ = mode;
+                        }
+                        reply = "{\"protocol_version\":1,\"type\":\"command_result\",\"request_id\":\"" + id +
+                                "\",\"accepted\":" + (type == "command" ? "true" : "false") +
+                                ",\"reason\":\"" + (type == "command" ? "stored_in_bridge" : "ecu_unavailable") + "\"}";
+                    } else throw std::runtime_error("unsupported dashboard message");
+                    if (!send_dashboard_packet(client, reply)) break;
+                } catch (const std::exception& error) {
+                    const std::string reject = "{\"protocol_version\":1,\"type\":\"error\",\"reason\":\"invalid_request\"}";
+                    std::cerr << "dashboard IPC rejected packet: " << error.what() << std::endl;
+                    if (!send_dashboard_packet(client, reject)) break;
+                }
+            }
+        } catch (const std::exception& error) {
+            if (!stopping_.load() && !shutdown_requested)
+                std::cerr << "dashboard IPC disconnected: " << error.what() << std::endl;
+        }
+        ::close(client);
+        client_fd_ = -1;
+    }
+    const int fd = listen_fd_.exchange(-1);
+    if (fd >= 0) ::close(fd);
     ::unlink(path_.c_str());
 }
 }  // namespace afs_bridge
