@@ -1,8 +1,9 @@
 # Runner–Bridge Communication
 
-**Status: initial implementation.** The runner publisher and bridge receiver
-implement protocol v1 and the candidate defaults in this document. These are
-bench defaults; they do not establish calibrated ECU safety thresholds.
+**Status: implemented.** The runner publisher and bridge receiver implement
+protocol v1 and the candidate defaults in this document; the optional bridge
+CAN worker consumes the latest accepted source scene. These are bench defaults;
+they do not establish calibrated ECU safety thresholds.
 Runner IPC carries the active MetaDrive `max_steering_deg`; the bridge requires
 a positive finite limit when present and rejects a steering angle outside its
 range. When the limit is `null`, the raw steering sample is retained, but a CAN
@@ -27,7 +28,7 @@ flowchart LR
         RX["IPC server: validate and receive"] --> STATE["Latest accepted source state"]
         STATE --> CAN["CAN worker: freshness, conversion, scheduling"]
     end
-    CAN -->|"SocketCAN; separate design"| ECU["STM32 ECU"]
+    CAN -->|"Optional SocketCAN; --can-interface NAME"| ECU["STM32 ECU"]
 ```
 
 The publisher reads the complete scene with `get_scene_snapshot()`. It must not
@@ -178,17 +179,20 @@ and `0x300` frames carry `GridValid=0` and zero sector records. The ECU clears
 its active grid and enters fallback. A fresh accepted scene is required to
 restore validity. Expected sequence gaps are allowed and do not trigger
 fallback.
-The CAN worker samples source state on its own schedule; a 20 ms CAN period can
-reuse one 60 ms simulation sample only while that sample is fresh. Simulation
-pause, lost updates, socket disconnect, and bridge restart cannot make old data
-fresh. CAN alive counters are separate from source sequence numbers.
+The CAN worker samples source state on independent schedules: speed and
+steering are encoded/transmitted every 20 ms, while the full object grid is
+transmitted every 100 ms. Each schedule uses the latest scene; a 20 ms period
+can reuse one 60 ms simulation sample only while it remains fresh. Because
+object-grid freshness is observed on its 100 ms transmit deadline, an input
+becoming stale just after a transmission can take up to one additional period
+to be sent with `GridValid=0`. Simulation pause, lost updates, socket
+disconnect, and bridge restart cannot make old data fresh. CAN alive counters
+are separate from source sequence numbers.
 
-This fail-closed CAN policy still needs implementation in the IPC/CAN state
-path. Today, `RunnerIpcServer` logs malformed or oversized packets and skips
-stale packets while retaining the previous `scene_` and `has_scene_` state;
-the CAN worker therefore needs an explicit invalid-source state or fault
-signal so a rejected packet cannot leave retained steering, speed, or grid
-data marked valid.
+`RunnerIpcServer` latches packet, parsing, freshness, and disconnect faults in
+its retained scene state. The production CAN worker encodes those conditions
+as invalid/fail-closed inputs on subsequent scheduled frames; it does not
+refresh source age from retransmitting an old sample.
 
 ## Connection And Failure Behavior
 
@@ -198,8 +202,8 @@ data marked valid.
 | Runner starts first or bridge restarts | Simulation remains usable without IPC. Publisher retries connection with bounded backoff, sends `hello`, then sends only the latest still-fresh scene. No history replay. |
 | Runner restarts | New session ID and sequence reset. Bridge discards old source state before accepting the new session. |
 | Episode resets | Same runner session; sequence continues while `seed`, `episode_step`, and `sim_time_s` may reset. |
-| Socket closes | Target: keep transmitting `0x300` with `GridValid=0` and zero sector records until a fresh accepted scene. The ECU clears the active grid and enters fallback. The current receiver marks the source unavailable on disconnect; CAN transmission is not implemented yet. |
-| Malformed or incompatible packet | Target: count and log a bounded diagnostic, reject the packet, and invalidate the `0x300` grid until a fresh accepted scene. Incompatible `hello` closes the connection. Repeated malformed packets may close it. The current receiver logs and rejects malformed scene packets but does not yet invalidate its retained scene state. |
+| Socket closes | When CAN is enabled, keep transmitting invalid `0x100`/`0x200` input values and a clear invalid `0x300` grid until a fresh accepted scene. The ECU clears its active grid and enters fallback. |
+| Malformed or incompatible packet | The receiver rejects and logs the packet, latches the detected fault, and the CAN worker marks the affected runner-derived inputs invalid until a fresh accepted scene. An incompatible `hello` closes the connection. |
 | Two publishers | Reject the second active runner connection; never merge samples from different sessions. |
 | Slow bridge | Runner worker remains nonblocking, drops intermediate scenes, and cannot create an unbounded replay queue. |
 

@@ -30,9 +30,9 @@ project.
 | Input | Source | Used for |
 |---|---|---|
 | Requested headlight power, requested mode, command validity, and clear-fault request | `0x400 Dashboard_Command` | Turn headlights off/on, select requested behavior, and handle safe fault clearing |
-| Steering angle and validity/freshness | `0x200 Vehicle_Steering` | Compute low-beam swivel target; 100 ms receive timeout |
-| Vehicle speed and validity/freshness | `0x100 Vehicle_Speed` | Gate behavior and scale/smooth swivel response; 100 ms receive timeout |
-| Grid validity/quality and one occupancy bit plus a cumulative four-bit subsector mask per sector | `0x300 Vehicle_Object` | Decide which calibrated high-beam matrix pixels to mask; clear grid after a 100 ms receive timeout |
+| Steering angle and validity/freshness | `0x200 Vehicle_Steering` | 20 ms period; compute low-beam swivel target; 100 ms receive timeout |
+| Vehicle speed and validity/freshness | `0x100 Vehicle_Speed` | 20 ms period; gate behavior and scale/smooth swivel response; 100 ms receive timeout |
+| Grid validity/quality and one occupancy bit plus a cumulative four-bit subsector mask per sector | `0x300 Vehicle_Object` | 100 ms period; decide which calibrated high-beam matrix pixels to mask; clear grid after a 250 ms receive timeout (one frame may be missed) |
 | Left/right servo feedback voltage | STM32 ADC inputs | Confirm physical swivel position |
 | Hardware driver state | I2C/PWM/SPI driver checks | Detect servo or matrix control-path faults |
 
