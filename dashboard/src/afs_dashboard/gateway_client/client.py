@@ -17,6 +17,27 @@ from afs_dashboard.models.state import DemoDashboardState, MODE_LABELS
 
 MAX_PACKET_BYTES = 4096
 
+EXECUTED_MODES = {
+    0: ("off", "Off"),
+    1: ("safe_default", "Safe default"),
+    2: ("low_beam_no_swivel", MODE_LABELS["low_beam_no_swivel"]),
+    3: ("low_beam_swivel", MODE_LABELS["low_beam_swivel"]),
+    4: ("high_beam_no_dimming", MODE_LABELS["high_beam_no_dimming"]),
+    5: ("high_beam_dimming", MODE_LABELS["high_beam_dimming"]),
+}
+HEALTH_STATES = {0: ("ok", "OK"), 1: ("degraded", "Degraded"),
+                 2: ("faulted", "Faulted"), 3: ("safe_fallback", "Safe fallback")}
+ECU_FAULT_FLAGS = (
+    ("steering_stale", "Steering input stale"),
+    ("speed_stale", "Speed input stale"),
+    ("object_stale", "Object data stale"),
+    ("dashboard_stale", "Dashboard command stale"),
+    ("servo_control_lost", "Servo control lost"),
+    ("servo_mismatch", "Servo feedback mismatch"),
+    ("beam_control_lost", "Beam control lost"),
+    ("can_decode_fault", "CAN decode fault"),
+)
+
 
 def default_socket_path() -> str:
     configured = os.environ.get("AFS_DASHBOARD_SOCKET")
@@ -40,8 +61,11 @@ class GatewayDashboardState:
         self._connected = False
         self._runner: dict[str, object] = {}
         self._request_present = False
+        self._request_valid = False
         self._request_power = True
         self._request_mode = "high_beam_dimming"
+        self._can_enabled = False
+        self._ecu: dict[str, object] = {}
         self._last_result = {
             "id": "bridge-preset", "kind": "demo_preset", "accepted": False,
             "message": "No request has been accepted by the bridge.",
@@ -104,20 +128,28 @@ class GatewayDashboardState:
             connected = self._connected
             runner = deepcopy(self._runner)
             request_present = self._request_present
+            request_valid = self._request_valid
             power = self._request_power
             mode = self._request_mode
+            can_enabled = self._can_enabled
+            ecu_status = deepcopy(self._ecu)
             result = dict(self._last_result)
             action = dict(self._last_action)
         snapshot["bridge"] = {
             "connected": connected,
             "label": "Bridge connected" if connected else "Bridge offline",
-            "detail": "Gateway IPC active; ECU CAN status unavailable." if connected
+            "detail": ("SocketCAN enabled; waiting for ECU 0x500 status."
+                       if can_enabled and not ecu_status.get("available") else
+                       "SocketCAN status is available." if can_enabled else
+                       "SocketCAN disabled; ECU values are simulated.") if connected
                       else "Waiting for Dashboard IPC socket.",
+            "can_enabled": can_enabled,
         }
         if connected and request_present:
             snapshot["request"]["power_on"] = power
             snapshot["request"]["mode"] = mode
             snapshot["request"]["mode_label"] = MODE_LABELS[mode]
+        snapshot["request"]["valid"] = request_valid
         snapshot["request"]["result"] = result
         snapshot["request"]["last_action"] = action
         fresh = connected and runner.get("fresh") is True
@@ -162,8 +194,47 @@ class GatewayDashboardState:
             if speed_live or steering_live or heading_live or position_live
             else "Simulated ego fallback"
         )
-        snapshot["ecu"]["source"] = "Simulated ECU status; CAN receive unavailable"
+        if ecu_status.get("available") is True:
+            self._apply_live_ecu(snapshot["ecu"], ecu_status)
+        else:
+            snapshot["ecu"]["source"] = (
+                "Simulated ECU status; waiting for CAN 0x500" if can_enabled
+                else "Simulated ECU status; CAN receive disabled")
         return snapshot
+
+    @staticmethod
+    def _apply_live_ecu(target: dict[str, object], status: dict[str, object]) -> None:
+        executed = status["executed_mode"]
+        health = status["health_state"]
+        mode_key, mode_label = EXECUTED_MODES[executed]
+        health_key, health_label = HEALTH_STATES[health]
+        mask = status["applied_dim_sector_mask"]
+        target.update({
+            "source": ("Live ECU status · Fresh" if status["fresh"]
+                       else "Live ECU status · Stale"),
+            "status_available": True,
+            "status_fresh": status["fresh"],
+            "status_age_ms": status["age_ms"],
+            "alive_counter": status["alive_counter"],
+            "executed_mode": mode_key,
+            "executed_mode_label": mode_label,
+            "health": health_key,
+            "health_label": health_label,
+            "required_inputs_valid": status["required_inputs_valid"],
+            "safe_fallback": status["safe_fallback"],
+            "fault_present": status["fault_present"],
+            "left_servo_feedback_deg": status["left_servo_feedback_deg"],
+            "right_servo_feedback_deg": status["right_servo_feedback_deg"],
+            "applied_dim_sector_mask": mask,
+            "applied_dim_sectors": [sector for sector in range(10) if mask & (1 << sector)],
+        })
+        faults = [
+            {"name": label, "detail": "Reported by ECU in AFS_Status (0x500)."}
+            for key, label in ECU_FAULT_FLAGS if status[key]
+        ]
+        if status["fault_present"] and not faults:
+            faults.append({"name": "ECU fault", "detail": "ECU reports a fault without a specific flag."})
+        target["faults"] = faults
 
     @staticmethod
     def _exchange(connection: socket.socket, payload: dict[str, object]) -> dict[str, object]:
@@ -197,15 +268,14 @@ class GatewayDashboardState:
             if accepted:
                 self._demo.set_command(request["power_on"], request["mode"])
         else:
-            message = "Clear-fault request accepted by bridge." if accepted else "ECU unavailable; clear-fault request was rejected."
+            message = ("Clear-fault pulse queued for CAN; ECU result is unconfirmed."
+                       if accepted else f"Bridge rejected clear-fault request: {reason}.")
             with self._lock:
                 if self._last_action["id"] == request["request_id"]:
                     self._last_action = {
                         "id": request["request_id"], "kind": "clear_fault",
                         "accepted": accepted, "message": message,
                     }
-            if accepted:
-                self._demo.clear_fault()
 
     def _apply_status(self, reply: dict[str, object]) -> None:
         if reply.get("type") != "status":
@@ -213,11 +283,42 @@ class GatewayDashboardState:
         runner = reply.get("runner")
         requested = reply.get("request")
         ecu = reply.get("ecu")
-        if not isinstance(runner, dict) or not isinstance(requested, dict) or not isinstance(ecu, dict):
+        can = reply.get("can")
+        if (not isinstance(runner, dict) or not isinstance(requested, dict) or
+                not isinstance(ecu, dict) or not isinstance(can, dict)):
             raise ValueError("Malformed bridge status")
-        if ecu.get("available") is not False:
-            raise ValueError("Unsupported ECU status source")
+        can_enabled = can.get("enabled")
+        available = ecu.get("available")
+        if not isinstance(can_enabled, bool) or not isinstance(available, bool):
+            raise ValueError("Malformed CAN/ECU availability")
+        if available:
+            if not isinstance(ecu.get("fresh"), bool):
+                raise ValueError("Malformed ECU freshness")
+            if ecu.get("age_ms") is not None and (
+                    isinstance(ecu["age_ms"], bool) or
+                    not isinstance(ecu["age_ms"], (int, float)) or
+                    not math.isfinite(ecu["age_ms"])):
+                raise ValueError("Malformed ECU age")
+            bool_fields = (
+                "required_inputs_valid", "fault_present", "safe_fallback",
+                "steering_stale", "speed_stale", "object_stale", "dashboard_stale",
+                "servo_control_lost", "servo_mismatch", "beam_control_lost", "can_decode_fault",
+            )
+            if any(not isinstance(ecu.get(key), bool) for key in bool_fields):
+                raise ValueError("Malformed ECU status flags")
+            for key, maximum in (("alive_counter", 15), ("executed_mode", 5),
+                                 ("health_state", 3), ("applied_dim_sector_mask", 1023)):
+                value = ecu.get(key)
+                if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= maximum:
+                    raise ValueError("Malformed ECU status enum or mask")
+            for key in ("left_servo_feedback_deg", "right_servo_feedback_deg"):
+                value = ecu.get(key)
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                    raise ValueError("Malformed ECU servo feedback")
         present = requested.get("present") is True
+        valid = requested.get("valid")
+        if not isinstance(requested.get("present"), bool) or not isinstance(valid, bool):
+            raise ValueError("Malformed bridge command validity")
         power = requested.get("power_on")
         mode = requested.get("mode")
         if not isinstance(power, bool) or not isinstance(mode, str) or mode not in MODE_LABELS:
@@ -256,14 +357,20 @@ class GatewayDashboardState:
                 }
             self._runner = runner
             self._request_present = present
+            self._request_valid = valid
             self._request_power = power
             self._request_mode = mode
+            self._can_enabled = can_enabled
+            self._ecu = ecu
             self._connected = True
 
     def _mark_disconnected(self) -> None:
         with self._lock:
             self._connected = False
             self._runner = {}
+            self._request_valid = False
+            self._ecu = {}
+            self._can_enabled = False
             if self._last_result["message"] == "Waiting for bridge acceptance.":
                 self._last_result = {
                     **self._last_result, "accepted": False,

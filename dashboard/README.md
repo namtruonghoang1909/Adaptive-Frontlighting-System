@@ -3,7 +3,8 @@
 Native Tkinter Dashboard for operator requests and AFS status. It exchanges
 commands and status with the C++ bridge over a local Unix socket. Runner speed,
 steering, position, heading, and nearby vehicles are shown when fresh and
-available. ECU data and fallback values are clearly marked as simulated. No
+available. ECU data uses clearly marked simulated fallbacks until decoded CAN
+status is available. No
 browser or localhost port is needed.
 
 ## Run
@@ -32,13 +33,13 @@ The window has three sections:
   buttons; turning them on restores the last selected mode.
 
 Open **Detailed status** for live position and heading when available, plus the
-simulated proximity grid, faults, servo feedback,
+simulated proximity grid and decoded ECU faults, executed mode, servo feedback,
 dim sectors, and the clear-fault action in a second window.
 
-The UI keeps the operator request, bridge acceptance, and simulated ECU
-execution separate. Accepted requests are retained by the bridge, but do not
-reach CAN or the ECU yet. Clear fault is rejected while ECU control is absent.
-The selection preview updates immediately, even when the bridge is offline;
+The UI keeps the operator request, bridge acceptance, and ECU-reported execution
+separate. With CAN enabled, accepted requests are sent by the bridge as `0x400`
+every 50 ms. Clear fault is queued for one successful CAN frame; the bridge
+response does not confirm ECU execution. The selection preview updates immediately, even when the bridge is offline;
 the request result still reports that failure. Commands are not replayed. The
 bridge retains the accepted request ID so the Dashboard can reconcile an
 in-flight command after reconnecting.
