@@ -270,14 +270,23 @@ bool valid_mode(const std::string& mode) {
            mode == "high_beam_no_dimming" || mode == "high_beam_dimming";
 }
 
+std::uint8_t mode_code(const std::string& mode) {
+    if (mode == "low_beam_no_swivel") return 0;
+    if (mode == "low_beam_swivel") return 1;
+    if (mode == "high_beam_no_dimming") return 2;
+    if (mode == "high_beam_dimming") return 3;
+    throw std::invalid_argument("unsupported headlight mode");
+}
+
 bool send_dashboard_packet(int fd, const std::string& packet) {
     const auto sent = ::send(fd, packet.data(), packet.size(), MSG_NOSIGNAL);
     return sent >= 0 && static_cast<std::size_t>(sent) == packet.size();
 }
 
-std::string dashboard_status(const RunnerIpcServer& runner, bool has_request,
-                             const std::string& request_id, bool power_on,
-                             const std::string& mode) {
+std::string dashboard_status(const RunnerIpcServer& runner,
+                             const DashboardIpcServer& dashboard) {
+    const auto request = dashboard.command_snapshot();
+    const auto ecu = dashboard.latest_ecu_status();
     const auto current = runner.current_scene();
     const bool connected = current.has_value();
     const RunnerScene scene = current.value_or(RunnerScene{});
@@ -332,13 +341,48 @@ std::string dashboard_status(const RunnerIpcServer& runner, bool has_request,
         out << "{\"x_forward_m\":" << display_objects[index]->x_forward_m
             << ",\"y_left_m\":" << display_objects[index]->y_left_m << '}';
     }
-    out << "]},\"request\":{\"present\":" << (has_request ? "true" : "false")
+    out << "]},\"request\":{\"present\":" << (request.present ? "true" : "false")
+        << ",\"valid\":" << (request.valid ? "true" : "false")
         << ",\"request_id\":";
-    if (has_request) out << '"' << request_id << '"';
+    if (request.present) out << '"' << request.request_id << '"';
     else out << "null";
     out
-        << ",\"power_on\":" << (power_on ? "true" : "false")
-        << ",\"mode\":\"" << mode << "\"},\"ecu\":{\"available\":false}}";
+        << ",\"power_on\":" << (request.power_on ? "true" : "false")
+        << ",\"mode\":\"" << request.mode << "\"},\"can\":{\"enabled\":"
+        << (dashboard.can_enabled() ? "true" : "false")
+        << "},\"ecu\":{\"available\":" << (ecu ? "true" : "false");
+    if (ecu) {
+        const auto now = std::chrono::steady_clock::now().time_since_epoch();
+        const auto now_ns = static_cast<std::uint64_t>(
+            std::chrono::duration_cast<std::chrono::nanoseconds>(now).count());
+        const bool timestamp_valid = ecu->received_monotonic_ns <= now_ns;
+        const auto age_ns = timestamp_valid ? now_ns - ecu->received_monotonic_ns : 0;
+        const bool fresh = timestamp_valid && age_ns <= 250'000'000ULL;
+        out << ",\"fresh\":" << (fresh ? "true" : "false")
+            << ",\"age_ms\":";
+        if (timestamp_valid) out << age_ns / 1'000'000ULL;
+        else out << "null";
+        out << ",\"alive_counter\":" << static_cast<unsigned int>(ecu->alive_counter)
+            << ",\"required_inputs_valid\":" << (ecu->required_inputs_valid ? "true" : "false")
+            << ",\"fault_present\":" << (ecu->fault_present ? "true" : "false")
+            << ",\"safe_fallback\":" << (ecu->safe_fallback ? "true" : "false")
+            << ",\"executed_mode\":" << static_cast<unsigned int>(ecu->executed_mode)
+            << ",\"health_state\":" << static_cast<unsigned int>(ecu->health_state)
+            << ",\"steering_stale\":" << (ecu->steering_stale ? "true" : "false")
+            << ",\"speed_stale\":" << (ecu->speed_stale ? "true" : "false")
+            << ",\"object_stale\":" << (ecu->object_stale ? "true" : "false")
+            << ",\"dashboard_stale\":" << (ecu->dashboard_stale ? "true" : "false")
+            << ",\"servo_control_lost\":" << (ecu->servo_control_lost ? "true" : "false")
+            << ",\"servo_mismatch\":" << (ecu->servo_mismatch ? "true" : "false")
+            << ",\"beam_control_lost\":" << (ecu->beam_control_lost ? "true" : "false")
+            << ",\"can_decode_fault\":" << (ecu->can_decode_fault ? "true" : "false")
+            << ",\"left_servo_feedback_deg\":" << ecu->left_servo_feedback_deg
+            << ",\"right_servo_feedback_deg\":" << ecu->right_servo_feedback_deg
+            << ",\"applied_dim_sector_mask\":" << ecu->applied_dim_sector_mask;
+    } else {
+        out << ",\"fresh\":false,\"age_ms\":null";
+    }
+    out << "}}";
     return out.str();
 }
 }  // namespace
@@ -482,8 +526,10 @@ void RunnerIpcServer::run() {
     ::unlink(path_.c_str());
 }
 
-DashboardIpcServer::DashboardIpcServer(std::string socket_path, const RunnerIpcServer& runner)
-    : path_(std::move(socket_path)), runner_(runner) {
+DashboardIpcServer::DashboardIpcServer(std::string socket_path,
+                                       const RunnerIpcServer& runner,
+                                       bool can_enabled)
+    : path_(std::move(socket_path)), runner_(runner), can_enabled_(can_enabled) {
     if (path_.empty() || path_[0] != '/' || path_.size() >= sizeof(sockaddr_un::sun_path))
         throw std::invalid_argument("dashboard socket path must be absolute and fit sun_path");
 }
@@ -497,6 +543,32 @@ DashboardIpcServer::~DashboardIpcServer() {
 }
 
 std::string DashboardIpcServer::socket_path() const { return path_; }
+
+bool DashboardIpcServer::can_enabled() const { return can_enabled_; }
+
+DashboardCommandSnapshot DashboardIpcServer::command_snapshot() const {
+    std::lock_guard<std::mutex> lock(state_lock_);
+    return {has_request_, dashboard_connected_ && (has_request_ || clear_fault_pending_), request_id_,
+            power_on_, mode_, mode_code_, clear_fault_pending_,
+            clear_fault_generation_};
+}
+
+std::optional<AfsStatus> DashboardIpcServer::latest_ecu_status() const {
+    std::lock_guard<std::mutex> lock(state_lock_);
+    return latest_ecu_status_;
+}
+
+void DashboardIpcServer::retain_ecu_status(const AfsStatus& status) {
+    std::lock_guard<std::mutex> lock(state_lock_);
+    latest_ecu_status_ = status;
+}
+
+void DashboardIpcServer::acknowledge_clear_fault(std::uint64_t generation) {
+    std::lock_guard<std::mutex> lock(state_lock_);
+    if (clear_fault_pending_ && generation == clear_fault_generation_) {
+        clear_fault_pending_ = false;
+    }
+}
 
 void DashboardIpcServer::stop() {
     stopping_.store(true);
@@ -581,6 +653,10 @@ void DashboardIpcServer::run() {
                 hello.at("role").string() != "dashboard") throw std::runtime_error("unsupported dashboard hello");
             if (!send_dashboard_packet(client, "{\"protocol_version\":1,\"type\":\"hello_ack\",\"role\":\"dashboard\"}"))
                 throw std::runtime_error("dashboard hello reply failed");
+            {
+                std::lock_guard<std::mutex> lock(state_lock_);
+                dashboard_connected_ = true;
+            }
             while (!stopping_.load() && !shutdown_requested) {
                 pollfd event{client, POLLIN, 0};
                 const int polled_client = ::poll(&event, 1, 250);
@@ -596,19 +672,34 @@ void DashboardIpcServer::run() {
                     const auto type = request.at("type").string();
                     std::string reply;
                     if (type == "get_status") {
-                        reply = dashboard_status(runner_, has_request_, request_id_, power_on_, mode_);
+                        reply = dashboard_status(runner_, *this);
                     } else if (type == "command" || type == "clear_fault") {
                         const auto id = request.at("request_id").string();
                         if (!valid_dashboard_id(id)) throw std::runtime_error("invalid request ID");
+                        bool accepted = true;
+                        std::string reason = "stored_in_bridge";
                         if (type == "command") {
                             const auto power = request.at("power_on").boolean();
                             const auto mode = request.at("mode").string();
                             if (!valid_mode(mode)) throw std::runtime_error("invalid headlight mode");
-                            has_request_ = true; request_id_ = id; power_on_ = power; mode_ = mode;
+                            std::lock_guard<std::mutex> lock(state_lock_);
+                            has_request_ = true;
+                            request_id_ = id;
+                            power_on_ = power;
+                            mode_ = mode;
+                            mode_code_ = afs_bridge::mode_code(mode);
+                        } else if (can_enabled_) {
+                            std::lock_guard<std::mutex> lock(state_lock_);
+                            clear_fault_pending_ = true;
+                            ++clear_fault_generation_;
+                            reason = "queued_for_can";
+                        } else {
+                            accepted = false;
+                            reason = "can_disabled";
                         }
                         reply = "{\"protocol_version\":1,\"type\":\"command_result\",\"request_id\":\"" + id +
-                                "\",\"accepted\":" + (type == "command" ? "true" : "false") +
-                                ",\"reason\":\"" + (type == "command" ? "stored_in_bridge" : "ecu_unavailable") + "\"}";
+                                "\",\"accepted\":" + (accepted ? "true" : "false") +
+                                ",\"reason\":\"" + reason + "\"}";
                     } else throw std::runtime_error("unsupported dashboard message");
                     if (!send_dashboard_packet(client, reply)) break;
                 } catch (const std::exception& error) {
@@ -623,6 +714,11 @@ void DashboardIpcServer::run() {
         }
         ::close(client);
         client_fd_ = -1;
+        {
+            std::lock_guard<std::mutex> lock(state_lock_);
+            dashboard_connected_ = false;
+            clear_fault_pending_ = false;
+        }
     }
     const int fd = listen_fd_.exchange(-1);
     if (fd >= 0) ::close(fd);

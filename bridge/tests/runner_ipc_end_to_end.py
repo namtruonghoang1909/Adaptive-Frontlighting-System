@@ -32,8 +32,10 @@ from object_extraction import (  # noqa: E402
 class BridgeProcess:
     def __init__(self, executable: str, socket_path: str) -> None:
         self.lines: queue.Queue[str] = queue.Queue()
+        dashboard_path = str(Path(socket_path).with_name("dashboard.sock"))
         self.process = subprocess.Popen(
-            [executable, "--socket", socket_path],
+            [executable, "--socket", socket_path,
+             "--dashboard-socket", dashboard_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,

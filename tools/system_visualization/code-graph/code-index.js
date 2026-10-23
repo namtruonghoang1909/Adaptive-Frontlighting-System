@@ -939,6 +939,16 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "bridge/src/app/can_runtime.cpp",
+    "label": "can_runtime.cpp",
+    "parent": "bridge/src/app",
+    "kind": "file",
+    "path": "bridge/src/app/can_runtime.cpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
     "id": "bridge/src/app/runner_bridge_main.cpp",
     "label": "runner_bridge_main.cpp",
     "parent": "bridge/src/app",
@@ -1039,6 +1049,16 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "bridge/src/can/afs_status.cpp",
+    "label": "afs_status.cpp",
+    "parent": "bridge/src/can",
+    "kind": "file",
+    "path": "bridge/src/can/afs_status.cpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
     "id": "bridge/src/can/can_encoder.cpp",
     "label": "can_encoder.cpp",
     "parent": "bridge/src/can",
@@ -1054,6 +1074,26 @@ globalThis.CODE_INDEX = [
     "parent": "bridge/src/can",
     "kind": "file",
     "path": "bridge/src/can/can_frame_encoder.cpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/socketcan_frame.cpp",
+    "label": "socketcan_frame.cpp",
+    "parent": "bridge/src/can",
+    "kind": "file",
+    "path": "bridge/src/can/socketcan_frame.cpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/socketcan_transport.cpp",
+    "label": "socketcan_transport.cpp",
+    "parent": "bridge/src/can",
+    "kind": "file",
+    "path": "bridge/src/can/socketcan_transport.cpp",
     "status": "implemented",
     "color": "#82c6a0",
     "description": ""
@@ -1094,6 +1134,36 @@ globalThis.CODE_INDEX = [
     "parent": "bridge",
     "kind": "module",
     "path": "bridge/src/state",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/afs_status.hpp",
+    "label": "afs_status.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/afs_status.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/afs_status.hpp#AfsStatus",
+    "label": "AfsStatus",
+    "parent": "bridge/include/afs_bridge/afs_status.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/afs_status.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/afs_status.hpp#AfsStatusDecoder",
+    "label": "AfsStatusDecoder",
+    "parent": "bridge/include/afs_bridge/afs_status.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/afs_status.hpp",
     "status": "implemented",
     "color": "#82c6a0",
     "description": ""
@@ -1189,6 +1259,16 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "bridge/include/afs_bridge/can_frame_encoder.hpp#DashboardCommandCanSignals",
+    "label": "DashboardCommandCanSignals",
+    "parent": "bridge/include/afs_bridge/can_frame_encoder.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_frame_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
     "id": "bridge/include/afs_bridge/can_frame_encoder.hpp#CanFrameEncoder",
     "label": "CanFrameEncoder",
     "parent": "bridge/include/afs_bridge/can_frame_encoder.hpp",
@@ -1219,10 +1299,40 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "bridge/include/afs_bridge/can_runtime.hpp",
+    "label": "can_runtime.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/can_runtime.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_runtime.hpp#CanRuntime",
+    "label": "CanRuntime",
+    "parent": "bridge/include/afs_bridge/can_runtime.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_runtime.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
     "id": "bridge/include/afs_bridge/dashboard_ipc.hpp",
     "label": "dashboard_ipc.hpp",
     "parent": "bridge",
     "kind": "file",
+    "path": "bridge/include/afs_bridge/dashboard_ipc.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/dashboard_ipc.hpp#DashboardCommandSnapshot",
+    "label": "DashboardCommandSnapshot",
+    "parent": "bridge/include/afs_bridge/dashboard_ipc.hpp",
+    "kind": "class",
     "path": "bridge/include/afs_bridge/dashboard_ipc.hpp",
     "status": "implemented",
     "color": "#82c6a0",
@@ -1274,6 +1384,58 @@ globalThis.CODE_INDEX = [
     "parent": "bridge/include/afs_bridge/runner_ipc.hpp",
     "kind": "class",
     "path": "bridge/include/afs_bridge/runner_ipc.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "label": "socketcan_frame.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/socketcan_frame.hpp#to_native_can_frame",
+    "label": "to_native_can_frame",
+    "parent": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "kind": "function",
+    "path": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": "",
+    "line": 13
+  },
+  {
+    "id": "bridge/include/afs_bridge/socketcan_frame.hpp#from_native_can_frame",
+    "label": "from_native_can_frame",
+    "parent": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "kind": "function",
+    "path": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": "",
+    "line": 14
+  },
+  {
+    "id": "bridge/include/afs_bridge/socketcan_transport.hpp",
+    "label": "socketcan_transport.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/socketcan_transport.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/socketcan_transport.hpp#SocketCanTransport",
+    "label": "SocketCanTransport",
+    "parent": "bridge/include/afs_bridge/socketcan_transport.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/socketcan_transport.hpp",
     "status": "implemented",
     "color": "#82c6a0",
     "description": ""
@@ -1379,7 +1541,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 599
+    "line": 649
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client",
@@ -1410,7 +1572,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 21
+    "line": 42
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState",
@@ -1421,7 +1583,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "Presents bridge requests and runner fields with explicit demo fallbacks.",
-    "line": 30
+    "line": 51
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.close",
@@ -1432,7 +1594,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 56
+    "line": 80
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.set_command",
@@ -1443,7 +1605,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 60
+    "line": 84
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.clear_fault",
@@ -1454,7 +1616,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 83
+    "line": 107
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.snapshot",
@@ -1465,7 +1627,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 101
+    "line": 125
   },
   {
     "id": "dashboard/src/afs_dashboard/models",
@@ -1731,7 +1893,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#dc93ae",
     "description": "",
-    "line": 99
+    "line": 111
   },
   {
     "id": "tools/system_visualization/code-graph/functionality-data.js",
