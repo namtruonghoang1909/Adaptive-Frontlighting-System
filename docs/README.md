@@ -50,6 +50,7 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 | [verification/testing.md](verification/testing.md) | Testing |
 | [../tools/system_visualization/README.md](../tools/system_visualization/README.md) | Interactive Code graph and functionality paths |
 | [temporary/desired_file_system.md](temporary/desired_file_system.md) | Target repository layout |
+| [temporary/linux_commands.md](temporary/linux_commands.md) | Practical Linux, SocketCAN, socket, and embedded target commands |
 | [Agent guide](../agents/README.md) | Agent rules, working context, and plans |
 
 ## Current Status
@@ -59,9 +60,9 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 | Documentation | Architecture guides plus a class interaction Code graph with implemented functionality paths under `tools/system_visualization/` |
 | Python simulation | Runner, controls, ego/surrounding extraction, latest-scene access, optional development browser display, and automatic bridge publishing implemented under `simulation_runner/` |
 | Simulation adapter IPC | Versioned local Unix socket publisher implemented; starts with every runner invocation |
-| C++ bridge | C++17/CMake runner socket receiver and latest source-scene retention implemented; CAN runtime remains planned |
-| DBC | [bridge/can/afs.dbc](../bridge/can/afs.dbc) defines all five CAN messages; generated payload codecs remain planned |
-| Dashboard | Python package scaffold; UI and IPC behavior not implemented |
+| C++ bridge | C++17/CMake runner and Dashboard IPC, opt-in SocketCAN (`0x100`/`0x200` TX every 20 ms; `0x300` TX every 100 ms; `0x400` TX every 50 ms), and `0x500` decoder/forwarding implemented |
+| DBC | [bridge/can/afs.dbc](../bridge/can/afs.dbc) defines all five CAN messages; generated codecs pack the `0x100`–`0x400` TX frames and decode `0x500` |
+| Dashboard | Native Tkinter vehicle dashboard with bridge requests, runner status, live ECU status, and clearly labeled simulated fallbacks |
 | AFS/ADB firmware | Not implemented |
 | Vendored MetaDrive | Local ignored tree under `simulation/metadrive/` |
 | Hardware rig | Planned |

@@ -65,7 +65,7 @@ values and row optics need bench calibration.
 |---|---|
 | STM32F407VE board | AFS ECU controller |
 | MCP2551 CAN transceiver | CAN physical layer transceiver |
-| CAN-to-USB adapter | Linux host connection to the real CAN bus; select one that exposes SocketCAN for the planned gateway and SavvyCAN monitoring |
+| CAN-to-USB adapter | Linux host connection to the real CAN bus; select one that exposes SocketCAN for the bridge and SavvyCAN monitoring |
 | Servo PCA9685 board | Shared servo PWM driver over I2C at servo frequency |
 | Left 8x8 MAX7219 matrix module | Left low/high beam pixel output and ADB masking |
 | Right 8x8 MAX7219 matrix module | Right low/high beam pixel output and ADB masking |
@@ -99,5 +99,50 @@ object bounds and optical calibration.
 - The matrix modules are display hardware for a bench demonstration. Their brightness and optics need evaluation before treating them as headlight emitters.
 - Moving-platform wiring needs strain relief and bounded yaw travel to avoid twisting wires.
 - Servo calibration, mechanical limits, matrix pixel angles, low-beam cutoff, high-beam reach, and ADB shadow margins require hardware bring-up calibration.
+
+## Host CAN Bring-Up
+
+When the USB adapter arrives, confirm that its Linux driver exposes a SocketCAN
+interface and find its name with `ip -brief link`. The DBC specifies 500 kbit/s;
+replace `can0` below if the adapter uses a different name:
+
+```bash
+sudo ip link set can0 down
+sudo ip link set can0 type can bitrate 500000
+sudo ip link set can0 up
+ip -details link show can0
+```
+
+Connect the adapter to the powered ECU bus with correct CANH/CANL wiring and
+termination. In separate terminals, run the traffic monitor:
+
+```bash
+candump can0
+```
+
+Start the bridge with CAN enabled:
+
+```bash
+bash bridge/scripts/run_runner_bridge.sh --can-interface can0
+```
+
+Start the Dashboard:
+
+```bash
+bash dashboard/scripts/start_dashboard.sh
+```
+
+Start MetaDrive:
+
+```bash
+bash simulation_runner/scripts/start_metadrive_simulation.sh
+```
+
+Confirm that `0x100`, `0x200`, `0x300`, and `0x400` appear on the bus, that the
+ECU reports `0x500`, and that the Dashboard changes from simulated fallback to
+fresh ECU status after a valid report. Selecting a Dashboard mode should change
+the decoded executed mode only after the ECU reports it. The synthetic `0x500`
+injector belongs to the `vcan0` integration test and is not part of this
+physical bring-up procedure.
 
 For the planned host-side CAN workflow, Vector CANdb++ edits the DBC and SavvyCAN displays decoded traffic. See [CAN DBC editing and monitoring](../can/README.md#dbc-editing-and-live-monitoring) for the DBC, SocketCAN, and live-traffic requirements.

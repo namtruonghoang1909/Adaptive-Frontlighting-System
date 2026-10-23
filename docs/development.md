@@ -67,13 +67,36 @@ override it, pass `--socket PATH` to the bridge script and `--bridge-socket PATH
 to the runner, or set `AFS_BRIDGE_SOCKET` to the same path in both terminals.
 See [bridge/README.md](../bridge/README.md) for bridge details.
 
+### Enable SocketCAN
+
+The bridge starts without opening CAN by default. To enable transmit/receive,
+pass the name of an existing, up CAN interface:
+
+```bash
+bash bridge/scripts/run_runner_bridge.sh --can-interface can0
+```
+
+For a prepared virtual interface, use `--can-interface vcan0`. The bridge does
+not create interfaces, set link state, or configure bitrate. It sends runner-
+derived `0x100` and `0x200` frames every 20 ms, `0x300` every 100 ms, and the
+Dashboard command `0x400` every 50 ms. It receives filtered `0x500 AFS_Status`
+frames and forwards decoded status to Dashboard IPC. The ECU's `0x300` receive
+timeout is 250 ms, and its suggested `0x500` reporting period is 50 ms. The
+Dashboard marks retained ECU status stale after 250 ms without a valid report.
+The opt-in vcan integration test is described in
+[bridge/tests/README.md](../bridge/tests/README.md); physical adapter/ECU
+validation still requires the hardware; see the
+[host CAN bring-up steps](hardware/hardware.md#host-can-bring-up). See the
+[SocketCAN implementation notes](../bridge/src/can/README.md).
+
 ## Check The Receiver
 
-CTest runs the C++ receiver protocol cases and, when Python 3 is available, a
-process-level check that runs the real Python publisher against the C++ bridge
-with synthetic scenes. Together they cover accepted data, reconnects, socket
-permissions, competing publishers, and invalid or stale messages. They do not
-require MetaDrive or CAN hardware.
+CTest runs the runner and Dashboard socket integration checks, CAN signal/frame
+encoding, SocketCAN conversion, `0x500` decoder validation, and (when Python 3
+is available) Dashboard status mapping plus the real Python runner publisher
+against the C++ bridge. These tests need neither MetaDrive nor CAN hardware.
+The separate end-to-end vcan test is opt-in and needs a prepared CAN interface;
+see [bridge/tests/README.md](../bridge/tests/README.md).
 
 ```bash
 cmake -S bridge -B build/bridge
@@ -169,13 +192,13 @@ bash dashboard/scripts/start_dashboard.sh
 The window needs a graphical Linux session and uses no localhost port. Start
 the bridge with `bash bridge/scripts/run_runner_bridge.sh` in another terminal.
 Fresh runner ego fields and nearby vehicles appear when available; mode and power requests
-reach the bridge. ECU values remain simulated and no CAN traffic is sent. See
+reach the bridge. ECU values use simulated fallbacks until valid CAN status is received. See
 the [Dashboard guide](../dashboard/README.md).
 
 ## Components Without A Runnable Entry Point
 
-`firmware/` does not yet have an implemented application. Live ECU status
-delivery remains planned. The bridge can validate/project runner data
-and pack DBC-generated in-memory CAN frames; the diagnostic smoke script above
-checks this path without SocketCAN. Production CAN scheduling and transmission
-are not implemented. Firmware does not yet have a launch script.
+`firmware/` does not yet have an implemented application. The bridge forwards
+decoded ECU status through Dashboard IPC. The CAN frame smoke script above
+checks DBC encoding without a CAN interface; production SocketCAN transmission
+and status reception are enabled with `--can-interface NAME`. Firmware does
+not yet have a launch script.

@@ -32,7 +32,7 @@
 | HIL | Real CAN and headlight rig | End-to-end behavior |
 | Demo acceptance | Full setup | Repeatable project demonstration |
 
-The current IPC tests cover the C++ receiver protocol, Python publisher projection, publisher-first retry, and publisher reconnection after bridge restart. The optional live smoke test runs a finite headless MetaDrive session through both processes. Remaining gateway checks include invalid/stale input policy through CAN, source timeout despite continuing CAN TX, slow Dashboard readers, CAN errors, command acceptance versus ECU execution, and clean shutdown. `vcan0` alone tests CAN transport; full SIL needs an ECU implementation, while physical HIL needs `can0` and STM32.
+The current IPC tests cover the C++ receiver protocol, Python publisher projection, publisher-first retry, and publisher reconnection after bridge restart. The optional live smoke test runs a finite headless MetaDrive session through both processes. Dashboard status mapping checks that requested mode and ECU-reported execution remain separate. Additional stress coverage can exercise stale-input policy while CAN TX continues, slow Dashboard readers, CAN I/O faults, and clean shutdown. `vcan0` alone tests CAN transport; full SIL needs an ECU implementation, while physical HIL needs `can0` and STM32.
 
 The optional CAN frame smoke check runs the standalone validation and DBC
 encoders at the bridge's 20 ms diagnostic cadence. Each batch is round-tripped

@@ -2,21 +2,32 @@
 
 A bench-scale design for headlights that **swivel with steering in low beam** and **mask selected pixels around vehicles in high beam**. The proposed rig has one servo-mounted 8×8 MAX7219 LED matrix on each side, controlled by an STM32F407ZG.
 
-**Project status:** MetaDrive scene extraction, runner-to-C++ bridge IPC, Dashboard-to-bridge request/status IPC, and standalone APIs for validating/projecting CAN signals and packing DBC-generated `0x100`–`0x300` frames are implemented. The native Dashboard displays fresh runner ego fields and nearby vehicles when available, sends mode/power requests to the bridge, and labels the proximity grid and ECU values as simulated. A separate diagnostic logger exercises the CAN APIs against live MetaDrive scenes; the production bridge executable does not call them yet. SocketCAN transmission, ECU status reception, Zephyr-based STM32 firmware, and physical lamp control are planned.
+**Project status:** MetaDrive scene extraction, runner-to-C++ bridge IPC,
+Dashboard-to-bridge request/status IPC, opt-in SocketCAN transmission of
+DBC-generated frames, and local `0x500 AFS_Status` reception/decoding are
+implemented. CAN requires an already configured interface selected with
+`--can-interface NAME`; the bridge sends `0x100`/`0x200` every 20 ms and `0x300`
+every 100 ms. The ECU object-grid receive timeout is 250 ms, and the suggested
+ECU `0x500` status period is 50 ms. The native Dashboard displays fresh runner
+ego fields and nearby vehicles when available and sends mode/power requests to
+the bridge. The bridge sends `0x400 Dashboard_Command` every 50 ms when CAN is
+enabled and forwards decoded `0x500 AFS_Status` with freshness metadata.
+Virtual CAN end-to-end coverage is available. Physical adapter/ECU verification,
+Zephyr-based STM32 firmware, and physical lamp control remain future work.
 
 ## System design
 
 ```mermaid
 flowchart LR
-    SIM["MetaDrive + Python runner<br/>scene, steering, speed"] -->|"Implemented<br/>Unix socket IPC"| BRIDGE["C++ bridge<br/>scene receiver"]
-    DASH["Python Dashboard<br/>native window + simulated ECU"] -->|"Implemented<br/>request IPC"| BRIDGE
-    BRIDGE -->|"Implemented<br/>runner status + acceptance"| DASH
-    BRIDGE -.->|"Standalone signal and DBC frame APIs<br/>SocketCAN planned"| BUS["USB-CAN + CAN bus"]
-    BUS -.->|"Planned<br/>CAN frames"| ECU["STM32 AFS ECU<br/>Zephyr firmware planned"]
+    SIM["MetaDrive + Python runner<br/>scene, steering, speed"] -->|"Implemented<br/>Unix socket IPC"| BRIDGE["C++ bridge<br/>scene receiver + CAN gateway"]
+    DASH["Python Dashboard<br/>native window + ECU status"] -->|"Implemented<br/>request IPC"| BRIDGE
+    BRIDGE -->|"Implemented<br/>runner + ECU status"| DASH
+    BRIDGE -->|"Optional<br/>SocketCAN 0x100/0x200/0x300/0x400 TX<br/>0x500 status RX/decode"| BUS["USB-CAN + CAN bus"]
+    BUS -.->|"Hardware ECU path<br/>firmware planned"| ECU["STM32 AFS ECU<br/>Zephyr firmware planned"]
     ECU -.->|"Planned<br/>servo + matrix control"| LAMPS["Left + right headlights<br/>8×8 matrix on each swivel platform"]
 ```
 
-The C++ bridge is the intended sole host owner of project CAN traffic. The STM32 makes the final AFS/ADB lighting decisions and supervises the hardware. ECU status is intended to travel back through the bridge to the Dashboard. See the [architecture overview](docs/architecture/overview.md) and [data flow](docs/architecture/data-flow.md) for the full target design.
+The C++ bridge is the sole host owner of project CAN traffic. The STM32 makes the final AFS/ADB lighting decisions and supervises the hardware. ECU status returns through the bridge to the Dashboard when CAN is enabled. See the [architecture overview](docs/architecture/overview.md) and [data flow](docs/architecture/data-flow.md) for the full target design.
 
 ## System components and hardware
 
@@ -28,8 +39,8 @@ control remain a build plan.
 | Component | Purpose | Status |
 |---|---|---|
 | MetaDrive + Python runner | Simulate the road, ego car, traffic, steering, and speed; publish scene data | Scene extraction and runner-to-bridge IPC implemented |
-| C++ bridge | Receive runner data and Dashboard requests; own host CAN traffic | Runner and Dashboard IPC, CAN signal validation/projection, and DBC-generated frame packing APIs implemented; runtime transport planned |
-| CAN-to-USB adapter and CAN bus | Connect the Linux host to the ECU | Proposed hardware; CAN transport planned |
+| C++ bridge | Receive runner data and Dashboard requests; own host CAN traffic | Runner and Dashboard IPC, opt-in SocketCAN TX for `0x100`–`0x400`, and `0x500` receive/decode/forward implemented |
+| CAN-to-USB adapter and CAN bus | Connect the Linux host to the ECU | Proposed hardware; physical adapter/HIL validation pending |
 | MCP2551 CAN transceiver | Connect STM32 CAN signals to the physical bus | Proposed hardware |
 | STM32F407ZG AFS ECU | Decide beam patterns, supervise feedback, and drive the lamps | Zephyr firmware planned |
 | PCA9685 and two feedback servos | Rotate the left and right headlight platforms with steering | Proposed hardware; limits need calibration |
@@ -105,15 +116,16 @@ Rows 1–4 are off while rows 5–8 swivel with steering. Higher speed reduces t
 
 The Python runner extracts MetaDrive scene data and publishes it to the C++
 bridge over a local socket. The bridge receives and retains the latest scene.
-Standalone CAN APIs validate steering and speed, project vehicle geometry,
-and use the DBC-generated C codec to pack three in-memory frames. A separate
-diagnostic logger exercises them against live runner data; they are not wired
-into the production bridge executable. The native Dashboard window sends mode
-and power requests to the bridge and displays fresh runner ego fields and
-nearby vehicles when available. The proximity grid and ECU status remain
-simulated. SocketCAN transport,
-ECU status reception, Zephyr-based STM32 firmware, and physical lamp control
-are planned. The headlight illustrations and beam
+The production bridge validates steering and speed, projects vehicle geometry,
+and uses the DBC-generated C codec to pack and transmit CAN frames. A separate
+diagnostic logger exercises the encoders against live runner data without CAN
+transport. The native Dashboard window sends mode and power requests to the
+bridge and displays fresh runner ego fields, nearby vehicles, and decoded ECU
+status when available. The proximity grid and ECU values use clearly labeled
+simulated fallbacks until live sources arrive. Optional SocketCAN sends
+`0x100`/`0x200` every 20 ms, `0x300` every 100 ms, and `0x400` every 50 ms.
+Virtual CAN end-to-end coverage is available; physical adapter/ECU verification,
+Zephyr-based STM32 firmware, and physical lamp control remain future work. The headlight illustrations and beam
 screenshots above describe the proposed design; they are not connected to the
 runtime or hardware.
 
@@ -173,8 +185,9 @@ The window opens without a browser or port. Start the bridge separately with
 nearby vehicles and send mode/power requests. Its three sections
 show surrounding objects, speed/steering meters with a lighting selection
 preview, and driver controls. Mouse-wheel and trackpad scrolling work across
-the main window. Mode buttons are disabled while the headlights are off. ECU
-display values remain simulated. See the
+the main window. Mode buttons are disabled while the headlights are off. Live
+ECU status appears when CAN is enabled; simulated values remain as labeled
+fallbacks until a valid status frame arrives. See the
 [Dashboard guide](dashboard/README.md) and [IPC contract](docs/architecture/dashboard-bridge-communication.md).
 
 ## Repository guide
@@ -182,11 +195,11 @@ display values remain simulated. See the
 | Location | Purpose and current state |
 |---|---|
 | [`simulation_runner/`](simulation_runner/README.md) | MetaDrive lifecycle, controls, scene extraction, optional live display, and implemented scene publishing |
-| [`bridge/`](bridge/README.md) | C++ runner receiver, Dashboard IPC, transport-independent CAN signal validation/projection, DBC-generated frame packing, and a diagnostic MetaDrive frame smoke tool; production transport planned |
-| [`dashboard/`](dashboard/README.md) | Native Tkinter window with bridge mode/power requests, fresh runner ego fields and nearby vehicles, and simulated ECU display |
+| [`bridge/`](bridge/README.md) | C++ runner receiver, Dashboard IPC, opt-in SocketCAN TX/RX, DBC frame encoding, `0x500` decoding, and diagnostic frame smoke tool |
+| [`dashboard/`](dashboard/README.md) | Native Tkinter window with bridge mode/power requests, fresh runner ego fields/vehicles, decoded ECU status, and simulated fallback values |
 | `firmware/` | Zephyr-based STM32 control and hardware drivers planned |
 | [`tools/system_visualization/`](tools/system_visualization/README.md) | Five interactive or static development/design views |
 | [`docs/`](docs/README.md) | Architecture, CAN, hardware, tools, and verification guides |
 | [`agents/`](agents/README.md) | Repository agent rules, working context, and plans |
 
-The [development guide](docs/development.md) indexes the runnable scripts. The [CAN DBC](bridge/can/afs.dbc) defines the agreed message layouts; generated in-memory frame packing is implemented, while virtual `vcan0` transport and physical `can0` hardware work remain future steps.
+The [development guide](docs/development.md) indexes the runnable scripts. The [CAN DBC](bridge/can/afs.dbc) defines the agreed message layouts. Production SocketCAN and an opt-in `vcan0` integration test are implemented; physical `can0` adapter/ECU validation remains a hardware step.
