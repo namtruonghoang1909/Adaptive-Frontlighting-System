@@ -13,6 +13,251 @@ Future agents should read this file with the rest of `agents/` before making cha
 
 ## Entries
 
+### 2026-10-23 - Continue Firmware CAN On Bridge ECU Branch
+
+**User prompt**
+
+User renamed the current branch to `feat/bridge-ecu/can`, decided to develop
+Bridge CAN and firmware CAN on the same branch for joint debugging, and asked
+to commit the host-side Bridge CAN work before starting firmware implementation.
+
+**Agent changes**
+
+- Renamed the local branch; it has no upstream and has not been pushed.
+- Updated the current handoff to use the new branch name and record firmware as
+  the next phase on this branch.
+- Prepared a seven-commit host-side sequence for review before staging or
+  committing, as required by the repository commit rules.
+
+**Files modified**
+
+- `agents/plan/feat-bridge-socketcan.md`
+- `agents/prompt-tracking.md`
+- `agents/roadmap.md`
+- `agents/working-context.md`
+
+**Verification**
+
+- Confirmed the local branch name and preserved the working tree. No tests were
+  rerun for this commit-planning step.
+
+### 2026-10-22 - Complete Dashboard CAN Command And Status Path
+
+**User prompt**
+
+User asked to implement the remaining CAN work: transmit Dashboard `0x400`,
+forward decoded `0x500` status to the Dashboard, add conversion/decoder and
+vcan integration coverage, and verify the physical adapter where possible.
+User selected `CommandValid` to remain true while the Dashboard is connected,
+then clarified that the USB-CAN adapter has not arrived and wants the laptop
+implementation ready before delivery so hardware checks can run immediately.
+
+**Agent changes**
+
+- Added `0x400 Dashboard_Command` packing with XOR checksum and mode validation;
+  production CAN sends it every 50 ms, leases `CommandValid` to an active
+  Dashboard connection, and queues clear-fault for one successful SocketCAN
+  write. CAN-disabled clear-fault requests are rejected.
+- Forwarded validated `0x500` status to Dashboard IPC, including decoded mode,
+  health, fault flags, feedback, applied sector mask, age, and freshness.
+  Dashboard now displays live ECU values and clearly labels simulated fallback
+  and stale status.
+- Added pure Linux `can_frame` conversion, encoder/decoder/status/Dashboard IPC
+  tests, Dashboard mapping coverage that distinguishes requested from executed
+  mode, and an opt-in actual-process vcan test.
+- Updated CAN, IPC, architecture, development, hardware, roadmap, branch-plan,
+  working-context, and Code graph documentation and models.
+- Added ready-to-follow SocketCAN setup and physical bus verification steps to
+  the hardware guide.
+- Bridge CTest passes 8/8; standalone Dashboard status tests pass 4/4. The vcan
+  test builds but could not run: this host has no CAN interface and denies
+  `CAP_NET_ADMIN` when creating `vcan0`. Physical adapter/ECU verification is
+  pending hardware access.
+
+**Files modified**
+
+- `README.md`
+- `agents/plan/feat-bridge-can-encoding.md`
+- `agents/plan/feat-bridge-socketcan.md`
+- `agents/prompt-tracking.md`
+- `agents/roadmap.md`
+- `agents/working-context.md`
+- `bridge/CMakeLists.txt`
+- `bridge/README.md`
+- `bridge/can/afs.dbc`
+- `bridge/include/afs_bridge/can_encoder.hpp`
+- `bridge/include/afs_bridge/can_frame_encoder.hpp`
+- `bridge/include/afs_bridge/dashboard_ipc.hpp`
+- `bridge/src/app/README.md`
+- `bridge/src/app/runner_bridge_main.cpp`
+- `bridge/src/can/README.md`
+- `bridge/src/can/can_frame_encoder.cpp`
+- `bridge/src/can/generated/afs.c`
+- `bridge/src/can/generated/afs.h`
+- `bridge/src/ipc/runner_ipc.cpp`
+- `bridge/tests/README.md`
+- `bridge/tests/runner_ipc_end_to_end.py`
+- `dashboard/README.md`
+- `dashboard/src/afs_dashboard/app/README.md`
+- `dashboard/src/afs_dashboard/app/window.py`
+- `dashboard/src/afs_dashboard/gateway_client/README.md`
+- `dashboard/src/afs_dashboard/gateway_client/client.py`
+- `dashboard/tests/README.md`
+- `docs/README.md`
+- `docs/architecture/components/afs-ecu.md`
+- `docs/architecture/components/bridge.md`
+- `docs/architecture/components/dashboard.md`
+- `docs/architecture/dashboard-bridge-communication.md`
+- `docs/architecture/data-flow.md`
+- `docs/architecture/overview.md`
+- `docs/architecture/runner-bridge-communication.md`
+- `docs/can/README.md`
+- `docs/can/messages/0x100_Vehicle_Speed.md`
+- `docs/can/messages/0x200_Vehicle_Steering.md`
+- `docs/can/messages/0x300_Vehicle_Object.md`
+- `docs/can/messages/0x400_Dashboard_Command.md`
+- `docs/can/messages/0x500_AFS_Status.md`
+- `docs/development.md`
+- `docs/hardware/hardware.md`
+- `docs/verification/testing.md`
+- `docs/tools/tools.md`
+- `tools/system_visualization/README.md`
+- `tools/system_visualization/can-messages/can-messages.js`
+- `tools/system_visualization/can-messages/index.html`
+- `tools/system_visualization/code-graph/build_index.py`
+- `tools/system_visualization/code-graph/code-index.js`
+- `tools/system_visualization/code-graph/functionality-data.js`
+- `tools/system_visualization/code-graph/graph-data.js`
+- `tools/system_visualization/tests/can-messages.test.cjs`
+- `bridge/include/afs_bridge/afs_status.hpp`
+- `bridge/include/afs_bridge/can_runtime.hpp`
+- `bridge/include/afs_bridge/socketcan_frame.hpp`
+- `bridge/include/afs_bridge/socketcan_transport.hpp`
+- `bridge/src/app/can_runtime.cpp`
+- `bridge/src/can/afs_status.cpp`
+- `bridge/src/can/socketcan_frame.cpp`
+- `bridge/src/can/socketcan_transport.cpp`
+- `bridge/tests/afs_status_test.cpp`
+- `bridge/tests/can_frame_encoder_test.cpp`
+- `bridge/tests/dashboard_ipc_integration.cpp`
+- `bridge/tests/socketcan_frame_test.cpp`
+- `bridge/tests/socketcan_vcan_end_to_end.py`
+- `dashboard/tests/test_gateway_status.py`
+
+**Verification**
+
+- Bridge configure/build and CTest: 8/8 passed.
+- `PYTHONPATH=dashboard/src python3 dashboard/tests/test_gateway_status.py`:
+  4/4 passed.
+- Optional vcan configuration/build succeeded; runtime execution is unavailable
+  on this host. Physical adapter verification remains pending.
+- Code graph inventory freshness and validation pass (200 inventory nodes,
+  60 graph nodes, 70 interactions, seven layers, 11 paths). Headless Firefox
+  review confirmed graph rendering, conversion node details/source link,
+  direct-connection highlighting, functionality selection/clearing, search,
+  Dashboard layer filtering, class expansion, zoom, and pan. Markdown
+  link/fence checks passed on 33 changed Markdown files; whitespace checks pass.
+
+### 2026-10-22 - Adjust CAN Message Periods
+
+**User prompt**
+
+User agreed to transmit `0x300 Vehicle_Object` every 100 ms and suggested a
+50 ms producer period for non-time-critical `0x500 AFS_Status`, then asked to
+adjust all related implementation and documentation.
+
+**Agent changes**
+
+- Split production scheduling: `0x100`/`0x200` remain at 20 ms; `0x300` is
+  sent every 100 ms. Set `0x300`'s ECU receive timeout to 250 ms to tolerate
+  one missed grid frame plus timing margin. Document that stale-grid reporting
+  can lag by up to one 100 ms transmission period.
+- Set the suggested ECU `0x500` reporting period and DBC cycle-time attribute
+  to 50 ms. The bridge does not yet enforce a receive-expiry timeout for
+  `0x500`.
+- Updated message specs, DBC metadata/comments, generated header comments,
+  bridge/architecture guides, CAN reference UI, agent plans/context, and Code
+  graph descriptions.
+- Local Python environments do not have cantools, so the generator could not
+  be run. Only DBC comments/cycle-time metadata changed; generated codec layouts
+  are unchanged, and the corresponding generated header comments were updated.
+- Code graph inventory freshness and validation passed (194 inventory nodes,
+  59 graph nodes, 65 interactions, 10 functionality paths). Headless Firefox
+  review passed for CanRuntime details/source/upstream links, class-member
+  expansion, search, layer filtering, production CAN path selection/clearing,
+  zoom, pan, and the updated CAN message reference.
+- CMake configure and the bridge build passed. Project tests and live CAN checks
+  were not run. `git diff --check` and required graph syntax checks passed.
+
+**Files modified**
+
+- `bridge/src/app/can_runtime.cpp`, `bridge/include/afs_bridge/can_runtime.hpp`,
+  `bridge/include/afs_bridge/can_encoder.hpp`, `bridge/can/afs.dbc`,
+  `bridge/src/can/generated/afs.h`
+- `bridge/README.md`, `bridge/src/can/README.md`, `docs/can/README.md`,
+  `docs/can/messages/0x300_Vehicle_Object.md`,
+  `docs/can/messages/0x500_AFS_Status.md`, `docs/development.md`,
+  `docs/README.md`, `docs/architecture/components/bridge.md`,
+  `docs/architecture/components/afs-ecu.md`, `docs/architecture/data-flow.md`,
+  `docs/architecture/overview.md`,
+  `docs/architecture/runner-bridge-communication.md`, `README.md`
+- `tools/system_visualization/can-messages/can-messages.js`,
+  `tools/system_visualization/can-messages/index.html`,
+  `tools/system_visualization/tests/can-messages.test.cjs`,
+  `tools/system_visualization/code-graph/graph-data.js`,
+  `tools/system_visualization/code-graph/functionality-data.js`,
+  `agents/plan/feat-bridge-socketcan.md`,
+  `agents/plan/feat-bridge-can-encoding.md`, `agents/working-context.md`,
+  `agents/prompt-tracking.md`, `tools/system_visualization/code-graph/code-index.js`
+
+### 2026-10-22 - Implement Production SocketCAN Runtime
+
+**User prompt**
+
+User asked to continue CAN work on `feat/bridge/can` and selected opt-in CAN
+startup: bind the CAN runtime only when `--can-interface NAME` is provided.
+
+**Agent changes**
+
+- Added a Linux SocketCAN RAII transport with interface validation, `0x500`
+  receive filtering, pollable I/O, and standard Classical CAN frame conversion.
+- Wired a 20 ms monotonic CAN worker into `afs_runner_bridge`. It samples the
+  latest runner scene, sends `0x100`/`0x200`/`0x300`, validates `0x500` status,
+  and retains accepted status with a host monotonic timestamp. CAN I/O faults
+  are rate-limited and retried while runner/Dashboard IPC remain available.
+- Updated bridge/CAN/architecture guidance, roadmap, branch checklist, Code
+  graph model, and working context. Dashboard ECU status forwarding and
+  `0x400` transmission remain out of scope.
+
+**Files modified**
+
+- `bridge/CMakeLists.txt`, `bridge/include/afs_bridge/afs_status.hpp`,
+  `bridge/include/afs_bridge/can_runtime.hpp`,
+  `bridge/include/afs_bridge/socketcan_transport.hpp`,
+  `bridge/src/app/can_runtime.cpp`,
+  `bridge/src/app/runner_bridge_main.cpp`, `bridge/src/can/afs_status.cpp`,
+  `bridge/src/can/socketcan_transport.cpp`, `bridge/README.md`,
+  `bridge/src/app/README.md`, `bridge/src/can/README.md`,
+  `bridge/tests/README.md`, `docs/architecture/components/bridge.md`,
+  `docs/architecture/data-flow.md`, `docs/architecture/overview.md`,
+  `docs/architecture/runner-bridge-communication.md`,
+  `docs/can/README.md`, `docs/can/messages/0x100_Vehicle_Speed.md`,
+  `docs/can/messages/0x200_Vehicle_Steering.md`,
+  `docs/can/messages/0x500_AFS_Status.md`,
+  `docs/development.md`, `docs/hardware/hardware.md`, `docs/README.md`,
+  `README.md`, `agents/plan/feat-bridge-socketcan.md`,
+  `agents/roadmap.md`, `agents/working-context.md`,
+  `tools/system_visualization/code-graph/graph-data.js`,
+  `tools/system_visualization/code-graph/functionality-data.js`,
+  `tools/system_visualization/code-graph/code-index.js`,
+  `agents/prompt-tracking.md`.
+
+**Verification**
+
+- CMake configure and bridge runtime/executable builds passed. No tests were
+  added or run. `vcan0` checks could not run because this environment denied
+  opening the netlink socket (`Operation not permitted`).
+
 ### 2026-10-22 - Remove An ADB Preview Beam Sector
 
 **User prompt**
@@ -244,157 +489,3 @@ speed meters and buttons for selecting headlight modes.
 - Dashboard JavaScript syntax, 35 unique HTML IDs with all JavaScript ID
   references present, Code graph inventory/validator/syntax checks, and
   `git diff --check` pass. Browser rendering was not inspected in this environment.
-
-### 2026-10-21 - Start The Local Dashboard
-
-**User prompt**
-
-User asked to pause SocketCAN work while the adapter is pending and implement
-the Dashboard first. They specified a local browser app showing ego vehicle
-data and ECU status, accepting user commands, and using mock values where no
-source exists. They then asked to create and switch to a Dashboard branch
-before continuing.
-
-**Agent changes**
-
-- Created and switched to `feat/dashboard`, preserving the working tree.
-- Added a loopback-only browser Dashboard with User Commands and AFS Status
-  sections, local demo command acceptance, simulated ECU execution, ego data,
-  a ten-sector proximity grid, faults, source provenance, servo feedback, and dim output.
-- Clearly marked all local sample values and command results as demo-only; no
-  bridge IPC, CAN traffic, or hardware connection is implemented.
-- Documented the local run command and remaining gateway integration work.
-- Added Dashboard nodes and its demo control/status flow to the Code graph.
-
-**Files modified**
-
-- `dashboard/README.md`, `dashboard/pyproject.toml`,
-  `dashboard/src/afs_dashboard/__main__.py`,
-  `dashboard/src/afs_dashboard/app/__init__.py`,
-  `dashboard/src/afs_dashboard/app/server.py`,
-  `dashboard/src/afs_dashboard/app/README.md`,
-  `dashboard/src/afs_dashboard/app/static/index.html`,
-  `dashboard/src/afs_dashboard/app/static/dashboard.css`,
-  `dashboard/src/afs_dashboard/app/static/dashboard.js`,
-  `dashboard/src/afs_dashboard/models/__init__.py`,
-  `dashboard/src/afs_dashboard/models/state.py`,
-  `dashboard/src/afs_dashboard/models/README.md`,
-  `dashboard/src/afs_dashboard/gateway_client/README.md`, `README.md`,
-  `docs/development.md`, `docs/architecture/components/dashboard.md`,
-  `docs/architecture/data-flow.md`, `docs/architecture/overview.md`,
-  `agents/README.md`, `agents/roadmap.md`, `agents/working-context.md`,
-  `agents/plan/feat-dashboard.md`, `agents/prompt-tracking.md`,
-  `tools/system_visualization/README.md`,
-  `tools/system_visualization/code-graph/build_index.py`,
-  `tools/system_visualization/code-graph/code-index.js`,
-  `tools/system_visualization/code-graph/graph-data.js`,
-  `tools/system_visualization/code-graph/functionality-data.js`
-
-**Verification**
-
-- Code inventory freshness, graph validation (182 inventory entries, 57
-  curated nodes, 57 interactions, seven layers, nine paths), Python/JavaScript
-  syntax checks, Markdown links/fences, and whitespace checks pass. No test
-  suite was run. The interactive viewer could not be checked in this session.
-
-### 2026-10-21 - Plan SocketCAN Branch
-
-**User prompt**
-
-User asked for an agents/plan document describing the work planned for the
-current feat/bridge/socketcan branch.
-
-**Agent changes**
-
-- Added a branch checklist for integrating the existing CAN encoders with
-  production SocketCAN transmit, 0x500 status receive/decode, vcan0 coverage,
-  and clean worker lifecycle. Dashboard IPC and runtime 0x400 transmission
-  remain out of scope.
-- Updated the agent guide and working context to point at the active branch
-  plan and retain the CAN-encoding checklist as prior-branch context.
-- No runtime implementation was changed.
-
-**Files modified**
-
-- agents/plan/feat-bridge-socketcan.md, agents/README.md,
-  agents/working-context.md, agents/prompt-tracking.md
-
-**Verification**
-
-- Documentation links, code fences, and whitespace were checked; no tests or
-  runtime checks were run.
-
-### 2026-10-21 - Improve Commit Plan Grouping Rules
-
-**User prompt**
-
-User asked to update the commit planning rule based on corrections to the
-recent plan: group by functionality, use smaller coherent commits, and keep a
-file in only one commit. They also asked to discuss the next work and branch
-name.
-
-**Agent changes**
-
-- Updated `agents/rules/committing.md` to require functionality-based grouping,
-  one-commit ownership for each path, accurate file counts, and clear file-list
-  headings that distinguish paths from commits. Rename paths stay together in
-  one commit.
-- Reviewed the bridge roadmap and current implementation status for the next
-  work recommendation; no implementation or branch creation was requested.
-
-**Files modified**
-
-- `agents/rules/committing.md`, `agents/prompt-tracking.md`
-
-**Verification**
-
-- `git diff --check` passes. Prompt tracking retains exactly ten entries.
-
-### 2026-10-20 - Verify DBC Frame Encoding With Headless MetaDrive
-
-**User prompt**
-
-User asked to run MetaDrive headless and add a simple logger to check the CAN
-encoder output against the agreed DBC.
-
-**Agent changes**
-
-- Added a diagnostic C++ frame logger and shell launcher that receives live
-  runner IPC, encodes frames at 20 ms intervals, prints representative IDs,
-  payload bytes, and decoded signal values, and captures each batch.
-- Added generated-C round-trip checks for every batch and an independent
-  cantools verifier that decodes captured bytes against `bridge/can/afs.dbc`.
-- Documented the smoke command and recorded the current result. The diagnostic
-  path does not open SocketCAN and does not wire encoders into the production
-  bridge executable.
-
-**Files modified**
-
-- `bridge/include/afs_bridge/can_frame_logger.hpp`,
-  `bridge/src/app/can_frame_logger.cpp`,
-  `bridge/src/app/can_frame_logger_main.cpp`,
-  `bridge/scripts/run_can_frame_smoke.sh`,
-  `bridge/scripts/verify_can_frame_capture.py`, `bridge/CMakeLists.txt`,
-  `bridge/README.md`, `bridge/src/can/README.md`, `bridge/tests/README.md`,
-  `README.md`, `docs/development.md`, `docs/verification/testing.md`,
-  `docs/can/README.md`, `docs/architecture/components/bridge.md`,
-  `docs/architecture/data-flow.md`,
-  `agents/plan/feat-bridge-can-encoding.md`, `agents/working-context.md`,
-  `agents/prompt-tracking.md`,
-  `tools/system_visualization/code-graph/build_index.py`,
-  `tools/system_visualization/code-graph/code-index.js`,
-  `tools/system_visualization/code-graph/graph-data.js`,
-  `tools/system_visualization/code-graph/functionality-data.js`
-
-**Verification**
-
-- Headless MetaDrive 0.4.3 completed 10 steps with 11 valid scenes. The logger
-  encoded 48 scheduled batches (144 frames); generated C round-trip checks
-  passed for every batch, and cantools matched all 144 frames to the DBC with
-  reserved fields zero. The sample `0x300` payload was `00 01 00 00 00 C0 39 00`.
-- The logger target built; shell and Python syntax checks passed. Code graph,
-  inventory freshness (163 nodes), graph validation (49 visible nodes, 48
-  interactions, seven layers, eight paths), JavaScript syntax, 95 Markdown
-  links across 12 checked files, and `git diff --check` passed. A Firefox
-  screenshot could not be captured: the existing profile was unresponsive and
-  a separate headless profile timed out on the compositor framebuffer error.

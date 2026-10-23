@@ -1,87 +1,68 @@
-# feat/bridge/can Branch Plan
+# feat/bridge-ecu/can Branch Plan
 
 ## Goal
 
-Connect the existing runner-to-bridge scene receiver and transport-independent CAN encoders to the Linux CAN bus through SocketCAN. The production C++ bridge should transmit runner-derived 0x100 Vehicle_Speed, 0x200 Vehicle_Steering, and 0x300 Vehicle_Object frames, and receive/decode 0x500 AFS_Status frames. The native Dashboard and its bridge request/status IPC are implemented on `feat/dashboard`; this plan retains its previously defined CAN scope. Verify transport with Linux vcan0 before any hardware integration.
-
-The branch ends at the host gateway boundary. The STM32 ECU retains AFS/ADB decisions, physical outputs, input timeouts, and safe fallback.
+Complete the laptop-side CAN gateway on `feat/bridge-ecu/can`: transmit runner and Dashboard messages through SocketCAN, decode `0x500 AFS_Status`, forward ECU state to the native Dashboard, and verify the software path on Linux vcan. The bridge remains the only host CAN owner. The STM32 ECU retains AFS/ADB decisions, actuator outputs, input timeouts, and safe fallback. Firmware CAN implementation follows on this same branch.
 
 ## Starting Point
 
-- Runner IPC and its latest accepted RunnerScene interface are implemented.
-- Dashboard IPC runs on a separate socket. The bridge retains accepted power/mode requests and IDs, reports runner status, and currently reports ECU status as unavailable.
-- CanEncoder validates runner inputs and prepares signal values; CanFrameEncoder packs the three runner-derived frames with the checked-in cantools codec.
-- afs_can_frame_logger exercises those APIs at 20 ms cadence, verifies generated-code round trips, and writes JSONL diagnostic captures. It does not transmit CAN.
-- The production afs_runner_bridge executable runs runner and Dashboard IPC servers. No SocketCAN transport, production CAN worker, or ECU status decoder exists yet.
-- The DBC defines 0x500 AFS_Status and its generated unpacker. Dashboard_Command 0x400 is also defined and the Dashboard source path is implemented, but runtime transmission of that command remains outside this plan's previously defined scope.
+- Runner scene IPC and latest accepted `RunnerScene` are implemented.
+- Dashboard request/status IPC and the native Dashboard are implemented.
+- `CanEncoder` projects runner data; `CanFrameEncoder` uses the checked-in cantools codec.
+- Optional production SocketCAN transport and scheduled runtime are implemented.
 
-## Scope
+## Implementation Checklist
 
-### 1. Add a SocketCAN transport boundary
+### SocketCAN runtime and message schedules
 
-- [ ] Add a small RAII transport class under bridge/ that opens a Linux raw CAN socket, binds it to a named interface, sends standard Classical CAN frames, receives frames, and closes the file descriptor on shutdown.
-- [ ] Require explicit interface selection through the bridge option --can-interface NAME. Require the interface to exist and be configured/up before starting; the bridge does not create interfaces, set bitrate, or change link state.
-- [ ] Convert the project's CanFrame value to/from Linux struct can_frame at this boundary. Keep DBC packing in CanFrameEncoder and keep SocketCAN unaware of signal meanings.
-- [ ] Configure receive filtering for the ECU status ID and make reads/writes pollable so transmit deadlines and receive traffic share one worker without blocking indefinitely.
-- [ ] Report interface, bind, read, and write failures through bridge diagnostics; ensure socket resources are closed during normal shutdown and error handling.
+- [x] Add an RAII Linux raw CAN transport bound to an existing up CAN interface; keep CAN opt-in with `--can-interface NAME`.
+- [x] Convert between project `CanFrame` and Linux `struct can_frame`; reject extended, remote, error, and oversized frames.
+- [x] Send `0x100 Vehicle_Speed` and `0x200 Vehicle_Steering` every 20 ms, `0x300 Vehicle_Object` every 100 ms, and `0x400 Dashboard_Command` every 50 ms using monotonic deadlines.
+- [x] Sample the newest runner scene and transmit invalid/fail-closed values for absent, stale, faulted, or degraded source data.
+- [x] Lease `CommandValid` to an active Dashboard connection and an accepted command; clear it after disconnect.
+- [x] Queue clear-fault until one successful SocketCAN write, with a valid safe-Off command if no mode request exists; reject clear-fault if CAN is disabled.
+- [x] Keep request acceptance distinct from CAN send and ECU execution results.
 
-### 2. Integrate scheduled transmission into the production bridge
+### ECU status and Dashboard display
 
-- [ ] Compose the existing RunnerIpcServer, CanEncoder, CanFrameEncoder, and SocketCAN transport in the production bridge application.
-- [ ] Run one CAN worker that reads a thread-safe copy of the latest accepted runner scene, encodes one batch, and sends 0x100, 0x200, and 0x300 every 20 ms.
-- [ ] Use monotonic deadlines. Always encode the newest available scene; do not queue or replay missed intermediate observations.
-- [ ] Continue sending invalid/fail-closed signal values when runner data is absent, stale, faulted, or degraded, so the ECU can clear unusable inputs and apply its own fallback policy.
-- [ ] Keep source-sample freshness separate from CAN transmit cadence and alive counters. Track partial send failures so the counter behavior agrees with ECU receive validation.
-- [ ] Coordinate worker stop, socket close, and runner IPC shutdown so the bridge exits cleanly.
+- [x] Receive filtered standard `0x500 AFS_Status` frames and decode through the generated DBC codec.
+- [x] Validate DLC, XOR checksum, reserved fields, enum ranges, mask bounds, and alive-counter progression.
+- [x] Retain the last accepted status with its host monotonic receive timestamp; rejected frames do not refresh it.
+- [x] Forward decoded flags, executed mode, health, servo feedback, and applied dim-sector mask through Dashboard IPC.
+- [x] Mark Dashboard status stale after 250 ms without a new accepted report; keep this as display freshness rather than ECU safety logic.
+- [x] Keep simulated ECU values clearly labeled as fallback until the first valid status frame.
 
-### 3. Receive and decode ECU status
+### Test coverage and integration
 
-- [ ] Receive standard 0x500 AFS_Status frames with DLC 8 and decode signals using the checked-in generated C codec.
-- [ ] Validate reserved fields, enum ranges, the documented XOR checksum over bytes 0 through 6, and alive-counter progression before accepting a status update.
-- [ ] Replace a mutex-protected latest accepted status snapshot with its host monotonic receive timestamp. A rejected frame must not refresh the accepted-status timestamp.
-- [ ] Log accepted status and receive/validation faults for this branch. Connecting decoded ECU status to the existing Dashboard status IPC remains follow-up work unless explicitly added to this branch's scope.
+- [x] Add a `0x400` golden vector/checksum and reserved-mode rejection test.
+- [x] Add pure Linux frame conversion tests for payload, DLC, padding, and unsupported frames.
+- [x] Add `0x500` decoder coverage for fields, checksum, reserved bits, enums, masks, counters, and restart handling.
+- [x] Add an opt-in `vcan` end-to-end test for runner-message fail-closed output, `0x400` transmission, one-frame clear-fault, Dashboard disconnect invalidation, malformed/valid `0x500`, and Dashboard status forwarding.
+- [x] Build the bridge, runtime, and focused CAN tests.
+- [x] Run the full bridge CTest suite (8/8, including Dashboard IPC/client mapping and Python-to-C++ runner IPC).
+- [ ] Run the opt-in end-to-end test on a prepared `vcan0` interface.
+- [ ] Verify the physical adapter and ECU on the bench when the adapter/ECU hardware is available.
 
-### 4. Verify transport and keep project context aligned
+### Project context
 
-- [ ] Add focused unit coverage for frame-to-SocketCAN conversion and AFS_Status validation.
-- [ ] Add Linux integration coverage using a preconfigured vcan0 interface: observe the three transmitted IDs and payloads, inject valid 0x500 status, and reject malformed status frames.
-- [ ] Cover absent/stale runner input, SocketCAN send/receive errors, and clean worker shutdown without requiring a physical CAN adapter.
-- [ ] Build the bridge and run its CTest suite plus the SocketCAN/vcan0 integration checks.
-- [ ] Update bridge, CAN, architecture, and verification docs to distinguish implemented transport from hardware validation and future Dashboard work.
-- [ ] Review and synchronize the Code graph source inventory, class interactions, and ordered functionality paths for the production CAN worker and SocketCAN transport; run the required graph checks.
+- [x] Update CAN message, IPC, bridge, architecture, and development documentation.
+- [x] Update the roadmap, prompt history, and working context.
+- [x] Synchronize Code graph nodes, interactions, and ordered Dashboard/CAN paths.
 
-## Out Of Scope
+## Remaining Decisions And Limits
 
-- Runtime transmission of 0x400 Dashboard_Command. The DBC definition, Dashboard UI, and bridge IPC request path exist, but the command's CAN transmission and lifetime policy are not included in this plan.
-- Reworking the native Dashboard UI or its implemented bridge IPC protocol.
-- STM32 firmware, AFS/ADB decisions, actuator control, and physical HIL validation.
-- Python CAN encoding or SocketCAN access.
-- DBC bit-layout changes unless implementation uncovers a documented schema defect.
-
-## Decisions To Close Before Or During Implementation
-
-- Alive-counter behavior when a scheduled SocketCAN write fails partway through a frame batch. CanEncoder currently advances counters once per encode cycle; ECU counter validation must tolerate or explicitly reject the resulting gap.
-- Whether a bound interface entering bus-off keeps the bridge alive while reporting transport unavailable, or causes the CAN worker to stop and require a restart.
-- Whether decoded ECU status should be added to the existing Dashboard IPC response in this branch or a follow-up change.
-
-## Completion Criteria
-
-- The production bridge sends complete 0x100, 0x200, and 0x300 frames on a 20 ms schedule over a configured SocketCAN interface.
-- A missing or stale runner scene is never transmitted as fresh valid input.
-- Valid 0x500 frames are decoded and retained; frames with a bad identifier, DLC, checksum, reserved field, enum, or alive counter are rejected and do not refresh status freshness.
-- vcan0 integration verifies both TX and RX without a physical adapter.
-- Socket and worker shutdown are deterministic, and the bridge, documentation, and Code graph agree about implemented behavior.
+- ECU firmware still needs to define counter-gap handling when a scheduled host CAN write fails within a message sequence.
+- Physical adapter/ECU validation requires the actual adapter, bus, and powered ECU. A vcan pass cannot verify electrical behavior, bitrate compatibility, or hardware fallback.
+- STM32 firmware and physical lamp control remain outside this branch's host-side implementation.
 
 ## References
 
 - [Bridge component design](../../docs/architecture/components/bridge.md)
 - [System data flow](../../docs/architecture/data-flow.md)
+- [Dashboard IPC contract](../../docs/architecture/dashboard-bridge-communication.md)
 - [CAN overview](../../docs/can/README.md)
-- [0x100 Vehicle_Speed](../../docs/can/messages/0x100_Vehicle_Speed.md)
-- [0x200 Vehicle_Steering](../../docs/can/messages/0x200_Vehicle_Steering.md)
-- [0x300 Vehicle_Object](../../docs/can/messages/0x300_Vehicle_Object.md)
 - [0x400 Dashboard_Command](../../docs/can/messages/0x400_Dashboard_Command.md)
 - [0x500 AFS_Status](../../docs/can/messages/0x500_AFS_Status.md)
 - [Bridge CAN module notes](../../bridge/src/can/README.md)
-- [Prior CAN encoding branch checklist](feat-bridge-can-encoding.md)
+- [Bridge test instructions](../../bridge/tests/README.md)
 - [Code graph maintenance rules](../code_visualize.md)
