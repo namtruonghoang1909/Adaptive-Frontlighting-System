@@ -17,6 +17,22 @@ The Dashboard is the logical command source. The C++ bridge CAN module is the bu
 | DLC | 3 |
 | Suggested period | 50 ms |
 
+The production bridge sends this frame every 50 ms when started with
+`--can-interface NAME`. Its `CommandValid` signal remains set while the
+Dashboard socket is connected and the bridge has accepted a power/mode
+request. Before the first accepted request, and after the Dashboard disconnects,
+the bridge sends an invalid command with power Off and mode zero. A retained
+request becomes valid again if the Dashboard reconnects; an active connection
+acts as the command lease.
+
+An accepted clear-fault request is queued for CAN and asserted for one
+successful SocketCAN write of a `0x400` frame. The pulse also sets `CommandValid`,
+using a safe Off request if no prior mode request exists. If the CAN write
+fails, the bridge keeps the pulse pending for the next scheduled attempt. The
+Dashboard result confirms bridge queuing only; ECU fault clearing is confirmed
+only by subsequent ECU status. Clear-fault requests are rejected when CAN is
+disabled.
+
 ## Byte Layout
 
 The alive counter is placed in byte `0` bits `0..3` for consistency with all provisional project frames. Byte `1` groups the related HMI headlight request values together: power first, then mode.

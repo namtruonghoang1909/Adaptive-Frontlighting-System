@@ -29,14 +29,15 @@ message index file.
 | Identifier type | 11-bit standard ID |
 | Nominal bitrate | 500 kbit/s |
 | Host interface | SocketCAN `vcan0` for virtual tests, `can0` for hardware |
-| Host CAN owner | Proposed C++17 gateway |
-| Host encoding/decoding | C++ validation/projection and cantools-generated in-memory frame packing for `0x100`–`0x300` implemented; runtime CAN transport pending |
-| Host transmit/receive | Raw Linux SocketCAN in the C++ gateway |
-| Dashboard role | Python HMI; requests and decoded status through gateway Unix socket IPC |
+| Host CAN owner | C++17 gateway |
+| Host encoding/decoding | C++ validation/projection, generated-code packing for `0x100`–`0x400`, and `0x500` status decoding/forwarding implemented |
+| Host transmit/receive | Opt-in raw Linux SocketCAN; enable with `--can-interface NAME` |
+| Dashboard role | Python HMI; requests, runner status, and decoded ECU status through gateway Unix socket IPC |
 | DLC | Message-specific and defined by the DBC; receivers reject frames whose DLC does not match the expected value |
 | Byte order | Little-endian for multi-byte integers |
+| Message periods | `0x100`/`0x200`: 20 ms; `0x300`: 100 ms; `0x400`: 50 ms; `0x500`: 50 ms suggested ECU status period |
 | Alive / grid freshness | `0x100` and `0x200` use a 4-bit rolling counter in byte `0` bits `0..3`; `0x300` has no counter and uses `GridValid` for source freshness/validity, with the ECU's CAN receive timeout for link loss |
-| ECU input/link timeout | `0x100`, `0x200`, and `0x300` use a 100 ms ECU timeout with 20 ms transmissions (five expected periods) |
+| ECU input/link timeout | `0x100`/`0x200`: 100 ms; `0x300`: 250 ms, allowing one missed 100 ms frame plus timing margin |
 | Checksum | `0x400` and `0x500` use application XOR checksums; `0x100`, `0x200`, and `0x300` rely on Classical CAN CRC |
 | Reserved fields | Transmit as `0`; each message file defines whether receivers ignore or reject nonzero reserved bits |
 
@@ -48,15 +49,21 @@ start transmitting at the same time. The project assigns `0x100` to speed,
 commands. `0x500 AFS_Status` reports the ECU's executed state and faults, so it
 is assigned a larger identifier and lower bus priority than those messages.
 
-The `0x100` and `0x200` alive counters increment on every transmitted frame,
-including invalid or repeated source data. `0x300` has no counter: the bridge
+The `0x100` and `0x200` alive counters advance once per scheduled encoding
+cycle, including invalid or repeated source data. A failed SocketCAN write can
+leave a gap in the sequence observed by the ECU; firmware integration must
+define gap tolerance. `0x300` has no counter: the bridge
 sets `GridValid` according to the latest source scene's validity and age, and
-the ECU applies its 100 ms receive timeout if accepted frames stop arriving.
-At 20 ms transmission periods, this is five expected periods. The ECU handles
-low `SteeringValid`, `SpeedValid`, or `GridValid` immediately as unusable source
-data; a received `0x300` frame with `GridValid=0` clears the active grid
-immediately. It uses the latest valid grid without comparing it to prior grid
-contents.
+the ECU applies its per-message receive timeout if accepted frames stop
+arriving. Speed and steering arrive every 20 ms and time out after 100 ms
+(five periods). The object grid arrives every 100 ms and times out after
+250 ms, allowing one missed frame plus timing margin. Low `SteeringValid`,
+`SpeedValid`, or `GridValid` marks the corresponding source unusable when
+received; a `0x300` frame with `GridValid=0` clears the active grid immediately.
+Because the bridge samples the object grid on its 100 ms transmit schedule, a
+source becoming stale just after a grid transmission can take up to one period
+to be reported. The ECU uses the latest valid grid without comparing it to
+prior grid contents.
 
 ## Current Messages
 
@@ -67,8 +74,8 @@ The message specifications use "C++ bridge CAN module" for the native gateway's 
 | `0x100` | `Vehicle_Speed` | C++ bridge CAN module | AFS ECU | Simulated speed input | [messages/0x100_Vehicle_Speed.md](messages/0x100_Vehicle_Speed.md) |
 | `0x200` | `Vehicle_Steering` | C++ bridge CAN module | AFS ECU | Simulated steering input | [messages/0x200_Vehicle_Steering.md](messages/0x200_Vehicle_Steering.md) |
 | `0x300` | `Vehicle_Object` | C++ bridge CAN module | AFS ECU | One-frame 10-sector occupancy grid with a four-bit cumulative subsector mask per sector | [messages/0x300_Vehicle_Object.md](messages/0x300_Vehicle_Object.md) |
-| `0x400` | `Dashboard_Command` | C++ bridge CAN module | AFS ECU | Dashboard HMI command encoded and sent by the bridge | [messages/0x400_Dashboard_Command.md](messages/0x400_Dashboard_Command.md) |
-| `0x500` | `AFS_Status` | AFS ECU | C++ bridge CAN module | ECU executed status decoded by the bridge and displayed by the Dashboard | [messages/0x500_AFS_Status.md](messages/0x500_AFS_Status.md) |
+| `0x400` | `Dashboard_Command` | C++ bridge CAN module | AFS ECU | Dashboard request transmitted every 50 ms; CommandValid follows Dashboard connection and accepted request | [messages/0x400_Dashboard_Command.md](messages/0x400_Dashboard_Command.md) |
+| `0x500` | `AFS_Status` | AFS ECU | C++ bridge CAN module and Dashboard | Received, validated, retained, and forwarded with freshness | [messages/0x500_AFS_Status.md](messages/0x500_AFS_Status.md) |
 
 ## Signal Intent
 
@@ -84,12 +91,12 @@ The message specifications use "C++ bridge CAN module" for the native gateway's 
 
 A DBC is a text dictionary of CAN messages: it identifies each signal's bits, signedness, units, scaling, and enums. `bridge/can/afs.dbc` is maintained with the bridge CAN implementation and shared by the gateway, firmware, logs, and tests. It is separate from the Python/C++ IPC message specification.
 
-The DBC can be edited in Vector CANdb++. The approved codec workflow uses cantools 45.0.0 to generate C pack/unpack functions when the DBC changes, checks the generated C files into `bridge/src/can/generated/`, and compiles them into the gateway. The C++ `CanFrameEncoder` currently uses generated signal encoders and packers for the `0x100`, `0x200`, and `0x300` in-memory frame values. See the regeneration command in [the CAN module notes](../../bridge/src/can/README.md). The same C codec can also be compiled into the future STM32 Zephyr firmware. Python is needed for code generation only, not at runtime or during a normal bridge build. C++ still owns sockets, scheduling, validation, and lifecycle; the STM32 Zephyr firmware owns AFS control. Timeouts and counter behavior need application logic alongside the DBC. The `0x300` grid is a single frame and requires no fragment assembly.
+The DBC can be edited in Vector CANdb++. The approved codec workflow uses cantools 45.0.0 to generate C pack/unpack functions when the DBC changes, checks the generated C files into `bridge/src/can/generated/`, and compiles them into the gateway. `CanFrameEncoder` packs the `0x100`–`0x400` frames; the `0x500` decoder uses the generated unpacker and validates application rules. See the regeneration command in [the CAN module notes](../../bridge/src/can/README.md). The same C codec can also be compiled into the future STM32 Zephyr firmware. Python is needed for code generation only, not at runtime or during a normal bridge build. C++ owns sockets, scheduling, validation, and lifecycle; the STM32 Zephyr firmware owns AFS control. Timeouts and counter behavior need application logic alongside the DBC. The `0x300` grid is a single frame and requires no fragment assembly.
 
 The Dashboard consumes decoded values and enums from gateway IPC. It does not load a DBC to own raw CAN transport.
 
 ## DBC Editing And Live Monitoring
 
-Open and edit `bridge/can/afs.dbc` in Vector CANdb++. Use SavvyCAN to view CAN traffic and decode frames using that DBC. SavvyCAN can connect to a Linux SocketCAN interface such as `vcan0` for virtual traffic or `can0` for a physical adapter. A USB-CAN adapter for the Linux host must expose SocketCAN to work with the planned gateway and this monitoring setup.
+Open and edit `bridge/can/afs.dbc` in Vector CANdb++. Use SavvyCAN to view CAN traffic and decode frames using that DBC. SavvyCAN can connect to a Linux SocketCAN interface such as `vcan0` for virtual traffic or `can0` for a physical adapter. A USB-CAN adapter for the Linux host must expose SocketCAN to work with the gateway and this monitoring setup.
 
-The DBC only describes and decodes frames; it does not create CAN traffic or connect the PC to the bus. The bridge has an in-memory generated-code frame encoder and a diagnostic logger that checks live MetaDrive samples against the DBC, but the production application does not schedule or transmit CAN frames. Live monitoring needs a CAN adapter connected to the bus. `cantools` generates the C signal encoders and message pack/unpack functions from the DBC; it is separate from the DBC editor and live viewer.
+The DBC only describes and decodes frames; it does not create CAN traffic or connect the PC to the bus. The production bridge sends `0x100`–`0x400` and receives `0x500` only when started with `--can-interface NAME`. The separate diagnostic logger checks live MetaDrive samples against the DBC without opening SocketCAN. Live physical monitoring needs a CAN adapter connected to the bus; virtual integration is available with the opt-in CTest `socketcan_vcan_end_to_end` on a prepared `vcan0`. `cantools` generates the C signal encoders and message pack/unpack functions from the DBC; it is separate from the DBC editor and live viewer.

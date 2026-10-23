@@ -36,8 +36,9 @@ The fixed example shows a white vehicle ahead and to the left of the red ego
 car. Its LED pattern is a static illustration, not a computed mapping. For the
 two-lamp overlap and response to moving vehicles, use **High beam visual**. The
 Python runner and C++ bridge occupy separate
-processes on the same laptop. Runner-to-bridge socket IPC is implemented; CAN
-conversion and ECU lighting behavior remain planned.
+processes on the same laptop. Runner-to-bridge socket IPC and the host-side
+SocketCAN conversion/runtime are implemented; ECU lighting behavior remains
+planned.
 
 The page uses a static 3D render with a local MetaDrive screen composite. It works without
 JavaScript and has no playback, moving objects, or runtime data connection.
@@ -164,8 +165,9 @@ The Code graph shows implemented classes and their interactions. Selected entry
 functions complete paths through the simulation loop, browser display, and
 runner-to-bridge socket. Files and folders are not graph nodes. Layer panels
 group nodes by source folder; the bridge panel shows runner and Dashboard IPC
-servers while runtime CAN remains planned. The Dashboard panel shows the native
-window, reconnecting client, and simulated ECU model; firmware remains planned.
+servers, the production SocketCAN runtime, frame conversion, and ECU status
+decoder. The Dashboard panel shows the native window, reconnecting client, live
+ECU status mapping, and simulated fallback model; firmware remains planned.
 
 ## Open System Visualization
 
@@ -210,10 +212,11 @@ to the readable view. Press Escape to clear focus.
 
 ## Follow A Functionality
 
-The **Functionalities** section on the right lists nine implemented paths:
-runner startup, ego extraction, surrounding extraction, scene
-publication, browser display, manual driving control, runner-to-bridge IPC,
-the CAN frame smoke path, and native Dashboard bridge IPC. Select one to expand
+The **Functionalities** section on the right lists eleven implemented paths:
+runner startup, ego extraction, surrounding extraction, scene publication,
+browser display, manual driving control, runner-to-bridge IPC, the CAN frame
+smoke path, production SocketCAN, the Dashboard CAN command/status roundtrip,
+and native Dashboard bridge IPC. Select one to expand
 the required members, focus the start of its route, and light up numbered
 action arrows.
 The action list shows the function or class at each end, the values passed,

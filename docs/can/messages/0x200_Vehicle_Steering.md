@@ -40,7 +40,7 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 
 | Byte | Bits | Signal | Type / Scale | Meaning |
 |---:|---|---|---|---|
-| 0 | 0..3 | `AliveCounter` | uint4 | Increment for every transmitted `0x200` frame, even when steering is invalid or repeated; wrap `15` to `0` |
+| 0 | 0..3 | `AliveCounter` | uint4 | Advances once per scheduled encoding cycle, even when steering is invalid or repeated; wrap `15` to `0`. A failed SocketCAN write can create a gap; ECU gap tolerance remains an integration decision. |
 | 0 | 4 | `SteeringValid` | bool | Steering sample is no older than 250 ms and usable; cleared on detected runner input faults |
 | 0 | 5 | `SteeringSaturated` | bool | Angle exceeded the CAN field range and was clamped for encoding; `SteeringValid` is also `0` |
 | 0 | 6..7 | `Reserved` | uint2 | Transmit `0` |

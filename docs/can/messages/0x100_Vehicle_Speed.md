@@ -31,7 +31,7 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 
 | Byte | Bits | Signal | Type / Scale | Meaning |
 |---:|---|---|---|---|
-| 0 | 0..3 | `AliveCounter` | uint4 | Increment for every transmitted `0x100` frame, even when speed is invalid or repeated; wrap `15` to `0` |
+| 0 | 0..3 | `AliveCounter` | uint4 | Advances once per scheduled encoding cycle, even when speed is invalid or repeated; wrap `15` to `0`. A failed SocketCAN write can create a gap; ECU gap tolerance remains an integration decision. |
 | 0 | 4 | `SpeedValid` | bool | Speed sample is no older than 250 ms and usable; cleared on detected runner input faults |
 | 0 | 5 | `SpeedSaturated` | bool | Speed exceeded the CAN field range and was clamped for encoding; `SpeedValid` is also `0` |
 | 0 | 6 | `Reserved` | bool | Transmit `0`; reverse is represented by a negative speed value |

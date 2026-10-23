@@ -13,8 +13,8 @@
 | Direction | Host to ECU |
 | CAN type | Classical CAN |
 | DLC | 8 |
-| Suggested transmit period | 20 ms |
-| ECU receive timeout | 100 ms without an accepted frame (five 20 ms periods) |
+| Suggested transmit period | 100 ms |
+| ECU receive timeout | 250 ms without an accepted frame (tolerates one missed 100 ms frame plus timing margin) |
 | Transmit pattern | One complete latest-state frame per period; repeating an unchanged grid is expected while its source scene remains fresh |
 
 ## Object-Grid Contract
@@ -109,7 +109,7 @@ The 8-byte payload is treated as a little-endian 64-bit bitstream. Bit 0 is byte
 
 For sector `n`, its record starts at payload bit `11 + 5 × n`. Record bit 0 is `SectorOccupied`; record bits 1..4 carry `SubsectorMask_0` through `SubsectorMask_3`, with mask bit 0 farthest and mask bit 3 nearest.
 
-The frame has no sample sequence or per-frame alive counter. The bridge repeatedly transmits the latest accepted grid and uses `GridValid` as the source-scene freshness and validity gate. The ECU acts on the latest frame, clears its active grid when `GridValid = 0`, and separately uses its 100 ms CAN receive timeout to detect a missing communication stream. The ECU does not compare successive grid contents. There is no sector-group index or multi-frame assembly.
+The frame has no sample sequence or per-frame alive counter. Every 100 ms, the bridge transmits the latest accepted grid and uses `GridValid` as the source-scene freshness and validity gate. The ECU acts on the latest frame, clears its active grid when `GridValid = 0`, and separately uses its 250 ms CAN receive timeout to detect a missing communication stream. This timeout tolerates one missed periodic frame while leaving margin for scheduling jitter. Since freshness is sampled on the 100 ms grid schedule, a source becoming stale just after a transmission can take up to one additional period to be reported as `GridValid = 0`. The ECU does not compare successive grid contents. There is no sector-group index or multi-frame assembly.
 
 The frame uses the Classical CAN CRC for link-level error detection. It has no application checksum. The reserved bits remain available for future use but must currently be zero.
 
@@ -134,7 +134,7 @@ The sector records decode as:
 ## Receiver Behavior
 
 - Accept only CAN ID `0x300` with DLC 8 and zero reserved bits.
-- Use `GridValid` as the source-grid freshness and validity gate. The ECU does not need to compare grid contents across frames. If no accepted `0x300` frame arrives for 100 ms (five 20 ms periods), clear the active grid and enter fallback. A received frame with `GridValid = 0` clears the grid immediately, without waiting for this link timeout.
+- Use `GridValid` as the source-grid freshness and validity gate. The ECU does not need to compare grid contents across frames. If no accepted `0x300` frame arrives for 250 ms, clear the active grid and enter fallback. This allows one missed 100 ms periodic frame plus timing margin. A received frame with `GridValid = 0` clears the grid immediately, without waiting for this link timeout.
 - If `GridValid = 0`, ignore all sector records, clear the ECU's active sector grid, and enter the configured fallback behavior. A bridge-generated invalid frame carries zero sector records.
 - `PerceptionDegraded = 1` requires `GridValid = 0`. Treat the combination `GridValid = 1` and `PerceptionDegraded = 1` as an invalid frame: clear the active grid and enter fallback.
 - If `GridValid = 1` and all sector records are clear, the sample is valid and reports no relevant vehicles.

@@ -45,7 +45,7 @@
           <article id="message-100" class="message-card">
             <header class="message-heading">
               <div class="message-title"><span class="message-id">0x100</span><div><h2>Vehicle_Speed</h2><p>C++ bridge → AFS ECU</p></div></div>
-              <div class="message-meta"><span>DLC 8</span><span>20 ms TX design</span><span>100 ms ECU timeout</span><span class="status-chip">Encoder API implemented</span></div>
+              <div class="message-meta"><span>DLC 8</span><span>20 ms TX</span><span>100 ms ECU timeout</span><span class="status-chip">SocketCAN TX implemented</span></div>
             </header>
             <p class="sample-payload"><strong>Example payload</strong><code>18 E8 03 00 00 00 00 00</code></p>
             <section class="byte-map-section" aria-label="0x100 byte map">
@@ -57,7 +57,7 @@
           <article id="message-200" class="message-card">
             <header class="message-heading">
               <div class="message-title"><span class="message-id">0x200</span><div><h2>Vehicle_Steering</h2><p>C++ bridge → AFS ECU</p></div></div>
-              <div class="message-meta"><span>DLC 8</span><span>20 ms TX design</span><span>100 ms ECU timeout</span><span class="status-chip">Encoder API implemented</span></div>
+              <div class="message-meta"><span>DLC 8</span><span>20 ms TX</span><span>100 ms ECU timeout</span><span class="status-chip">SocketCAN TX implemented</span></div>
             </header>
             <p class="sample-payload"><strong>Example payload</strong><code>17 7B 00 00 00 00 00 00</code></p>
             <section class="byte-map-section" aria-label="0x200 byte map">
@@ -69,7 +69,7 @@
           <article id="message-300" class="message-card">
             <header class="message-heading">
               <div class="message-title"><span class="message-id">0x300</span><div><h2>Vehicle_Object</h2><p>C++ bridge → AFS ECU</p></div></div>
-              <div class="message-meta"><span>DLC 8</span><span>20 ms TX design</span><span>100 ms ECU timeout</span><span class="status-chip">Encoder API implemented</span></div>
+              <div class="message-meta"><span>DLC 8</span><span>100 ms TX</span><span>250 ms ECU timeout</span><span class="status-chip">SocketCAN TX implemented</span></div>
             </header>
             <p class="sample-payload"><strong>Example payload</strong><code>00 01 00 7C 00 C0 00 00</code></p>
             <p class="grid-bit-note"><strong>Mask bit values:</strong> M0 is farthest (75–100 m), M1 is 50–75 m, M2 is 25–50 m, and M3 is nearest (0–25 m). A sector row's sample shows <code>occupied</code> and <code>M0 M1 M2 M3</code>.</p>
@@ -82,7 +82,7 @@
           <article id="message-400" class="message-card">
             <header class="message-heading">
               <div class="message-title"><span class="message-id">0x400</span><div><h2>Dashboard_Command</h2><p>C++ bridge → AFS ECU · Dashboard source</p></div></div>
-              <div class="message-meta"><span>DLC 3</span><span>50 ms</span><span class="status-chip">Documented</span></div>
+              <div class="message-meta"><span>DLC 3</span><span>50 ms design period</span><span class="status-chip">CAN TX planned</span></div>
             </header>
             <p class="sample-payload"><strong>Example payload</strong><code>14 07 13</code></p>
             <section class="byte-map-section" aria-label="0x400 byte map">
@@ -94,7 +94,7 @@
           <article id="message-500" class="message-card">
             <header class="message-heading">
               <div class="message-title"><span class="message-id">0x500</span><div><h2>AFS_Status</h2><p>ECU → C++ bridge</p></div></div>
-              <div class="message-meta"><span>DLC 8</span><span>20 ms</span><span class="status-chip">Documented</span></div>
+              <div class="message-meta"><span>DLC 8</span><span>50 ms suggested ECU period</span><span class="status-chip">Decoder implemented</span></div>
             </header>
             <p class="sample-payload"><strong>Example payload</strong><code>12 05 00 00 00 9C 01 8A</code></p>
             <section class="byte-map-section" aria-label="0x500 byte map">

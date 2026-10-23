@@ -151,14 +151,20 @@ test("the page shows each message with its sample payload and linked byte map", 
   assert.match(html, /Example payload/);
 });
 
-test("runner-derived CAN messages show the agreed transmit period and ECU timeout", () => {
+test("runner-derived CAN messages show their transmit periods and ECU timeouts", () => {
   const html = fs.readFileSync(path.resolve(__dirname, "../can-messages/index.html"), "utf8");
-  for (const id of ["100", "200", "300"]) {
+  for (const [id, period, timeout] of [
+    ["100", "20 ms TX", "100 ms ECU timeout"],
+    ["200", "20 ms TX", "100 ms ECU timeout"],
+    ["300", "100 ms TX", "250 ms ECU timeout"],
+  ]) {
     const card = html.match(new RegExp(`<article id="message-${id}"[\\s\\S]*?<\\/article>`))?.[0];
     assert.ok(card, `0x${id} card exists`);
-    assert.match(card, /20 ms TX/);
-    assert.match(card, /100 ms ECU timeout/);
+    assert.ok(card.includes(period), `0x${id} shows ${period}`);
+    assert.ok(card.includes(timeout), `0x${id} shows ${timeout}`);
   }
+  const status = html.match(/<article id="message-500"[\s\S]*?<\/article>/)?.[0];
+  assert.ok(status?.includes("50 ms suggested ECU period"));
 });
 
 test("steering and speed validity rows explain immediate invalidation on runner faults", () => {
