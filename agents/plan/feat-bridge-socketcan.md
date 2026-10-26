@@ -40,6 +40,7 @@ Complete the laptop-side CAN gateway on `feat/bridge-ecu/can`: transmit runner a
 - [x] Add an opt-in `vcan` end-to-end test for runner-message fail-closed output, `0x400` transmission, one-frame clear-fault, Dashboard disconnect invalidation, malformed/valid `0x500`, and Dashboard status forwarding.
 - [x] Build the bridge, runtime, and focused CAN tests.
 - [x] Run the full bridge CTest suite (8/8, including Dashboard IPC/client mapping and Python-to-C++ runner IPC).
+- [x] Configure the USB-CAN adapter at 500 kbit/s and observe bridge `0x100`–`0x400` frames through adapter controller loopback.
 - [ ] Run the opt-in end-to-end test on a prepared `vcan0` interface.
 - [ ] Verify the physical adapter and ECU on the bench when the adapter/ECU hardware is available.
 
@@ -53,6 +54,7 @@ Complete the laptop-side CAN gateway on `feat/bridge-ecu/can`: transmit runner a
 
 - ECU firmware still needs to define counter-gap handling when a scheduled host CAN write fails within a message sequence.
 - Physical adapter/ECU validation requires the actual adapter, bus, and powered ECU. A vcan pass cannot verify electrical behavior, bitrate compatibility, or hardware fallback.
+- The bridge loopback run printed `No buffer space available`; inspect CAN state/error counters and confirm controller-loopback mode before attributing or changing queue behavior.
 - STM32 firmware and physical lamp control remain outside this branch's host-side implementation.
 
 ## References
