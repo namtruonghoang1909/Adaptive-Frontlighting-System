@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="Proteus-style candidate pin-level schematic for the STM32F407VET6 AFS bench, with selectable nets and a pin map.">
+    <title>AFS · Hardware wiring</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="hardware-wiring.css">
+    <script defer src="../shared/code-timestamp.js"></script>
+    <script defer src="hardware-wiring.js"></script>
+  </head>
+  <body class="hardware-wiring-page">
+    <div id="workspace">
+      <header class="topbar">
+        <a class="brand" href="../../../README.md" title="Repository README"><span class="brand-mark">✳</span> AFS <span class="brand-divider">/</span> System Visualization</a>
+        <nav class="site-tabs" aria-label="Visualization views">
+          <a href="../code-graph/">Code graph</a>
+          <a href="../system-in-action/">System in Action</a>
+          <a href="../beam-visual/beam-segments.html">High beam visual</a>
+          <a href="../beam-visual/beam-segments.html?mode=low">Low beam visual</a>
+          <a href="../can-messages/">CAN messages</a>
+          <a href="index.html" aria-current="page">Hardware wiring</a>
+        </nav>
+        <time id="codeUpdated" class="code-updated" role="status" aria-live="polite" title="Latest modification time reported for this page and its local CSS and JavaScript files, shown in local time.">Code updated: checking…</time>
+      </header>
+
+      <main class="hardware-main">
+        <header class="hardware-intro">
+          <div>
+            <p class="wiring-kicker">BENCH BUILD · PIN-LEVEL SCHEMATIC</p>
+            <h1>Hardware wiring</h1>
+            <p>Follow the candidate connections between the Linux host, CAN transceiver, STM32 board, servo driver, servos, and matrix headlights.</p>
+          </div>
+          <div class="draft-badge"><span aria-hidden="true"></span><div><strong>Draft wiring</strong><small>Board and module details still need verification</small></div></div>
+        </header>
+
+        <section class="wiring-summary" aria-label="How to read the wiring view">
+          <div><span class="summary-icon">01</span><p><strong>One SPI bus, two LOAD lines</strong><br>Both MAX7219 modules share SPI2 SCK and MOSI. Separate GPIO-controlled LOAD lines let firmware latch each matrix independently.</p></div>
+          <div><span class="summary-icon">02</span><p><strong>Select a colored wire or net</strong><br>The connected pins and wire runs highlight together. The table below keeps the full pin mapping readable.</p></div>
+          <div><span class="summary-icon warning-icon">!</span><p><strong>Candidate pin map</strong><br>STM32 pins follow the current wiring draft. Confirm the `ver 36C` board and every breakout before wiring power.</p></div>
+        </section>
+
+        <section class="diagram-card" aria-labelledby="diagramHeading">
+          <div class="diagram-heading">
+            <div><p class="panel-kicker">AFS BENCH · SCHEMATIC</p><h2 id="diagramHeading">Functional blocks and pin connections</h2></div>
+            <div class="diagram-meta"><span>Shared SPI2 · independent LOAD</span><span>Matrix power · board USB-C 5 V</span><span>Candidate pin map</span><span>Direct 3.3 V · bench validation</span></div>
+          </div>
+          <div class="diagram-scroll" tabindex="0" aria-label="Scrollable pin-level wiring schematic">
+            <svg id="wiringDiagram" viewBox="0 0 2040 1320" role="group" aria-labelledby="wiringTitle wiringDescription">
+              <title id="wiringTitle">Candidate Adaptive Front-lighting System wiring schematic</title>
+              <desc id="wiringDescription">A functional schematic connects the Linux host, USB-CAN adapter, MCP2551 transceiver, STM32F407VET6, PCA9685 servo controller, feedback servos, one shared SPI2 bus directly to two MAX7219 modules, and two separately controlled LOAD lines. The direct 3.3 V logic connection is selected for bench validation, though it is below the bare MAX7219's specified 3.5 V minimum logic-high input at 5 V.</desc>
+              <defs>
+                <pattern id="schematicGrid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#52645a" opacity=".16"/></pattern>
+              </defs>
+              <rect class="schematic-sheet" x="12" y="12" width="2016" height="1296" rx="10"/>
+              <rect class="schematic-grid" x="24" y="24" width="1992" height="1272" rx="7"/>
+              <text class="schematic-title" x="46" y="56">AFS BENCH · FUNCTIONAL WIRING SCHEMATIC</text>
+              <text class="schematic-subtitle" x="1990" y="56" text-anchor="end">CANDIDATE PIN MAP · VERIFY BEFORE WIRING</text>
+              <text class="zone-label" x="48" y="350">HOST AND DEBUG</text>
+              <text class="zone-label" x="700" y="408">AFS ECU</text>
+              <text class="zone-label" x="1458" y="358">CAN TRANSCEIVER</text>
+              <text class="zone-label" x="48" y="814">SERVO CONTROL</text>
+              <text class="zone-label" x="1220" y="729">MATRIX OUTPUT</text>
+
+              <!-- Electrical nets sit behind component symbols; choose a wire to trace its net. -->
+              <g class="wire-layer" aria-label="Wiring paths">
+                <path class="wire" data-net="usb" d="M370 225 H390 V200 H414" aria-label="USB cable from host to USB-CAN adapter"/>
+                <path class="wire" data-net="usb" d="M370 245 H385 V300 H775 V181 H810" aria-label="USB cable from host to ST-Link, routed below the adapter symbol"/>
+                <path class="wire" data-net="can-h" d="M626 172 H640 V68 H1750 V450 H1720" aria-label="CAN high from adapter routed above the component row to MCP2551 CANH"/>
+                <path class="wire" data-net="can-l" d="M626 206 H670 V88 H1770 V480 H1720" aria-label="CAN low from adapter routed above the component row to MCP2551 CANL"/>
+                <path class="wire termination-wire" data-net="termination" d="M635 172 V178 l-7 4 14 6-14 6 14 6-7 4 V206" aria-label="120 ohm CAN termination at host bus end; adapter termination must be checked"/>
+                <path class="wire termination-wire" data-net="termination" d="M1750 450 H1800 V456 l-7 4 14 6-14 6 14 6-7 4 V480 H1770" aria-label="120 ohm CAN termination at ECU bus end; confirm module switch or resistor"/>
+
+                <path class="wire" data-net="swdio" d="M916 436 V265" aria-label="PA13 SWDIO from MCU to ST-Link"/>
+                <path class="wire" data-net="swclk" d="M946 436 V265" aria-label="PA14 SWCLK from MCU to ST-Link"/>
+                <path class="wire optional-wire" data-net="nrst" d="M976 436 V265" aria-label="Optional NRST connection from MCU to ST-Link"/>
+                <path class="wire wire-ground" data-net="ground" d="M1006 436 V265" aria-label="Ground reference between MCU and ST-Link"/>
+                <path class="wire wire-power" data-net="3v3" d="M1036 436 V265" aria-label="MCU 3.3 volt reference to ST-Link VTref; do not use as a supply"/>
+
+                <path class="wire" data-net="can-tx" d="M1140 525 H1180 V510 H1228 M1400 510 H1430 V505 H1474" aria-label="CAN2 TX PB13 through candidate logic-level interface to MCP2551 TXD"/>
+                <path class="wire" data-net="can-rx" d="M1474 535 H1430 V550 H1400 M1228 550 H1195 V555 H1140" aria-label="MCP2551 RXD through candidate logic-level interface to CAN2 RX PB12"/>
+
+                <path class="wire" data-net="i2c-scl" d="M694 570 H530 V575 H420" aria-label="PB8 I2C1 SCL to PCA9685 SCL"/>
+                <path class="wire" data-net="i2c-sda" d="M694 600 H510 V545 H420" aria-label="PB9 I2C1 SDA to PCA9685 SDA"/>
+                <path class="wire wire-power" data-net="3v3" d="M694 510 H585 V480 H420" aria-label="Candidate 3.3 volt logic rail to PCA9685 VDD"/>
+                <path class="wire wire-ground" data-net="ground" d="M694 815 H575 V510 H420" aria-label="Common ground between MCU and PCA9685 logic"/>
+
+                <path class="wire" data-net="pwm-left" d="M420 630 H520 V790 H142 V837" aria-label="PCA9685 PWM0 to left servo command input"/>
+                <path class="wire" data-net="pwm-right" d="M420 660 H550 V825 H442 V837" aria-label="PCA9685 PWM1 to right servo command input"/>
+                <path class="wire" data-net="servo-feedback-left" d="M262 978 V1015 H630 V750 H694" aria-label="Left servo analog position feedback to PA1 ADC input"/>
+                <path class="wire" data-net="servo-feedback-right" d="M562 978 V1045 H650 V780 H694" aria-label="Right servo analog position feedback to PA4 ADC input"/>
+                <path class="wire wire-power" data-net="servo-power" d="M340 1101 V1085 H600 V700 H420 M500 700 V806 H182 V837 M482 806 V837" aria-label="Servo supply and PCA9685 V+ rail to both servo power pins; exact model TBD"/>
+
+                <path class="wire" data-net="spi-clock" d="M1140 625 H1170 V680 H1470 V832 H1680 M1470 832 V1060 H1680" aria-label="PB10 SPI2 SCK directly to both MAX7219 CLK pins"/>
+                <path class="wire" data-net="spi-mosi" d="M1140 655 H1200 V700 H1500 V808 H1680 M1500 808 V1035 H1680" aria-label="PC3 SPI2 MOSI directly to both MAX7219 DIN pins"/>
+                <path class="wire" data-net="matrix-load-left" d="M1140 705 H1230 V720 H1550 V856 H1680" aria-label="PD10 GPIO directly to left MAX7219 LOAD pin"/>
+                <path class="wire" data-net="matrix-load-right" d="M1140 735 H1260 V750 H1580 V1080 H1680" aria-label="PD11 GPIO directly to right MAX7219 LOAD pin"/>
+                <path class="wire wire-power" data-net="led-power" d="M1000 845 V1110 H1640 V760 H1680 M1640 985 H1680" aria-label="STM32 board USB-C-fed 5 volt rail directly powers both matrix modules"/>
+
+                <path class="wire wire-power" data-net="can-power" d="M1625 1148 V1135 H1980 V700 H1580 V650" aria-label="5 volt logic supply to MCP2551 module; exact breakout implementation TBD"/>
+                <path class="wire wire-ground" data-net="ground" d="M100 1236 H2010" aria-label="Common ground reference bus; verify adapter isolation before bonding"/>
+                <path class="wire wire-ground" data-net="ground" d="M694 815 V1236 M222 978 V1070 H100 V1236 M522 978 V1110 H620 V1236" aria-label="MCU and servo ground returns to the common reference bus"/>
+                <path class="wire wire-ground" data-net="ground" d="M1640 650 H2010 V1236 M1680 785 H1650 V1090 H1490 V1236 M1680 1010 H1650" aria-label="Transceiver and matrix ground returns to the common reference bus"/>
+                <path class="wire wire-ground" data-net="ground" d="M390 1186 V1236 M1680 1218 V1236" aria-label="Servo and CAN supply returns to the common reference bus"/>
+              </g>
+              <g class="junction-layer" aria-label="Connected wire junctions">
+                <circle class="hardware-pin junction-dot" data-net="can-h" cx="635" cy="172" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="can-l" cx="635" cy="206" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="can-h" cx="1750" cy="450" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="can-l" cx="1770" cy="480" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="servo-power" cx="500" cy="700" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="servo-power" cx="482" cy="806" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="spi-clock" cx="1470" cy="832" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="spi-mosi" cx="1500" cy="808" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="led-power" cx="1640" cy="985" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="ground" cx="1650" cy="1010" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="ground" cx="100" cy="1236" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="ground" cx="390" cy="1236" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="ground" cx="620" cy="1236" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="ground" cx="694" cy="1236" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="ground" cx="1490" cy="1236" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="ground" cx="1680" cy="1236" r="3"/>
+                <circle class="hardware-pin junction-dot" data-net="ground" cx="2010" cy="1236" r="3"/>
+              </g>
+
+              <g class="schematic-symbol" aria-label="Linux host running the runner, bridge, and Dashboard">
+                <rect class="symbol-box host-symbol" x="50" y="82" width="320" height="201" rx="3"/>
+                <text class="reference" x="68" y="108">HOST 1</text>
+                <text class="symbol-title" x="210" y="153" text-anchor="middle">Linux host</text>
+                <text class="symbol-note" x="210" y="177" text-anchor="middle">MetaDrive · Bridge · Dashboard</text>
+                <text class="pin-caption" x="358" y="228" text-anchor="end">USB 1</text>
+                <text class="pin-caption" x="358" y="248" text-anchor="end">USB 2</text>
+                <circle class="hardware-pin" data-net="usb" cx="370" cy="225" r="5"/>
+                <circle class="hardware-pin" data-net="usb" cx="370" cy="245" r="5"/>
+              </g>
+
+              <g class="schematic-symbol" aria-label="Generic USB-CAN adapter; exact model not selected">
+                <rect class="symbol-box" x="414" y="134" width="212" height="116" rx="3"/>
+                <text class="reference" x="430" y="157">J2</text>
+                <text class="symbol-title" x="520" y="185" text-anchor="middle">USB-CAN</text>
+                <text class="symbol-note" x="520" y="205" text-anchor="middle">SocketCAN · model TBD</text>
+                <circle class="hardware-pin" data-net="usb" cx="414" cy="200" r="5"/><text class="pin-caption" x="424" y="203">USB</text>
+                <circle class="hardware-pin" data-net="can-h" cx="626" cy="172" r="5"/><text class="pin-caption" x="616" y="175" text-anchor="end">CANH</text>
+                <circle class="hardware-pin" data-net="can-l" cx="626" cy="206" r="5"/><text class="pin-caption" x="616" y="209" text-anchor="end">CANL</text>
+                <text class="symbol-note warning-text" x="520" y="242" text-anchor="middle">120 Ω termination · verify</text>
+              </g>
+
+              <g class="schematic-symbol" aria-label="ST-Link debug probe">
+                <rect class="symbol-box" x="810" y="101" width="230" height="160" rx="3"/>
+                <text class="reference" x="826" y="124">J3</text>
+                <text class="symbol-title" x="925" y="165" text-anchor="middle">ST-Link</text>
+                <text class="symbol-note" x="925" y="188" text-anchor="middle">SWD debug probe</text>
+                <circle class="hardware-pin" data-net="usb" cx="810" cy="181" r="5"/><text class="pin-caption" x="820" y="184">USB</text>
+                <circle class="hardware-pin" data-net="swdio" cx="916" cy="265" r="5"/><text class="pin-caption vertical-pin-caption" x="916" y="228" text-anchor="middle" transform="rotate(90 916 228)">SWDIO</text>
+                <circle class="hardware-pin" data-net="swclk" cx="946" cy="265" r="5"/><text class="pin-caption vertical-pin-caption" x="946" y="228" text-anchor="middle" transform="rotate(90 946 228)">SWCLK</text>
+                <circle class="hardware-pin" data-net="nrst" cx="976" cy="265" r="5"/><text class="pin-caption vertical-pin-caption" x="976" y="228" text-anchor="middle" transform="rotate(90 976 228)">NRST*</text>
+                <circle class="hardware-pin" data-net="ground" cx="1006" cy="265" r="5"/><text class="pin-caption vertical-pin-caption" x="1006" y="228" text-anchor="middle" transform="rotate(90 1006 228)">GND</text>
+                <circle class="hardware-pin" data-net="3v3" cx="1036" cy="265" r="5"/><text class="pin-caption vertical-pin-caption" x="1036" y="228" text-anchor="middle" transform="rotate(90 1036 228)">VTref</text>
+              </g>
+
+              <g class="schematic-symbol" aria-label="PCA9685 servo controller breakout">
+                <rect class="symbol-box" x="111" y="456" width="309" height="271" rx="3"/>
+                <text class="reference" x="128" y="480">U4</text>
+                <text class="symbol-title" x="268" y="536" text-anchor="middle">PCA9685</text>
+                <text class="symbol-note" x="268" y="559" text-anchor="middle">16-channel PWM controller</text>
+                <text class="symbol-note" x="268" y="583" text-anchor="middle">I²C servo driver</text>
+                <circle class="hardware-pin" data-net="3v3" cx="420" cy="480" r="5"/><text class="pin-caption" x="408" y="483" text-anchor="end">VDD</text>
+                <circle class="hardware-pin" data-net="ground" cx="420" cy="510" r="5"/><text class="pin-caption" x="408" y="513" text-anchor="end">GND</text>
+                <circle class="hardware-pin" data-net="i2c-sda" cx="420" cy="545" r="5"/><text class="pin-caption" x="408" y="548" text-anchor="end">SDA</text>
+                <circle class="hardware-pin" data-net="i2c-scl" cx="420" cy="575" r="5"/><text class="pin-caption" x="408" y="578" text-anchor="end">SCL</text>
+                <circle class="hardware-pin" data-net="pwm-left" cx="420" cy="630" r="5"/><text class="pin-caption" x="408" y="633" text-anchor="end">PWM0</text>
+                <circle class="hardware-pin" data-net="pwm-right" cx="420" cy="660" r="5"/><text class="pin-caption" x="408" y="663" text-anchor="end">PWM1</text>
+                <circle class="hardware-pin" data-net="servo-power" cx="420" cy="700" r="5"/><text class="pin-caption" x="408" y="703" text-anchor="end">V+</text>
+                <text class="symbol-note" x="268" y="759" text-anchor="middle">Breakout pin layout TBD</text>
+              </g>
+
+              <g class="schematic-symbol" aria-label="Left feedback servo with candidate command and feedback pins">
+                <rect class="symbol-box actuator-symbol" x="92" y="837" width="190" height="141" rx="3"/>
+                <text class="reference" x="108" y="861">M1</text>
+                <text class="symbol-title" x="187" y="922" text-anchor="middle">Left servo</text>
+                <text class="symbol-note" x="187" y="944" text-anchor="middle">Feedback pinout TBD</text>
+                <circle class="hardware-pin" data-net="pwm-left" cx="142" cy="837" r="5"/><text class="pin-caption" x="142" y="853" text-anchor="middle">PWM</text>
+                <circle class="hardware-pin" data-net="servo-power" cx="182" cy="837" r="5"/><text class="pin-caption" x="182" y="853" text-anchor="middle">V+</text>
+                <circle class="hardware-pin" data-net="ground" cx="222" cy="978" r="5"/><text class="pin-caption" x="222" y="966" text-anchor="middle">GND</text>
+                <circle class="hardware-pin" data-net="servo-feedback-left" cx="262" cy="978" r="5"/><text class="pin-caption" x="262" y="966" text-anchor="middle">FB</text>
+              </g>
+
+              <g class="schematic-symbol" aria-label="Right feedback servo with candidate command and feedback pins">
+                <rect class="symbol-box actuator-symbol" x="392" y="837" width="190" height="141" rx="3"/>
+                <text class="reference" x="408" y="861">M2</text>
+                <text class="symbol-title" x="487" y="922" text-anchor="middle">Right servo</text>
+                <text class="symbol-note" x="487" y="944" text-anchor="middle">Feedback pinout TBD</text>
+                <circle class="hardware-pin" data-net="pwm-right" cx="442" cy="837" r="5"/><text class="pin-caption" x="442" y="853" text-anchor="middle">PWM</text>
+                <circle class="hardware-pin" data-net="servo-power" cx="482" cy="837" r="5"/><text class="pin-caption" x="482" y="853" text-anchor="middle">V+</text>
+                <circle class="hardware-pin" data-net="ground" cx="522" cy="978" r="5"/><text class="pin-caption" x="522" y="966" text-anchor="middle">GND</text>
+                <circle class="hardware-pin" data-net="servo-feedback-right" cx="562" cy="978" r="5"/><text class="pin-caption" x="562" y="966" text-anchor="middle">FB</text>
+              </g>
+
+              <g class="schematic-symbol" aria-label="STM32F407VET6 ECU board with candidate MCU pin assignments">
+                <rect class="symbol-box mcu-symbol" x="694" y="436" width="446" height="409" rx="3"/>
+                <text class="reference" x="714" y="463">U3</text>
+                <text class="symbol-title" x="916" y="603" text-anchor="middle">STM32F407VET6</text>
+                <text class="symbol-note" x="916" y="628" text-anchor="middle">AFS ECU · board marked STM32F4VE ver 36C</text>
+                <text class="symbol-note warning-text" x="916" y="653" text-anchor="middle">Header routing unverified</text>
+                <text class="pin-caption" x="704" y="513">3V3 · candidate</text>
+                <circle class="hardware-pin" data-net="3v3" cx="694" cy="510" r="5"/>
+                <circle class="hardware-pin" data-net="i2c-scl" cx="694" cy="570" r="5"/><text class="pin-caption" x="704" y="573">PB8 · I2C1 SCL</text>
+                <circle class="hardware-pin" data-net="i2c-sda" cx="694" cy="600" r="5"/><text class="pin-caption" x="704" y="603">PB9 · I2C1 SDA</text>
+                <circle class="hardware-pin" data-net="servo-feedback-left" cx="694" cy="750" r="5"/><text class="pin-caption" x="704" y="753">PA1 · ADC feedback L</text>
+                <circle class="hardware-pin" data-net="servo-feedback-right" cx="694" cy="780" r="5"/><text class="pin-caption" x="704" y="783">PA4 · ADC feedback R</text>
+                <circle class="hardware-pin" data-net="ground" cx="694" cy="815" r="5"/><text class="pin-caption" x="704" y="818">GND</text>
+                <circle class="hardware-pin" data-net="led-power" cx="1000" cy="845" r="5"/><text class="pin-caption" x="1000" y="833" text-anchor="middle">5V · USB-C rail</text>
+                <circle class="hardware-pin" data-net="can-tx" cx="1140" cy="525" r="5"/><text class="pin-caption right-pin-label" x="1128" y="528" text-anchor="end">PB13 · CAN2 TX</text>
+                <circle class="hardware-pin" data-net="can-rx" cx="1140" cy="555" r="5"/><text class="pin-caption right-pin-label" x="1128" y="558" text-anchor="end">PB12 · CAN2 RX</text>
+                <circle class="hardware-pin" data-net="spi-clock" cx="1140" cy="625" r="5"/><text class="pin-caption right-pin-label" x="1128" y="628" text-anchor="end">PB10 · SPI2 SCK</text>
+                <circle class="hardware-pin" data-net="spi-mosi" cx="1140" cy="655" r="5"/><text class="pin-caption right-pin-label" x="1128" y="658" text-anchor="end">PC3 · SPI2 MOSI</text>
+                <circle class="hardware-pin" data-net="matrix-load-left" cx="1140" cy="705" r="5"/><text class="pin-caption right-pin-label" x="1128" y="708" text-anchor="end">PD10 · LOAD-L</text>
+                <circle class="hardware-pin" data-net="matrix-load-right" cx="1140" cy="735" r="5"/><text class="pin-caption right-pin-label" x="1128" y="738" text-anchor="end">PD11 · LOAD-R</text>
+                <circle class="hardware-pin" data-net="swdio" cx="916" cy="436" r="5"/><text class="pin-caption vertical-pin-caption" x="916" y="480" text-anchor="middle" transform="rotate(90 916 480)">PA13 SWDIO</text>
+                <circle class="hardware-pin" data-net="swclk" cx="946" cy="436" r="5"/><text class="pin-caption vertical-pin-caption" x="946" y="480" text-anchor="middle" transform="rotate(90 946 480)">PA14 SWCLK</text>
+                <circle class="hardware-pin" data-net="nrst" cx="976" cy="436" r="5"/><text class="pin-caption vertical-pin-caption" x="976" y="480" text-anchor="middle" transform="rotate(90 976 480)">NRST*</text>
+                <circle class="hardware-pin" data-net="ground" cx="1006" cy="436" r="5"/><text class="pin-caption vertical-pin-caption" x="1006" y="480" text-anchor="middle" transform="rotate(90 1006 480)">GND</text>
+                <circle class="hardware-pin" data-net="3v3" cx="1036" cy="436" r="5"/><text class="pin-caption vertical-pin-caption" x="1036" y="480" text-anchor="middle" transform="rotate(90 1036 480)">3V3 rail</text>
+              </g>
+
+              <g class="schematic-symbol" aria-label="Candidate CAN logic-level interface; exact circuit not selected">
+                <rect class="symbol-box uncertain-symbol" x="1228" y="471" width="172" height="143" rx="3"/>
+                <text class="reference" x="1244" y="495">U2</text>
+                <text class="symbol-title" x="1314" y="536" text-anchor="middle">CAN interface</text>
+                <text class="symbol-note" x="1314" y="558" text-anchor="middle">level circuit TBD</text>
+                <text class="symbol-note warning-text" x="1314" y="594" text-anchor="middle">Check MCP2551 logic levels</text>
+                <circle class="hardware-pin" data-net="can-tx" cx="1228" cy="510" r="5"/><text class="pin-caption" x="1238" y="513">TX 3V3</text>
+                <circle class="hardware-pin" data-net="can-rx" cx="1228" cy="550" r="5"/><text class="pin-caption" x="1238" y="553">RX 3V3</text>
+                <circle class="hardware-pin" data-net="can-tx" cx="1400" cy="510" r="5"/><text class="pin-caption" x="1392" y="513" text-anchor="end">TXD side</text>
+                <circle class="hardware-pin" data-net="can-rx" cx="1400" cy="550" r="5"/><text class="pin-caption" x="1392" y="553" text-anchor="end">RXD side</text>
+              </g>
+
+              <g class="schematic-symbol" aria-label="MCP2551 CAN transceiver module">
+                <rect class="symbol-box" x="1474" y="390" width="246" height="258" rx="3"/>
+                <text class="reference" x="1490" y="414">U1</text>
+                <text class="symbol-title" x="1595" y="513" text-anchor="middle">MCP2551</text>
+                <text class="symbol-note" x="1595" y="536" text-anchor="middle">CAN transceiver</text>
+                <text class="symbol-note warning-text" x="1595" y="578" text-anchor="middle">Breakout pinout / levels TBD</text>
+                <circle class="hardware-pin" data-net="can-tx" cx="1474" cy="505" r="5"/><text class="pin-caption" x="1484" y="508">TXD</text>
+                <circle class="hardware-pin" data-net="can-rx" cx="1474" cy="535" r="5"/><text class="pin-caption" x="1484" y="538">RXD</text>
+                <circle class="hardware-pin" data-net="can-h" cx="1720" cy="450" r="5"/><text class="pin-caption" x="1710" y="453" text-anchor="end">CANH</text>
+                <circle class="hardware-pin" data-net="can-l" cx="1720" cy="480" r="5"/><text class="pin-caption" x="1710" y="483" text-anchor="end">CANL</text>
+                <circle class="hardware-pin" data-net="can-power" cx="1580" cy="650" r="5"/><text class="pin-caption" x="1580" y="638" text-anchor="middle">VDD</text>
+                <circle class="hardware-pin" data-net="ground" cx="1640" cy="650" r="5"/><text class="pin-caption" x="1640" y="638" text-anchor="middle">GND</text>
+              </g>
+
+              <g class="schematic-symbol" aria-label="Left MAX7219 matrix module">
+                <rect class="symbol-box matrix-symbol" x="1680" y="741" width="268" height="161" rx="3"/>
+                <text class="reference" x="1928" y="757" text-anchor="end">U6</text>
+                <text class="symbol-title" x="1870" y="808" text-anchor="middle">MAX7219</text>
+                <text class="symbol-note" x="1870" y="830" text-anchor="middle">Left · 8×8 matrix</text>
+                <path class="matrix-icon" d="M1730 785 H1790 M1730 797 H1790 M1730 809 H1790 M1730 821 H1790 M1730 833 H1790 M1730 845 H1790 M1730 857 H1790 M1730 869 H1790 M1730 785 V869 M1742 785 V869 M1754 785 V869 M1766 785 V869 M1778 785 V869 M1790 785 V869"/>
+                <circle class="hardware-pin" data-net="led-power" cx="1680" cy="760" r="5"/><text class="pin-caption" x="1690" y="763">VCC</text>
+                <circle class="hardware-pin" data-net="ground" cx="1680" cy="785" r="5"/><text class="pin-caption" x="1690" y="788">GND</text>
+                <circle class="hardware-pin" data-net="spi-mosi" cx="1680" cy="808" r="5"/><text class="pin-caption" x="1690" y="811">DIN</text>
+                <circle class="hardware-pin" data-net="spi-clock" cx="1680" cy="832" r="5"/><text class="pin-caption" x="1690" y="835">CLK</text>
+                <circle class="hardware-pin" data-net="matrix-load-left" cx="1680" cy="856" r="5"/><text class="pin-caption" x="1690" y="859">LOAD</text>
+                <text class="symbol-note warning-text" x="1870" y="880" text-anchor="middle">Module / load TBD</text>
+              </g>
+
+              <g class="schematic-symbol" aria-label="Right MAX7219 matrix module">
+                <rect class="symbol-box matrix-symbol" x="1680" y="966" width="268" height="161" rx="3"/>
+                <text class="reference" x="1928" y="982" text-anchor="end">U7</text>
+                <text class="symbol-title" x="1870" y="1033" text-anchor="middle">MAX7219</text>
+                <text class="symbol-note" x="1870" y="1055" text-anchor="middle">Right · 8×8 matrix</text>
+                <path class="matrix-icon" d="M1730 1010 H1790 M1730 1022 H1790 M1730 1034 H1790 M1730 1046 H1790 M1730 1058 H1790 M1730 1070 H1790 M1730 1082 H1790 M1730 1094 H1790 M1730 1010 V1094 M1742 1010 V1094 M1754 1010 V1094 M1766 1010 V1094 M1778 1010 V1094 M1790 1010 V1094"/>
+                <circle class="hardware-pin" data-net="led-power" cx="1680" cy="985" r="5"/><text class="pin-caption" x="1690" y="988">VCC</text>
+                <circle class="hardware-pin" data-net="ground" cx="1680" cy="1010" r="5"/><text class="pin-caption" x="1690" y="1013">GND</text>
+                <circle class="hardware-pin" data-net="spi-mosi" cx="1680" cy="1035" r="5"/><text class="pin-caption" x="1690" y="1038">DIN</text>
+                <circle class="hardware-pin" data-net="spi-clock" cx="1680" cy="1060" r="5"/><text class="pin-caption" x="1690" y="1063">CLK</text>
+                <circle class="hardware-pin" data-net="matrix-load-right" cx="1680" cy="1080" r="5"/><text class="pin-caption" x="1690" y="1083">LOAD</text>
+                <text class="symbol-note warning-text" x="1870" y="1100" text-anchor="middle">Module / load TBD</text>
+              </g>
+
+              <g class="schematic-symbol supply-symbol" aria-label="Separate servo supply, voltage and current to be selected from the servo datasheets">
+                <rect class="symbol-box supply-box" x="244" y="1101" width="193" height="85" rx="3"/>
+                <text class="reference" x="258" y="1127">PS1</text><text class="symbol-title" x="340" y="1133" text-anchor="middle">Servo supply</text>
+                <text class="symbol-note" x="340" y="1164" text-anchor="middle">5–6 V · current TBD</text>
+                <circle class="hardware-pin" data-net="servo-power" cx="340" cy="1101" r="5"/><text class="pin-caption" x="351" y="1115">V+</text>
+                <circle class="hardware-pin" data-net="ground" cx="390" cy="1186" r="5"/><text class="pin-caption" x="399" y="1189">GND</text>
+              </g>
+              <g class="schematic-symbol supply-symbol" aria-label="CAN transceiver supply; confirm breakout requirements">
+                <rect class="symbol-box supply-box" x="1517" y="1148" width="193" height="70" rx="3"/>
+                <text class="reference" x="1531" y="1177">PS3</text><text class="symbol-title" x="1613" y="1175" text-anchor="middle">CAN supply · 5 V</text>
+                <text class="symbol-note" x="1613" y="1203" text-anchor="middle">Module requirements TBD</text>
+                <circle class="hardware-pin" data-net="can-power" cx="1625" cy="1148" r="5"/><text class="pin-caption" x="1634" y="1151">V+</text>
+                <circle class="hardware-pin" data-net="ground" cx="1680" cy="1218" r="5"/><text class="pin-caption" x="1688" y="1221">GND</text>
+              </g>
+
+              <g class="ground-bus-label"><rect x="74" y="1241" width="1932" height="38" rx="3"/><text x="1040" y="1266" text-anchor="middle">0 V REFERENCE · CONNECT USB-CAN GROUND ONLY AFTER CHECKING ADAPTER ISOLATION</text></g>
+              <text class="diagram-footnote" x="46" y="1300">Direct 3.3 V signals are a bench-test choice: MAX7219 VIH is specified ≥3.5 V at 5 V, so operation is not guaranteed. Verify the board 5 V current path. LOAD rising latches the command.</text>
+            </svg>
+          </div>
+          <div class="diagram-foot"><span><i class="wire-key-dot can-dot"></i>CAN bus</span><span><i class="wire-key-dot signal-dot"></i>Signal / data</span><span><i class="wire-key-dot power-dot"></i>Power</span><span><i class="wire-key-dot ground-dot"></i>Ground</span><span><i class="wire-key-dot unknown-dot"></i>Check / part TBD</span></div>
+        </section>
+
+        <section class="connection-explorer" aria-label="Selectable nets and pin map">
+          <aside class="net-panel" aria-labelledby="netHeading">
+            <div class="panel-heading-row"><div><p class="panel-kicker">TRACE A CONNECTION</p><h2 id="netHeading">Nets</h2></div><button id="clearNet" type="button">Show all</button></div>
+            <p class="net-hint">Select a net to highlight its pins and wire runs.</p>
+            <div id="netList" class="net-list"></div>
+          </aside>
+          <section class="pin-map-panel" aria-labelledby="pinMapHeading">
+            <div class="pin-map-heading"><div><p class="panel-kicker">PIN-TO-PIN INDEX</p><h2 id="pinMapHeading">Candidate connections</h2></div><span class="candidate-chip">Review draft · not build sign-off</span></div>
+            <p id="netDetail" class="net-detail" aria-live="polite">Showing the complete wiring map. Choose a net to inspect its endpoints and notes.</p>
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Net</th><th>From pin</th><th>To pin(s)</th><th>Review note</th><th>State</th></tr></thead>
+                <tbody id="connectionRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <aside class="wiring-caveat"><strong>Before connecting power:</strong> verify that the USB-C source and STM32F4VE 5 V header path can carry the board plus both matrix loads, along with actual module pin labels and logic requirements, MCP2551 RXD level, servo feedback voltage, and bus termination. The [wiring draft](../../../docs/hardware/wiring-draft.md) and [datasheet index](../../../docs/hardware/datasheets/README.md) are the current source notes.</aside>
+      </main>
+      <noscript>Enable JavaScript to select and trace wiring nets. The diagram shows the candidate connections.</noscript>
+    </div>
+  </body>
+</html>

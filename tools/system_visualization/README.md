@@ -1,10 +1,15 @@
 # System Visualization
 
-This tool has five tabs. **Code graph** maps implemented classes and calls.
+This tool has six tabs. **Code graph** maps implemented classes and calls.
 **System in Action** illustrates the target prototype on a plain table.
 **High beam visual** shows centered matrices and adaptive masking.
 **Low beam visual** shows shorter, wider light that follows steering.
 **CAN messages** maps every payload bit and explains each signal in the documented frames.
+**Hardware wiring** shows component symbols, candidate pins, and selectable wire routes.
+
+Run `bash tools/test_components.sh visualization` from the repository root after
+changing a page, model, or graph. It runs the model tests, JavaScript syntax
+checks, and Code graph validation.
 
 ## Folder Layout
 
@@ -13,6 +18,7 @@ tools/system_visualization/
 ├── code-graph/       Code graph page, model, inventory, and validator
 ├── beam-visual/      High/low beam page and lamp model
 ├── can-messages/     CAN frame reference page
+├── hardware-wiring/  Pin-level bench wiring illustration and connection explorer
 ├── system-in-action/ Static hardware illustration and artwork
 ├── shared/           Common page styles and timestamp loader
 ├── tests/            Focused model and page tests
@@ -43,6 +49,28 @@ planned.
 The page uses a static 3D render with a local MetaDrive screen composite. It works without
 JavaScript and has no playback, moving objects, or runtime data connection.
 The Code graph and other views use the same local server.
+
+## Hardware Wiring
+
+Open [Hardware wiring](hardware-wiring/index.html) to trace the planned bench
+connections from the Linux host and USB-CAN adapter through the STM32 ECU, servo
+driver, feedback servos, and matrix modules. The light-grid canvas uses component
+symbols, reference labels, pin names, and orthogonal colored wires. Select a net
+to highlight its pins and wire runs and inspect the corresponding pin-to-pin row.
+Filled dots mark connected wire branches; crossings without dots are separate.
+
+This is a candidate schematic, not a build-ready wiring plan. Exact board
+header positions, adapter and breakout models, pinouts, supplies, logic-level
+interfaces, and termination still need verification. Candidate assignments and
+open checks are tracked in the [wiring draft](../../docs/hardware/wiring-draft.md).
+The matrix design uses one shared SPI2 clock/data bus and an individual GPIO
+LOAD line per MAX7219; LOAD is the latch input, though some breakouts label it
+`CS`. The current power plan uses the board's USB-C-fed 5 V rail for both
+matrix modules; its source and header current capacity still need confirmation.
+The current prototype choice connects 3.3 V STM32 SCK, MOSI, and LOAD signals
+directly to the bare MAX7219 inputs for bench validation. At 5 V the specified
+minimum logic-high input is 3.5 V, so direct operation is below guaranteed
+specification; verify it on the bench and add a compatible buffer if needed.
 
 ## CAN Messages
 
@@ -182,10 +210,11 @@ Open the printed URL (default
 then use the top navigation to switch views. Direct pages are
 `http://127.0.0.1:8000/tools/system_visualization/system-in-action/index.html` and
 `http://127.0.0.1:8000/tools/system_visualization/beam-visual/beam-segments.html` for
-high beam, add `?mode=low` for low beam, or open
-`http://127.0.0.1:8000/tools/system_visualization/can-messages/` for CAN layouts. Pass a
-port number to use another port. Press Ctrl+C to stop the server. Python 3 is
-the only runtime requirement for viewing.
+high beam; add `?mode=low` for low beam. Open
+`http://127.0.0.1:8000/tools/system_visualization/can-messages/` for CAN layouts or
+`http://127.0.0.1:8000/tools/system_visualization/hardware-wiring/` for wiring.
+Pass a port number to use another port. Press Ctrl+C to stop the server. Python 3
+is the only runtime requirement for viewing.
 
 ## Explore the Code graph
 

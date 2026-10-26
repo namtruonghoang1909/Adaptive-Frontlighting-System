@@ -77,6 +77,16 @@ noscript { display: block; padding: 20px; }
 @media (max-width: 1450px) {
   .topbar-hint { display: none; }
   .code-updated { font-size: 8px; }
+  .site-tabs { max-width: calc(100vw - 400px); overflow-x: auto; scrollbar-width: thin; }
+  .site-tabs a { padding: 7px 8px; font-size: 11px; }
+}
+@media (max-width: 1850px) {
+  .code-graph-page #workspace { display: flex; flex-direction: column; height: 100dvh; }
+  .code-graph-page .topbar { flex: none; flex-wrap: wrap; gap: 8px; }
+  .code-graph-page .site-tabs { max-width: calc(100vw - 520px); overflow-x: auto; scrollbar-width: thin; }
+  .code-graph-page .site-tabs a { padding: 7px 8px; font-size: 11px; }
+  .code-graph-page .search-wrap { width: min(260px, 24vw); }
+  .code-graph-page .layout { flex: 1; height: auto; min-height: 0; }
 }
 @media (max-width: 1040px) {
   .layout { grid-template-columns: minmax(0, 1fr) 270px; }
@@ -87,6 +97,8 @@ noscript { display: block; padding: 20px; }
   .topbar { height: auto; min-height: 64px; gap: 9px; padding: 9px 13px; flex-wrap: wrap; }
   .brand { font-size: 14px; }
   .site-tabs { order: 2; margin-left: auto; }
+  .site-tabs { max-width: 100%; }
+  .code-graph-page .site-tabs { max-width: 100%; }
   .site-tabs a { padding: 7px 8px; font-size: 11px; }
   .code-updated { order: 3; margin-left: auto; }
   .search-wrap { order: 4; width: calc(100% - 154px); margin: 0; }
