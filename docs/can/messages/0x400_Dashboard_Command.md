@@ -16,6 +16,7 @@ The Dashboard is the logical command source. The C++ bridge CAN module is the bu
 | Direction | Host to ECU |
 | DLC | 3 |
 | Suggested period | 50 ms |
+| ECU command timeout | 200 ms without a fresh valid command (four periods) |
 
 The production bridge sends this frame every 50 ms when started with
 `--can-interface NAME`. Its `CommandValid` signal remains set while the
@@ -39,7 +40,7 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 
 | Byte | Bits | Signal | Type / Scale | Meaning |
 |---:|---|---|---|---|
-| 0 | 0..3 | `AliveCounter` | uint4 | Rolling bridge CAN-interface counter, `0..15` |
+| 0 | 0..3 | `AliveCounter` | uint4 | Rolling bridge CAN-interface counter, `0..15`; ECU accepts modulo-16 forward deltas 1–8, rejects duplicates and deltas 9–15, and permits a new baseline after 500 ms without an accepted frame |
 | 0 | 4 | `CommandValid` | bool | Dashboard command is fresh and usable |
 | 0 | 5 | `ClearFaultRequest` | bool | Momentary request to clear safe, clearable latched faults |
 | 0 | 6..7 | `Reserved` | uint2 | Transmit `0` |
@@ -112,4 +113,4 @@ HEX:  14 07 13
 - If `RequestedHeadlightPower = Off`, command headlights off or standby and ignore `RequestedHeadlightMode` for output selection.
 - If `RequestedHeadlightPower = On`, evaluate `RequestedHeadlightMode` and the required fresh inputs for that mode.
 - Treat `ClearFaultRequest` as edge-triggered, usually on a `0` to `1` transition, and clear only faults that are safe to clear.
-- If this message times out or fails alive-counter checks, enter the configured safe default and set `DashboardStale` in `0x500 AFS_Status`.
+- If this message times out after 200 ms or a received frame fails validation/alive-counter checks, immediately invalidate the usable command, enter the configured safe default, and set `DashboardStale` in `0x500 AFS_Status`. The timeout applies to valid commands; `CommandValid = 0` does not refresh the usable command timer.

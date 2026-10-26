@@ -36,8 +36,8 @@ message index file.
 | DLC | Message-specific and defined by the DBC; receivers reject frames whose DLC does not match the expected value |
 | Byte order | Little-endian for multi-byte integers |
 | Message periods | `0x100`/`0x200`: 20 ms; `0x300`: 100 ms; `0x400`: 50 ms; `0x500`: 50 ms suggested ECU status period |
-| Alive / grid freshness | `0x100` and `0x200` use a 4-bit rolling counter in byte `0` bits `0..3`; `0x300` has no counter and uses `GridValid` for source freshness/validity, with the ECU's CAN receive timeout for link loss |
-| ECU input/link timeout | `0x100`/`0x200`: 100 ms; `0x300`: 250 ms, allowing one missed 100 ms frame plus timing margin |
+| Alive / grid freshness | `0x100`, `0x200`, and `0x400` use a 4-bit rolling counter in byte `0` bits `0..3`; ECU accepts forward deltas 1–8, rejects duplicates and other deltas, and permits counter restart after 500 ms without an accepted frame. `0x300` has no counter and uses `GridValid` for source freshness/validity, with the ECU's CAN receive timeout for link loss |
+| ECU input/link timeout | `0x100`/`0x200`: 100 ms; `0x300`: 250 ms, allowing one missed 100 ms frame plus timing margin; valid `0x400`: 200 ms |
 | Checksum | `0x400` and `0x500` use application XOR checksums; `0x100`, `0x200`, and `0x300` rely on Classical CAN CRC |
 | Reserved fields | Transmit as `0`; each message file defines whether receivers ignore or reject nonzero reserved bits |
 
@@ -50,14 +50,18 @@ commands. `0x500 AFS_Status` reports the ECU's executed state and faults, so it
 is assigned a larger identifier and lower bus priority than those messages.
 
 The `0x100` and `0x200` alive counters advance once per scheduled encoding
-cycle, including invalid or repeated source data. A failed SocketCAN write can
-leave a gap in the sequence observed by the ECU; firmware integration must
-define gap tolerance. `0x300` has no counter: the bridge
+cycle, including invalid or repeated source data. The `0x400` counter advances
+on each scheduled command frame. The ECU accepts modulo-16 forward deltas from
+1 through 8, so occasional lost transmissions do not immediately reject the
+next frame; duplicates and deltas 9–15 are rejected. After 500 ms without an
+accepted frame for that message, the next counter value establishes a new
+baseline. `0x300` has no counter: the bridge
 sets `GridValid` according to the latest source scene's validity and age, and
 the ECU applies its per-message receive timeout if accepted frames stop
 arriving. Speed and steering arrive every 20 ms and time out after 100 ms
 (five periods). The object grid arrives every 100 ms and times out after
-250 ms, allowing one missed frame plus timing margin. Low `SteeringValid`,
+250 ms, allowing one missed frame plus timing margin. A valid `0x400` command
+expires after 200 ms (four 50 ms periods). Low `SteeringValid`,
 `SpeedValid`, or `GridValid` marks the corresponding source unusable when
 received; a `0x300` frame with `GridValid=0` clears the active grid immediately.
 Because the bridge samples the object grid on its 100 ms transmit schedule, a
@@ -67,15 +71,15 @@ prior grid contents.
 
 ## Current Messages
 
-The message specifications use "C++ bridge CAN module" for the native gateway's CAN boundary. They explain the schema in `bridge/can/afs.dbc` and record behavioral agreements and remaining decisions. The `0x300` single-frame sector layout, 10-sector preview geometry, four 25 m bands, cumulative subsector masks, radial footprint rule, missing-geometry fallback, and fail-closed behavior are agreed software design direction. `PerceptionDegraded` describes object-scan or required-geometry quality and implies `GridValid=0`; transfer, parse, and freshness faults invalidate the grid without setting this perception-specific flag. `ObjectListOverflow` identifies candidate objects dropped at the runner's configured object-list cap.
+The message specifications use "C++ bridge CAN module" for the native gateway's CAN boundary and document the ECU CAN receiver policy implemented in the Zephyr app. The `0x300` single-frame sector layout, 10-sector preview geometry, four 25 m bands, cumulative subsector masks, radial footprint rule, missing-geometry fallback, and fail-closed behavior are agreed software design direction. `PerceptionDegraded` describes object-scan or required-geometry quality and implies `GridValid=0`; transfer, parse, and freshness faults invalidate the grid without setting this perception-specific flag. `ObjectListOverflow` identifies candidate objects dropped at the runner's configured object-list cap.
 
 | ID | Name | Bus producer | Bus consumer | Purpose | Detail |
 |---:|---|---|---|---|---|
 | `0x100` | `Vehicle_Speed` | C++ bridge CAN module | AFS ECU | Simulated speed input | [messages/0x100_Vehicle_Speed.md](messages/0x100_Vehicle_Speed.md) |
 | `0x200` | `Vehicle_Steering` | C++ bridge CAN module | AFS ECU | Simulated steering input | [messages/0x200_Vehicle_Steering.md](messages/0x200_Vehicle_Steering.md) |
 | `0x300` | `Vehicle_Object` | C++ bridge CAN module | AFS ECU | One-frame 10-sector occupancy grid with a four-bit cumulative subsector mask per sector | [messages/0x300_Vehicle_Object.md](messages/0x300_Vehicle_Object.md) |
-| `0x400` | `Dashboard_Command` | C++ bridge CAN module | AFS ECU | Dashboard request transmitted every 50 ms; CommandValid follows Dashboard connection and accepted request | [messages/0x400_Dashboard_Command.md](messages/0x400_Dashboard_Command.md) |
-| `0x500` | `AFS_Status` | AFS ECU | C++ bridge CAN module and Dashboard | Received, validated, retained, and forwarded with freshness | [messages/0x500_AFS_Status.md](messages/0x500_AFS_Status.md) |
+| `0x400` | `Dashboard_Command` | C++ bridge CAN module | AFS ECU | Dashboard request transmitted every 50 ms; ECU expires it after 200 ms | [messages/0x400_Dashboard_Command.md](messages/0x400_Dashboard_Command.md) |
+| `0x500` | `AFS_Status` | AFS ECU | C++ bridge CAN module and Dashboard | ECU currently reports Safe_Default bring-up status every 50 ms; bridge receives and forwards accepted status | [messages/0x500_AFS_Status.md](messages/0x500_AFS_Status.md) |
 
 ## Signal Intent
 
@@ -91,7 +95,7 @@ The message specifications use "C++ bridge CAN module" for the native gateway's 
 
 A DBC is a text dictionary of CAN messages: it identifies each signal's bits, signedness, units, scaling, and enums. `bridge/can/afs.dbc` is maintained with the bridge CAN implementation and shared by the gateway, firmware, logs, and tests. It is separate from the Python/C++ IPC message specification.
 
-The DBC can be edited in Vector CANdb++. The approved codec workflow uses cantools 45.0.0 to generate C pack/unpack functions when the DBC changes, checks the generated C files into `bridge/src/can/generated/`, and compiles them into the gateway. `CanFrameEncoder` packs the `0x100`–`0x400` frames; the `0x500` decoder uses the generated unpacker and validates application rules. See the regeneration command in [the CAN module notes](../../bridge/src/can/README.md). The same C codec can also be compiled into the future STM32 Zephyr firmware. Python is needed for code generation only, not at runtime or during a normal bridge build. C++ owns sockets, scheduling, validation, and lifecycle; the STM32 Zephyr firmware owns AFS control. Timeouts and counter behavior need application logic alongside the DBC. The `0x300` grid is a single frame and requires no fragment assembly.
+The DBC can be edited in Vector CANdb++. The approved codec workflow uses cantools 45.0.0 to generate C pack/unpack functions when the DBC changes, checks the generated C files into `bridge/src/can/generated/`, and compiles them into the gateway and STM32 Zephyr application. `CanFrameEncoder` packs the `0x100`–`0x400` frames; both ECU and bridge use the generated unpacker for `0x500`, with application validation layered on top. See the regeneration command in [the CAN module notes](../../bridge/src/can/README.md). Python is needed for code generation only, not at runtime or during normal builds. C++ owns host sockets, scheduling, and lifecycle; Zephyr firmware owns ECU-side CAN validation and status, while physical AFS actuation remains future work. Timeouts and counter behavior live in application logic alongside the DBC. The `0x300` grid is a single frame and requires no fragment assembly.
 
 The Dashboard consumes decoded values and enums from gateway IPC. It does not load a DBC to own raw CAN transport.
 

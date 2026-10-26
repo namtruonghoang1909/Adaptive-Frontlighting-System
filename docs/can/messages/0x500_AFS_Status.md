@@ -1,6 +1,6 @@
 # 0x500 AFS_Status
 
-`AFS_Status` is transmitted by the STM32F407VE AFS ECU to the C++ bridge CAN module. The CAN interface decodes it and stores a status snapshot that the Dashboard interface and log tools can expose. It reports what the ECU is actually executing, whether required inputs are fresh enough, which faults are active, the measured servo positions, and the beam dimming pattern actually applied by the ECU.
+`AFS_Status` is transmitted by the STM32F407VET6 AFS ECU to the C++ bridge CAN module. The CAN interface decodes it and stores a status snapshot that the Dashboard interface and log tools can expose. It reports what the ECU is actually executing, whether required inputs are fresh enough, which faults are active, the measured servo positions, and the beam dimming pattern actually applied by the ECU.
 
 ## Frame
 
@@ -23,6 +23,15 @@ The suggested 50 ms period is an ECU reporting cadence, not a bridge transmit
 setting. The bridge retains the latest accepted status and reports its receive
 age to the Dashboard. The Dashboard marks it stale after 250 ms without a new
 accepted frame; this is a display freshness threshold, not ECU safety logic.
+
+The current firmware implements CAN communication and status reporting, but
+does not yet drive the servo or beam hardware. During this bring-up stage it
+reports `ExecutedMode = Safe_Default`, `SafeFallback = 1`,
+`ServoControlLost = 1`, and `BeamControlLost = 1`, with a zero applied dim mask
+and placeholder zero feedback. These values explicitly report that the output
+drivers are unavailable; they do not confirm that a physical fallback pattern
+has been applied. The output behavior in the later **Safe Fallback Lighting**
+section remains the intended hardware behavior once those drivers exist.
 
 The C++ bridge includes a receiver-side decoder for this frame. It accepts only
 standard `0x500` frames with DLC 8, validates the XOR checksum, reserved fields,

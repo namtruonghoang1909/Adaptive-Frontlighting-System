@@ -40,7 +40,7 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 
 | Byte | Bits | Signal | Type / Scale | Meaning |
 |---:|---|---|---|---|
-| 0 | 0..3 | `AliveCounter` | uint4 | Advances once per scheduled encoding cycle, even when steering is invalid or repeated; wrap `15` to `0`. A failed SocketCAN write can create a gap; ECU gap tolerance remains an integration decision. |
+| 0 | 0..3 | `AliveCounter` | uint4 | Advances once per scheduled encoding cycle, even when steering is invalid or repeated; wrap `15` to `0`. ECU accepts modulo-16 forward deltas 1–8; duplicate and deltas 9–15 are rejected. A new baseline is allowed after 500 ms without an accepted frame. |
 | 0 | 4 | `SteeringValid` | bool | Steering sample is no older than 250 ms and usable; cleared on detected runner input faults |
 | 0 | 5 | `SteeringSaturated` | bool | Angle exceeded the CAN field range and was clamped for encoding; `SteeringValid` is also `0` |
 | 0 | 6..7 | `Reserved` | uint2 | Transmit `0` |
@@ -89,5 +89,5 @@ BIN:  00010111 01111011 00000000 00000000 00000000 00000000 00000000 00000000
 ## Receiver Behavior
 
 - If `SteeringValid = 0`, the ECU should immediately ignore `SteeringAngleDeg`, mark steering unusable, and not run behavior that requires a valid steering input.
-- If no accepted `0x200` frame arrives for 100 ms, or this message fails alive-counter checks, the ECU should disable low-beam swivel when that behavior requires steering and set `SteeringStale` in `0x500 AFS_Status`. This is five expected 20 ms periods. A frame with `SteeringValid = 0` is received but does not make the steering input usable.
+- If no accepted `0x200` frame arrives for 100 ms, or a received frame fails validation/alive-counter checks, the ECU should immediately mark steering unusable, disable low-beam swivel when it requires steering, and set `SteeringStale` in `0x500 AFS_Status`. This is five expected 20 ms periods. A frame with `SteeringValid = 0` is received but does not make the steering input usable.
 - If `SteeringSaturated = 1`, the ECU must ignore `SteeringAngleDeg`; reject the inconsistent combination where `SteeringValid = 1`.
