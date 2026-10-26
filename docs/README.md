@@ -15,9 +15,11 @@ All documented paths are relative to the repository root unless explicitly state
 7. [architecture/components/headlights.md](architecture/components/headlights.md) - headlight structure and behavior.
 8. [can/README.md](can/README.md) - CAN bus and message-spec index.
 9. [hardware/hardware.md](hardware/hardware.md) - bench hardware.
-10. [tools/tools.md](tools/tools.md) - tools and runtime environment.
-11. [verification/testing.md](verification/testing.md) - verification approach.
-12. [agents/README.md](../agents/README.md) - agent working guide and handoff entry point.
+10. [hardware/wiring-draft.md](hardware/wiring-draft.md) - candidate ECU signal and power wiring.
+11. [hardware/datasheets/README.md](hardware/datasheets/README.md) - downloaded component datasheets and unresolved model-specific references.
+12. [tools/tools.md](tools/tools.md) - tools and runtime environment.
+13. [verification/testing.md](verification/testing.md) - verification approach.
+14. [agents/README.md](../agents/README.md) - agent working guide and handoff entry point.
 
 ## System Snapshot
 
@@ -46,11 +48,16 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 | [architecture/components/headlights.md](architecture/components/headlights.md) | Headlight rig |
 | [can/README.md](can/README.md) | CAN contract |
 | [hardware/hardware.md](hardware/hardware.md) | Hardware |
+| [hardware/wiring-draft.md](hardware/wiring-draft.md) | ECU wiring diagram and candidate pin map |
+| [../tools/system_visualization/hardware-wiring/index.html](../tools/system_visualization/hardware-wiring/index.html) | Selectable, schematic-style pin-level hardware wiring view |
+| [hardware/datasheets/README.md](hardware/datasheets/README.md) | Datasheets, source revisions, and documents awaiting exact part numbers |
 | [tools/tools.md](tools/tools.md) | Tools |
 | [verification/testing.md](verification/testing.md) | Testing |
-| [../tools/system_visualization/README.md](../tools/system_visualization/README.md) | Interactive Code graph and functionality paths |
+| [../tools/system_visualization/README.md](../tools/system_visualization/README.md) | System Visualization pages, Code graph, and functionality paths |
 | [temporary/desired_file_system.md](temporary/desired_file_system.md) | Target repository layout |
-| [temporary/linux_commands.md](temporary/linux_commands.md) | Practical Linux, SocketCAN, socket, and embedded target commands |
+| [temporary/linux_commands.md](temporary/linux_commands.md) | Common Linux network, USB, and SocketCAN commands |
+| [../firmware/docs/hardware_check.md](../firmware/docs/hardware_check.md) | ST-LINK and STM32F4 host-side connection checks |
+| [../firmware/docs/rtt_debugging.md](../firmware/docs/rtt_debugging.md) | ECU RTT console setup, startup, and troubleshooting |
 | [Agent guide](../agents/README.md) | Agent rules, working context, and plans |
 
 ## Current Status
@@ -63,7 +70,7 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 | C++ bridge | C++17/CMake runner and Dashboard IPC, opt-in SocketCAN (`0x100`/`0x200` TX every 20 ms; `0x300` TX every 100 ms; `0x400` TX every 50 ms), and `0x500` decoder/forwarding implemented |
 | DBC | [bridge/can/afs.dbc](../bridge/can/afs.dbc) defines all five CAN messages; generated codecs pack the `0x100`–`0x400` TX frames and decode `0x500` |
 | Dashboard | Native Tkinter vehicle dashboard with bridge requests, runner status, live ECU status, and clearly labeled simulated fallbacks |
-| AFS/ADB firmware | Not implemented |
+| AFS/ADB firmware | Zephyr CAN receive/status slice builds, with RTT diagnostics; physical CAN and actuator control remain to be verified or implemented |
 | Vendored MetaDrive | Local ignored tree under `simulation/metadrive/` |
 | Hardware rig | Planned |
 

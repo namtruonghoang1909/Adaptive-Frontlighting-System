@@ -13,479 +13,324 @@ Future agents should read this file with the rest of `agents/` before making cha
 
 ## Entries
 
-### 2026-10-23 - Continue Firmware CAN On Bridge ECU Branch
+### 2026-10-26 - Add Component Regression Suites
 
 **User prompt**
 
-User renamed the current branch to `feat/bridge-ecu/can`, decided to develop
-Bridge CAN and firmware CAN on the same branch for joint debugging, and asked
-to commit the host-side Bridge CAN work before starting firmware implementation.
+User requested test cases for each project component and a repeatable test
+command to run after changing a component.
 
 **Agent changes**
 
-- Renamed the local branch; it has no upstream and has not been pushed.
-- Updated the current handoff to use the new branch name and record firmware as
-  the next phase on this branch.
-- Prepared a seven-commit host-side sequence for review before staging or
-  committing, as required by the repository commit rules.
+- Added ECU host tests for CAN counters, frame validation, Dashboard command
+  policy, freshness and fallback, and `0x500` status encoding. The ECU suite
+  also builds the Zephyr image.
+- Added headless Dashboard command and power/mode tests. Retained existing
+  runner, bridge, Dashboard status, and visualization suites.
+- Added `tools/test_components.sh` to run one component or all software suites,
+  documented commands and coverage, and made component testing a code-change
+  rule. Physical interface checks remain a separate hardware gate.
 
 **Files modified**
 
-- `agents/plan/feat-bridge-socketcan.md`
-- `agents/prompt-tracking.md`
-- `agents/roadmap.md`
-- `agents/working-context.md`
-
-**Verification**
-
-- Confirmed the local branch name and preserved the working tree. No tests were
-  rerun for this commit-planning step.
-
-### 2026-10-22 - Complete Dashboard CAN Command And Status Path
-
-**User prompt**
-
-User asked to implement the remaining CAN work: transmit Dashboard `0x400`,
-forward decoded `0x500` status to the Dashboard, add conversion/decoder and
-vcan integration coverage, and verify the physical adapter where possible.
-User selected `CommandValid` to remain true while the Dashboard is connected,
-then clarified that the USB-CAN adapter has not arrived and wants the laptop
-implementation ready before delivery so hardware checks can run immediately.
-
-**Agent changes**
-
-- Added `0x400 Dashboard_Command` packing with XOR checksum and mode validation;
-  production CAN sends it every 50 ms, leases `CommandValid` to an active
-  Dashboard connection, and queues clear-fault for one successful SocketCAN
-  write. CAN-disabled clear-fault requests are rejected.
-- Forwarded validated `0x500` status to Dashboard IPC, including decoded mode,
-  health, fault flags, feedback, applied sector mask, age, and freshness.
-  Dashboard now displays live ECU values and clearly labels simulated fallback
-  and stale status.
-- Added pure Linux `can_frame` conversion, encoder/decoder/status/Dashboard IPC
-  tests, Dashboard mapping coverage that distinguishes requested from executed
-  mode, and an opt-in actual-process vcan test.
-- Updated CAN, IPC, architecture, development, hardware, roadmap, branch-plan,
-  working-context, and Code graph documentation and models.
-- Added ready-to-follow SocketCAN setup and physical bus verification steps to
-  the hardware guide.
-- Bridge CTest passes 8/8; standalone Dashboard status tests pass 4/4. The vcan
-  test builds but could not run: this host has no CAN interface and denies
-  `CAP_NET_ADMIN` when creating `vcan0`. Physical adapter/ECU verification is
-  pending hardware access.
-
-**Files modified**
-
-- `README.md`
-- `agents/plan/feat-bridge-can-encoding.md`
-- `agents/plan/feat-bridge-socketcan.md`
-- `agents/prompt-tracking.md`
-- `agents/roadmap.md`
-- `agents/working-context.md`
-- `bridge/CMakeLists.txt`
-- `bridge/README.md`
-- `bridge/can/afs.dbc`
-- `bridge/include/afs_bridge/can_encoder.hpp`
-- `bridge/include/afs_bridge/can_frame_encoder.hpp`
-- `bridge/include/afs_bridge/dashboard_ipc.hpp`
-- `bridge/src/app/README.md`
-- `bridge/src/app/runner_bridge_main.cpp`
-- `bridge/src/can/README.md`
-- `bridge/src/can/can_frame_encoder.cpp`
-- `bridge/src/can/generated/afs.c`
-- `bridge/src/can/generated/afs.h`
-- `bridge/src/ipc/runner_ipc.cpp`
-- `bridge/tests/README.md`
-- `bridge/tests/runner_ipc_end_to_end.py`
-- `dashboard/README.md`
-- `dashboard/src/afs_dashboard/app/README.md`
-- `dashboard/src/afs_dashboard/app/window.py`
-- `dashboard/src/afs_dashboard/gateway_client/README.md`
-- `dashboard/src/afs_dashboard/gateway_client/client.py`
-- `dashboard/tests/README.md`
-- `docs/README.md`
-- `docs/architecture/components/afs-ecu.md`
-- `docs/architecture/components/bridge.md`
-- `docs/architecture/components/dashboard.md`
-- `docs/architecture/dashboard-bridge-communication.md`
-- `docs/architecture/data-flow.md`
-- `docs/architecture/overview.md`
-- `docs/architecture/runner-bridge-communication.md`
-- `docs/can/README.md`
-- `docs/can/messages/0x100_Vehicle_Speed.md`
-- `docs/can/messages/0x200_Vehicle_Steering.md`
-- `docs/can/messages/0x300_Vehicle_Object.md`
-- `docs/can/messages/0x400_Dashboard_Command.md`
-- `docs/can/messages/0x500_AFS_Status.md`
-- `docs/development.md`
-- `docs/hardware/hardware.md`
-- `docs/verification/testing.md`
-- `docs/tools/tools.md`
-- `tools/system_visualization/README.md`
-- `tools/system_visualization/can-messages/can-messages.js`
-- `tools/system_visualization/can-messages/index.html`
-- `tools/system_visualization/code-graph/build_index.py`
-- `tools/system_visualization/code-graph/code-index.js`
-- `tools/system_visualization/code-graph/functionality-data.js`
-- `tools/system_visualization/code-graph/graph-data.js`
-- `tools/system_visualization/tests/can-messages.test.cjs`
-- `bridge/include/afs_bridge/afs_status.hpp`
-- `bridge/include/afs_bridge/can_runtime.hpp`
-- `bridge/include/afs_bridge/socketcan_frame.hpp`
-- `bridge/include/afs_bridge/socketcan_transport.hpp`
-- `bridge/src/app/can_runtime.cpp`
-- `bridge/src/can/afs_status.cpp`
-- `bridge/src/can/socketcan_frame.cpp`
-- `bridge/src/can/socketcan_transport.cpp`
-- `bridge/tests/afs_status_test.cpp`
-- `bridge/tests/can_frame_encoder_test.cpp`
-- `bridge/tests/dashboard_ipc_integration.cpp`
-- `bridge/tests/socketcan_frame_test.cpp`
-- `bridge/tests/socketcan_vcan_end_to_end.py`
-- `dashboard/tests/test_gateway_status.py`
-
-**Verification**
-
-- Bridge configure/build and CTest: 8/8 passed.
-- `PYTHONPATH=dashboard/src python3 dashboard/tests/test_gateway_status.py`:
-  4/4 passed.
-- Optional vcan configuration/build succeeded; runtime execution is unavailable
-  on this host. Physical adapter verification remains pending.
-- Code graph inventory freshness and validation pass (200 inventory nodes,
-  60 graph nodes, 70 interactions, seven layers, 11 paths). Headless Firefox
-  review confirmed graph rendering, conversion node details/source link,
-  direct-connection highlighting, functionality selection/clearing, search,
-  Dashboard layer filtering, class expansion, zoom, and pan. Markdown
-  link/fence checks passed on 33 changed Markdown files; whitespace checks pass.
-
-### 2026-10-22 - Adjust CAN Message Periods
-
-**User prompt**
-
-User agreed to transmit `0x300 Vehicle_Object` every 100 ms and suggested a
-50 ms producer period for non-time-critical `0x500 AFS_Status`, then asked to
-adjust all related implementation and documentation.
-
-**Agent changes**
-
-- Split production scheduling: `0x100`/`0x200` remain at 20 ms; `0x300` is
-  sent every 100 ms. Set `0x300`'s ECU receive timeout to 250 ms to tolerate
-  one missed grid frame plus timing margin. Document that stale-grid reporting
-  can lag by up to one 100 ms transmission period.
-- Set the suggested ECU `0x500` reporting period and DBC cycle-time attribute
-  to 50 ms. The bridge does not yet enforce a receive-expiry timeout for
-  `0x500`.
-- Updated message specs, DBC metadata/comments, generated header comments,
-  bridge/architecture guides, CAN reference UI, agent plans/context, and Code
-  graph descriptions.
-- Local Python environments do not have cantools, so the generator could not
-  be run. Only DBC comments/cycle-time metadata changed; generated codec layouts
-  are unchanged, and the corresponding generated header comments were updated.
-- Code graph inventory freshness and validation passed (194 inventory nodes,
-  59 graph nodes, 65 interactions, 10 functionality paths). Headless Firefox
-  review passed for CanRuntime details/source/upstream links, class-member
-  expansion, search, layer filtering, production CAN path selection/clearing,
-  zoom, pan, and the updated CAN message reference.
-- CMake configure and the bridge build passed. Project tests and live CAN checks
-  were not run. `git diff --check` and required graph syntax checks passed.
-
-**Files modified**
-
-- `bridge/src/app/can_runtime.cpp`, `bridge/include/afs_bridge/can_runtime.hpp`,
-  `bridge/include/afs_bridge/can_encoder.hpp`, `bridge/can/afs.dbc`,
-  `bridge/src/can/generated/afs.h`
-- `bridge/README.md`, `bridge/src/can/README.md`, `docs/can/README.md`,
-  `docs/can/messages/0x300_Vehicle_Object.md`,
-  `docs/can/messages/0x500_AFS_Status.md`, `docs/development.md`,
-  `docs/README.md`, `docs/architecture/components/bridge.md`,
-  `docs/architecture/components/afs-ecu.md`, `docs/architecture/data-flow.md`,
-  `docs/architecture/overview.md`,
-  `docs/architecture/runner-bridge-communication.md`, `README.md`
-- `tools/system_visualization/can-messages/can-messages.js`,
-  `tools/system_visualization/can-messages/index.html`,
-  `tools/system_visualization/tests/can-messages.test.cjs`,
-  `tools/system_visualization/code-graph/graph-data.js`,
-  `tools/system_visualization/code-graph/functionality-data.js`,
-  `agents/plan/feat-bridge-socketcan.md`,
-  `agents/plan/feat-bridge-can-encoding.md`, `agents/working-context.md`,
-  `agents/prompt-tracking.md`, `tools/system_visualization/code-graph/code-index.js`
-
-### 2026-10-22 - Implement Production SocketCAN Runtime
-
-**User prompt**
-
-User asked to continue CAN work on `feat/bridge/can` and selected opt-in CAN
-startup: bind the CAN runtime only when `--can-interface NAME` is provided.
-
-**Agent changes**
-
-- Added a Linux SocketCAN RAII transport with interface validation, `0x500`
-  receive filtering, pollable I/O, and standard Classical CAN frame conversion.
-- Wired a 20 ms monotonic CAN worker into `afs_runner_bridge`. It samples the
-  latest runner scene, sends `0x100`/`0x200`/`0x300`, validates `0x500` status,
-  and retains accepted status with a host monotonic timestamp. CAN I/O faults
-  are rate-limited and retried while runner/Dashboard IPC remain available.
-- Updated bridge/CAN/architecture guidance, roadmap, branch checklist, Code
-  graph model, and working context. Dashboard ECU status forwarding and
-  `0x400` transmission remain out of scope.
-
-**Files modified**
-
-- `bridge/CMakeLists.txt`, `bridge/include/afs_bridge/afs_status.hpp`,
-  `bridge/include/afs_bridge/can_runtime.hpp`,
-  `bridge/include/afs_bridge/socketcan_transport.hpp`,
-  `bridge/src/app/can_runtime.cpp`,
-  `bridge/src/app/runner_bridge_main.cpp`, `bridge/src/can/afs_status.cpp`,
-  `bridge/src/can/socketcan_transport.cpp`, `bridge/README.md`,
-  `bridge/src/app/README.md`, `bridge/src/can/README.md`,
-  `bridge/tests/README.md`, `docs/architecture/components/bridge.md`,
-  `docs/architecture/data-flow.md`, `docs/architecture/overview.md`,
-  `docs/architecture/runner-bridge-communication.md`,
-  `docs/can/README.md`, `docs/can/messages/0x100_Vehicle_Speed.md`,
-  `docs/can/messages/0x200_Vehicle_Steering.md`,
-  `docs/can/messages/0x500_AFS_Status.md`,
-  `docs/development.md`, `docs/hardware/hardware.md`, `docs/README.md`,
-  `README.md`, `agents/plan/feat-bridge-socketcan.md`,
-  `agents/roadmap.md`, `agents/working-context.md`,
-  `tools/system_visualization/code-graph/graph-data.js`,
-  `tools/system_visualization/code-graph/functionality-data.js`,
-  `tools/system_visualization/code-graph/code-index.js`,
+- `firmware/tests/`, `dashboard/tests/`, `tools/test_components.sh`,
+  `tools/system_visualization/code-graph/code-index.js`, component READMEs,
+  `README.md`, `docs/development.md`, `docs/verification/testing.md`,
+  `docs/tools/tools.md`, `tools/README.md`, `agents/README.md`,
+  `agents/rules/coding.md`, `agents/working-context.md`, and
   `agents/prompt-tracking.md`.
 
 **Verification**
 
-- CMake configure and bridge runtime/executable builds passed. No tests were
-  added or run. `vcan0` checks could not run because this environment denied
-  opening the netlink socket (`Operation not permitted`).
+- The unified `all` command passes: 45 runner tests, eight bridge CTest cases,
+  nine Dashboard tests, five ECU host cases and an STM32 build, and 37
+  visualization tests plus graph validation. Bridge IPC cases needed permitted
+  Unix socket binding outside the execution sandbox.
+- Interactive Code graph inspection could not run because the Snap Firefox
+  launcher requires the unavailable `snapd.apparmor` service; the graph
+  inventory and validator pass.
+- Physical CAN/SWD/RTT and actuator behavior are not covered by host tests.
 
-### 2026-10-22 - Remove An ADB Preview Beam Sector
+### 2026-10-26 - Document ECU RTT Setup And Startup
 
 **User prompt**
 
-User asked for the Dashboard high-beam ADB demonstration to show a sector of
-light actually missing instead of a road-colored trapezoid placed over a full
-beam.
+User requested documentation explaining how to set up and start the RTT tool.
 
 **Agent changes**
 
-- Reworked the center preview to draw the low-beam base and high-beam fans
-  separately. ADB mode omits a right-side high-beam fan sector around a small
-  sample vehicle, so the road shows through the unlit area. Other lighting
-  modes retain their intended previews.
-- Updated Dashboard descriptions, working context, and the Code graph node and
-  functionality summary to match the preview behavior.
+- Added a dedicated ECU RTT guide covering Zephyr SDK/OpenOCD and `nc`
+  prerequisites, ST-Link checks, build/flash/start commands, expected output,
+  local port override, and common failures.
+- Linked the guide from the firmware, hardware-check, development, root, and
+  docs-index pages, and corrected the docs-index firmware status.
 
 **Files modified**
 
-- `dashboard/src/afs_dashboard/app/window.py`, `dashboard/README.md`,
-  `dashboard/src/afs_dashboard/app/README.md`,
-  `docs/architecture/components/dashboard.md`, `agents/working-context.md`,
-  `agents/prompt-tracking.md`,
-  `tools/system_visualization/code-graph/graph-data.js`,
-  `tools/system_visualization/code-graph/functionality-data.js`, and
+- `firmware/docs/rtt_debugging.md`, `firmware/README.md`,
+  `firmware/docs/hardware_check.md`, `docs/development.md`, `docs/README.md`,
+  `README.md`, `agents/working-context.md`, and `agents/prompt-tracking.md`.
+
+**Verification**
+
+- Documentation links, fenced command blocks, and whitespace checked. Hardware
+  RTT output remains unverified in this environment.
+
+### 2026-10-26 - Route ECU Diagnostics Through RTT
+
+**User prompt**
+
+User chose RTT for ECU diagnostics over the existing ST-Link SWD connection.
+
+**Agent changes**
+
+- Enabled Zephyr's SEGGER RTT console for the ECU's existing `printk` messages
+  and disabled the UART console.
+- Added `firmware/scripts/read_rtt.sh` to start the SDK OpenOCD RTT server and
+  read channel 0 on a local terminal.
+- Documented the build, flash, reader, and board-reset sequence; updated the
+  Code graph's firmware descriptions.
+
+**Files modified**
+
+- `firmware/afs_ecu/prj.conf`, `firmware/scripts/read_rtt.sh`,
+  `firmware/README.md`, `firmware/docs/hardware_check.md`, `README.md`,
+  `docs/development.md`, `agents/working-context.md`,
+  `agents/prompt-tracking.md`, and `tools/system_visualization/code-graph/`.
+
+**Verification**
+
+- A pristine Zephyr 3.7 `black_f407ve` build passes with RTT console enabled,
+  UART console disabled, and the RTT control block in normal SRAM.
+- Shell syntax passes. The reader cannot connect to the physical ST-Link in
+  this environment; it reports OpenOCD's `open failed` error. Physical RTT
+  output must be checked after flashing in the user's Ubuntu VM.
+- Code inventory freshness, graph validation, JavaScript syntax, and whitespace
+  checks pass. Firefox could not open the interactive viewer because the Snap
+  launcher requires the unavailable `snapd.apparmor` service.
+
+### 2026-10-26 - Implement STM32 ECU CAN Communication Slice
+
+**User prompt**
+
+User approved the AUTOSAR-inspired firmware structure and requested the first
+STM32 CAN milestone: communication and status only, with outputs held at safe
+fallback until actuator drivers exist. User selected a 200 ms Dashboard
+command timeout and a modulo-16 alive-counter policy.
+
+**Agent changes**
+
+- Implemented Zephyr CAN2 receive and transmit abstraction, standard-frame RX
+  queue, shared DBC decoding/packing, validation for `0x100`–`0x400`, RTE-style
+  input/status storage, freshness supervision, and periodic `0x500` status.
+  Rejected frames invalidate that input immediately; RX overflow drops queued
+  backlog and invalidates every input until new frames arrive.
+- Configured CAN2 for 500 kbit/s and kept outputs explicitly in
+  `Safe_Default`, reporting beam/servo control unavailable.
+- Documented timeouts: speed/steering 100 ms, object grid 250 ms, and valid
+  Dashboard command 200 ms. Alive-counter deltas 1–8 are accepted; duplicates
+  and deltas 9–15 are rejected; restart baseline is allowed after 500 ms with
+  no accepted frame.
+- Removed the obsolete standalone LED demo; the application loop keeps the
+  board LED as a 500 ms heartbeat.
+- Updated the project guides and synchronized the Code graph and ordered
+  firmware communication path.
+
+**Files modified**
+
+- `firmware/afs_ecu/`, `firmware/README.md`,
+  `firmware/docs/hardware_check.md`, `README.md`, `docs/architecture/`,
+  `docs/can/`, `docs/development.md`, `docs/hardware/hardware.md`,
+  `docs/temporary/desired_file_system.md`, `agents/roadmap.md`,
+  `agents/working-context.md`, `agents/prompt-tracking.md`, and
+  `tools/system_visualization/code-graph/`.
+
+**Verification**
+
+- Zephyr 3.7 `black_f407ve` firmware build passes; no project tests were run.
+- Physical CAN transceiver wiring, flashing of this CAN image, and CAN bus
+  receive/status exchange remain pending.
+- Code inventory and graph validation pass. Interactive viewer inspection
+  could not run because the Firefox Snap launcher refuses to start without the
+  unavailable `snapd.apparmor` service.
+
+### 2026-10-25 - Verify CAN Adapter And Bridge Loopback
+
+**User prompt**
+
+User confirmed that flashing succeeded and the board LED blinks, then provided
+the USB-CAN adapter and bridge controller-loopback results.
+
+**Agent changes**
+
+- Updated project status to mark ST-Link flashing and the board LED as verified.
+- Recorded that the Ubuntu VM detects the USB-CAN adapter as `can0` with
+  `gs_usb`, accepts 500 kbit/s, and passes controller loopback; `candump` showed
+  a TX echo and matching RX frame for `123#DEADBEEF`.
+- Confirmed bridge frames `0x100`–`0x400` appear as matching TX/RX loopback
+  entries with counters advancing at the configured periods. Signal values are
+  fail-closed because no runner or Dashboard source was connected.
+- Documented that the reported `ENOBUFS` warning still needs interface-counter
+  diagnosis; physical-bus validation with an active peer remains pending.
+
+**Files modified**
+
+- `README.md`, `agents/roadmap.md`, `agents/working-context.md`,
+- `agents/plan/feat-bridge-socketcan.md`,
+  `docs/architecture/components/afs-ecu.md`,
+  `docs/architecture/data-flow.md`, `docs/architecture/overview.md`,
+  `docs/development.md`, `docs/hardware/hardware.md`,
+  `docs/temporary/desired_file_system.md`, `docs/temporary/linux_commands.md`,
+  `docs/verification/testing.md`, `firmware/README.md`,
+  `firmware/docs/hardware_check.md`, and `agents/prompt-tracking.md`.
+
+**Verification**
+
+- The user confirmed adapter controller loopback and bridge `0x100`–`0x400`
+  transmission through it. Physical bus exchange and diagnosis of the reported
+  `ENOBUFS` warning remain pending. This execution environment cannot access
+  the user's USB device or CAN netlink socket; no project test suites were run.
+
+### 2026-10-25 - Configure OpenOCD For Four-Wire SWD
+
+**User prompt**
+
+User asked to fix the OpenOCD setup after confirming that the same STM32F4VE
+board programs in STM32CubeIDE with SWDIO, SWCLK, GND, and 3.3 V VTref, without
+an NRST wire, and requested the needed commands.
+
+**Agent changes**
+
+- Added a project-owned OpenOCD config that declares no external reset wire and
+  uses Cortex-M software reset handling, while preserving the STM32F4 target setup and
+  debug attach/detach handlers.
+- Changed the ST-LINK check to reset, halt, and resume without programming flash.
+- Made the flash wrapper select the same config and documented the behavior and
+  commands.
+
+**Files modified**
+
+- `firmware/scripts/openocd_stm32f4_swd.cfg`, `firmware/scripts/check_stlink.sh`,
+  `firmware/scripts/flash_firmware.sh`, `firmware/README.md`,
+  `firmware/docs/hardware_check.md`, `docs/development.md`,
+  `docs/hardware/wiring-draft.md`, `agents/working-context.md`, and
   `tools/system_visualization/code-graph/code-index.js`.
 
 **Verification**
 
-- Python compilation, Code graph inventory freshness and validation (184 source
-  nodes, 55 visible nodes, 58 interactions, seven layers, nine paths),
-  JavaScript syntax, Markdown links/fences, and Git whitespace checks passed.
-  The native window could not be visually inspected without a graphical session.
+- Shell syntax, OpenOCD runner option parsing, source inventory freshness, graph
+  validation, Markdown links/fences, and whitespace checks are recorded in the
+  handoff. The current environment cannot access the USB probe, so the hardware
+  reset/halt and flash sequence still needs to be run on the user's Ubuntu VM.
+  No project test suites were run.
 
-### 2026-10-21 - Fix Beam And Scrolling; Complete Non-CAN Bridge Path
-
-**User prompt**
-
-User reported that the lighting beams appeared to come from the car's sides,
-asked for mouse-wheel/trackpad scrolling, and asked to finish the bridge. They
-clarified that this branch should complete non-CAN bridge work and defer
-SocketCAN until the adapter arrives.
-
-**Agent changes**
-
-- Moved the car and beam origins so light projects from front lamps ahead of
-  the vehicle. Bound wheel and Linux scroll events across the main Dashboard.
-- Extended runner observations and bridge Dashboard status with optional ego
-  position/heading, a bounded fresh nearby-vehicle list, and retained request
-  IDs for reconnect reconciliation. The UI uses labeled demo fallback when
-  source data is stale or invalid.
-- Updated IPC contracts, run/architecture guides, working context, branch plan,
-  and Code graph. Runtime SocketCAN remains deferred.
-
-**Files modified**
-
-- `dashboard/src/afs_dashboard/app/window.py`,
-  `dashboard/src/afs_dashboard/gateway_client/client.py`,
-  `simulation_runner/src/ipc_adapter/publisher.py`,
-  `bridge/include/afs_bridge/runner_ipc.hpp`,
-  `bridge/include/afs_bridge/dashboard_ipc.hpp`,
-  `bridge/src/ipc/runner_ipc.cpp`, `dashboard/README.md`, `bridge/README.md`,
-  `docs/architecture/runner-bridge-communication.md`,
-  `docs/architecture/dashboard-bridge-communication.md`, component guides,
-  `README.md`, `docs/development.md`, `agents/working-context.md`,
-  `agents/plan/feat-dashboard.md`, `agents/prompt-tracking.md`, and Code graph files.
-
-**Verification**
-
-- Bridge build, Python compile, and Dashboard shell syntax checks passed.
-  The Code graph inventory was current (184 nodes), and graph validation passed
-  (55 visible nodes, 58 interactions, seven layers, nine paths). JavaScript
-  syntax, 155 local links and code fences across 24 Markdown files, and
-  `git diff --check` passed. A graphical Tk session was unavailable.
-
-### 2026-10-21 - Reorganize Dashboard Visuals And Controls
+### 2026-10-25 - Build Firmware And Add Development Wrappers
 
 **User prompt**
 
-User requested a top surrounding-object view, middle speed and steering meters,
-and bottom command controls. The picture between the meters must respond to
-mode selection, meter captions must sit below the circles, and mode buttons
-must be grey and unavailable when headlights are off.
+User asked to build the current firmware, then requested build and flash scripts
+and a short set of common Zephyr development commands.
 
 **Agent changes**
 
-- Reordered the native window into the three sections, drew labeled simulated
-  surrounding vehicles, and moved SPEED and STEERING below the meters.
-- Added distinct local lighting previews for off, fixed/swivel low beam, and
-  full/ADB high beam. The preview updates immediately even when the bridge is
-  offline; the bridge result remains separate.
-- Disabled and greyed mode controls while power is off, retaining the selected
-  mode for the next power-on. Updated user guides, architecture notes, handoff
-  context, and the Code graph.
+- Completed a pristine `black_f407ve` build from `firmware/afs_ecu/`; it
+  produced `zephyr.elf`, `zephyr.hex`, and `zephyr.bin`.
+- Added build and flash wrappers. Flash first runs the non-flashing ST-Link
+  probe, then invokes `west flash` only if the target is reachable.
+- Documented incremental/pristine builds, ccache override, menuconfig, debug,
+  update, and flash commands.
 
 **Files modified**
 
-- `dashboard/src/afs_dashboard/app/window.py`,
-  `dashboard/src/afs_dashboard/models/state.py`,
-  `dashboard/src/afs_dashboard/gateway_client/client.py`,
-  `dashboard/README.md`, `dashboard/src/afs_dashboard/app/README.md`,
-  `docs/architecture/components/dashboard.md`, `README.md`,
-  `agents/plan/feat-dashboard.md`, `agents/working-context.md`,
-  `agents/prompt-tracking.md`,
-  `tools/system_visualization/code-graph/graph-data.js`,
-  `tools/system_visualization/code-graph/functionality-data.js`, and
-  `tools/system_visualization/code-graph/code-index.js`.
+- `agents/prompt-tracking.md`, `agents/working-context.md`,
+  `docs/development.md`, `docs/temporary/desired_file_system.md`,
+  `firmware/README.md`, `firmware/docs/hardware_check.md`,
+  `firmware/scripts/`, and `tools/system_visualization/code-graph/code-index.js`.
 
 **Verification**
 
-- Syntax, inventory freshness, graph validation, Markdown links/fences, and
-  whitespace checks are reported in the task handoff. The Dashboard window
-  normally remains open until closed; the user's one-hour shell timeout is
-  consistent with an interactive GUI staying open.
+- The Zephyr build completed successfully. Shell syntax, Code graph inventory
+  and validation, Markdown links/fences, and whitespace checks pass. No flash
+  was attempted; the ST-LINK udev permission rule remains to be applied.
 
-### 2026-10-21 - Launch Dashboard And Connect Bridge IPC
+### 2026-10-25 - Organize The Zephyr Application Under afs_ecu
 
 **User prompt**
 
-User requested a Dashboard start script and chose to implement Dashboard-to-bridge
-communication on `feat/dashboard` now. The native window and combined launcher
-decision from the prior prompt still apply.
+User asked to group firmware application code under `firmware/afs_ecu/`, add
+`firmware/docs/hardware_check.md`, and provide ST-Link check scripts. User chose
+to keep the full Zephyr checkout and imported modules outside `afs_ecu/` so they
+remain ignored dependencies.
 
 **Agent changes**
 
-- Added `dashboard/scripts/start_dashboard.sh` for the native window.
-- Added a separate Dashboard `SOCK_SEQPACKET` server in the C++ bridge and a
-  reconnecting Python client. Mode/power requests are stored by the bridge;
-  clear-fault is rejected until ECU control exists. Fresh runner speed/steering
-  reaches the UI; other ego and ECU values remain labeled simulated.
-- Updated run guides, protocol/architecture docs, branch context, and the Code
-  graph for the implemented request/status path.
+- Moved the application CMake file, configuration, headers, and sources into
+  `firmware/afs_ecu/`; kept the west manifest and Zephyr dependencies in their
+  existing workspace locations.
+- Added a non-flashing OpenOCD probe script and hardware-check guide, including
+  the `LIBUSB_ERROR_ACCESS` udev fix found during diagnosis.
+- Updated firmware build/flash guidance, project layout documentation, handoff,
+  and firmware Code graph paths.
 
 **Files modified**
 
-- `dashboard/scripts/start_dashboard.sh`,
-  `dashboard/src/afs_dashboard/gateway_client/client.py`,
-  `dashboard/src/afs_dashboard/app/window.py`,
-  `bridge/include/afs_bridge/dashboard_ipc.hpp`,
-  `bridge/include/afs_bridge/runner_ipc.hpp`,
-  `bridge/src/ipc/runner_ipc.cpp`, `bridge/src/app/runner_bridge_main.cpp`,
-  `bridge/CMakeLists.txt`, `docs/architecture/dashboard-bridge-communication.md`,
-  `dashboard/README.md`, `bridge/README.md`, `README.md`, `docs/development.md`,
-  architecture/component guides, `agents/working-context.md`,
-  `agents/plan/feat-dashboard.md`, `agents/prompt-tracking.md`, and Code graph files.
+- `README.md`, `agents/prompt-tracking.md`, `agents/working-context.md`,
+  `docs/README.md`, `docs/architecture/components/afs-ecu.md`,
+  `docs/development.md`, `docs/temporary/desired_file_system.md`, `firmware/`,
+  and `tools/system_visualization/code-graph/`.
 
 **Verification**
 
-- Bridge build, Dashboard syntax, launcher shell syntax and `--help` passed.
-  A manual bridge/Dashboard IPC smoke passed for handshake, accepted mode/power,
-  rejected clear-fault, and live runner speed/steering. Final graph and
-  documentation checks are recorded in the task handoff.
+- Shell syntax, Code graph inventory and validation, Markdown links/fences, and
+  whitespace checks are recorded in the handoff. No firmware build or project
+  test suites were run; the OpenOCD probe remains blocked by USB permissions.
 
-### 2026-10-21 - Convert Dashboard To A Native Window
+### 2026-10-25 - Detect USB-CAN Adapter In Linux VM
 
 **User prompt**
 
-User clarified that the Dashboard should run as a program window rather than
-through a localhost port. They want a future `start_system` command to open
-MetaDrive and the Dashboard together, and chose to add that combined launcher
-later.
+User shared `lsusb` output showing the ST-LINK/V2 (`0483:3748`) and a
+Geschwister Schneider CAN adapter (`1d50:606f`), then asked to continue without
+waiting on `ip -brief link`.
 
 **Agent changes**
 
-- Replaced the Dashboard browser/HTTP layer with a Tkinter instrument cluster
-  and a second native detailed-status window. Mode, power, and clear-fault
-  controls call the existing local demo model directly.
-- Updated the Dashboard entry point, run guidance, architecture, branch plan,
-  and Code graph to describe the native window and future combined launcher.
-- Removed the Dashboard-specific HTTP server and static browser assets.
+- Confirmed the upstream Linux `gs_usb` driver lists USB ID `1d50:606f`.
+- Updated the Linux command reference and workspace handoff to distinguish USB
+enumeration from SocketCAN interface creation and physical bus validation.
+- Physical CAN transmit/receive verification remains pending; this execution
+environment cannot access the USB devices passed through to the user's VM.
 
 **Files modified**
 
-- `dashboard/pyproject.toml`, `dashboard/src/afs_dashboard/__main__.py`,
-  `dashboard/src/afs_dashboard/app/window.py`,
-  `dashboard/src/afs_dashboard/app/server.py`,
-  `dashboard/src/afs_dashboard/app/static/`, `dashboard/README.md`,
-  `dashboard/src/afs_dashboard/app/README.md`, `README.md`,
-  `docs/development.md`, `docs/architecture/components/dashboard.md`,
-  `docs/architecture/overview.md`, `docs/architecture/data-flow.md`,
-  `docs/tools/tools.md`, `agents/roadmap.md`,
-  `agents/plan/feat-dashboard.md`, `agents/working-context.md`,
-  `agents/prompt-tracking.md`,
-  `tools/system_visualization/code-graph/graph-data.js`,
-  `tools/system_visualization/code-graph/functionality-data.js`,
-  `tools/system_visualization/code-graph/code-index.js`
+- `docs/temporary/linux_commands.md`, `agents/working-context.md`, and
+  `agents/prompt-tracking.md`.
 
 **Verification**
 
-- Dashboard syntax and `--help` pass with the configured MetaDrive Python;
-  Tkinter 8.6 imports there. The Code graph inventory is current with 174
-  nodes, and its validator passes with 52 graph nodes, 51 interactions, and
-  9 functionality paths. JavaScript syntax, 12 changed Markdown files' links
-  and fences, and Git whitespace checks pass. In this shell, launching the
-  window reports the expected missing `DISPLAY`; graphical review remains.
+- Checked the upstream Linux kernel driver's USB ID table, Markdown links,
+code fences, and whitespace. No project tests were run.
 
-### 2026-10-21 - Restyle Dashboard As A Vehicle Cluster
+### 2026-10-25 - Narrow The Linux Command Reference
 
 **User prompt**
 
-User asked for the current Dashboard to look like a real car dashboard, with
-speed meters and buttons for selecting headlight modes.
+User requested that `linux_commands.md` contain common commands for checking
+ports, IP addresses, USB devices, and CAN.
 
 **Agent changes**
 
-- Replaced the two-tab console page with a car-style cluster: speedometer,
-  steering dial, central lighting display, direct mode buttons, and power
-  control. ECU health, requested mode, and bridge state remain visible.
-- Kept illustrative data and local command endpoints. A mode or power change
-  immediately sends a local demo command; detailed vehicle/ECU values remain
-  available in an expandable section.
-- Updated Dashboard documentation, handoff context, and the Code graph path
-  and descriptions to match the current UI behavior.
+- Replaced the broad Linux troubleshooting guide with concise network, port,
+  USB/ST-Link, SocketCAN, and `vcan0` commands.
+- Updated the documentation index and recorded that the VM now enumerates the
+  ST-LINK/V2, while SWD connectivity and flashing are still unverified.
 
 **Files modified**
 
-- `dashboard/src/afs_dashboard/app/static/index.html`,
-  `dashboard/src/afs_dashboard/app/static/dashboard.css`,
-  `dashboard/src/afs_dashboard/app/static/dashboard.js`,
-  `dashboard/README.md`, `docs/architecture/components/dashboard.md`,
-  `README.md`, `agents/plan/feat-dashboard.md`,
-  `agents/working-context.md`, `agents/prompt-tracking.md`,
-  `tools/system_visualization/code-graph/graph-data.js`,
-  `tools/system_visualization/code-graph/functionality-data.js`,
-  `tools/system_visualization/code-graph/code-index.js`
+- `docs/temporary/linux_commands.md`, `docs/README.md`,
+  `agents/working-context.md`, and `agents/prompt-tracking.md`.
 
 **Verification**
 
-- Dashboard JavaScript syntax, 35 unique HTML IDs with all JavaScript ID
-  references present, Code graph inventory/validator/syntax checks, and
-  `git diff --check` pass. Browser rendering was not inspected in this environment.
+- Markdown link targets, fenced code blocks, and whitespace were checked.
+- No project test suites were run.

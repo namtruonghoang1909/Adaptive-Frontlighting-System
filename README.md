@@ -1,205 +1,114 @@
 # Adaptive Front-lighting System
 
-A bench-scale design for headlights that **swivel with steering in low beam** and **mask selected pixels around vehicles in high beam**. The proposed rig has one servo-mounted 8×8 MAX7219 LED matrix on each side, controlled by an STM32F407ZG.
+A bench prototype that swivels low beams with steering and masks high-beam pixels around vehicles. The ECU target is **STM32F407VET6**.
 
-**Project status:** MetaDrive scene extraction, runner-to-C++ bridge IPC,
-Dashboard-to-bridge request/status IPC, opt-in SocketCAN transmission of
-DBC-generated frames, and local `0x500 AFS_Status` reception/decoding are
-implemented. CAN requires an already configured interface selected with
-`--can-interface NAME`; the bridge sends `0x100`/`0x200` every 20 ms and `0x300`
-every 100 ms. The ECU object-grid receive timeout is 250 ms, and the suggested
-ECU `0x500` status period is 50 ms. The native Dashboard displays fresh runner
-ego fields and nearby vehicles when available and sends mode/power requests to
-the bridge. The bridge sends `0x400 Dashboard_Command` every 50 ms when CAN is
-enabled and forwards decoded `0x500 AFS_Status` with freshness metadata.
-Virtual CAN end-to-end coverage is available. Physical adapter/ECU verification,
-Zephyr-based STM32 firmware, and physical lamp control remain future work.
-
-## System design
+## System map
 
 ```mermaid
 flowchart LR
-    SIM["MetaDrive + Python runner<br/>scene, steering, speed"] -->|"Implemented<br/>Unix socket IPC"| BRIDGE["C++ bridge<br/>scene receiver + CAN gateway"]
-    DASH["Python Dashboard<br/>native window + ECU status"] -->|"Implemented<br/>request IPC"| BRIDGE
-    BRIDGE -->|"Implemented<br/>runner + ECU status"| DASH
-    BRIDGE -->|"Optional<br/>SocketCAN 0x100/0x200/0x300/0x400 TX<br/>0x500 status RX/decode"| BUS["USB-CAN + CAN bus"]
-    BUS -.->|"Hardware ECU path<br/>firmware planned"| ECU["STM32 AFS ECU<br/>Zephyr firmware planned"]
-    ECU -.->|"Planned<br/>servo + matrix control"| LAMPS["Left + right headlights<br/>8×8 matrix on each swivel platform"]
+    subgraph HOST["Linux host · implemented"]
+        RUNNER["MetaDrive runner<br/>ego and nearby vehicles"]
+        BRIDGE["C++ bridge<br/>IPC, CAN codec, SocketCAN"]
+        DASH["Native Dashboard<br/>requests and status"]
+        RUNNER -->|"scene IPC"| BRIDGE
+        DASH <-->|"command and status IPC"| BRIDGE
+    end
+
+    subgraph RIG["Physical rig · planned"]
+        ADAPTER["USB-CAN adapter"]
+        TRANSCEIVER["CAN transceiver"]
+        ECU["STM32F407VET6<br/>Zephyr AFS ECU"]
+        LAMPS["Left and right<br/>servo-mounted 8×8 lamps"]
+        ADAPTER <-->|"CANH / CANL"| TRANSCEIVER
+        TRANSCEIVER <-->|"CAN TX / RX"| ECU
+        ECU --> LAMPS
+    end
+
+    BRIDGE -.->|"0x100–0x400 · bus test pending"| ADAPTER
+    ADAPTER -.->|"0x500 status"| BRIDGE
 ```
 
-The C++ bridge is the sole host owner of project CAN traffic. The STM32 makes the final AFS/ADB lighting decisions and supervises the hardware. ECU status returns through the bridge to the Dashboard when CAN is enabled. See the [architecture overview](docs/architecture/overview.md) and [data flow](docs/architecture/data-flow.md) for the full target design.
-
-## System components and hardware
-
-The proposed bench system combines the simulation and host software with a
-physical ECU, CAN wiring, and two servo-mounted matrix headlights. The host
-software pieces are implemented or in progress; the hardware and lighting
-control remain a build plan.
-
-| Component | Purpose | Status |
-|---|---|---|
-| MetaDrive + Python runner | Simulate the road, ego car, traffic, steering, and speed; publish scene data | Scene extraction and runner-to-bridge IPC implemented |
-| C++ bridge | Receive runner data and Dashboard requests; own host CAN traffic | Runner and Dashboard IPC, opt-in SocketCAN TX for `0x100`–`0x400`, and `0x500` receive/decode/forward implemented |
-| CAN-to-USB adapter and CAN bus | Connect the Linux host to the ECU | Proposed hardware; physical adapter/HIL validation pending |
-| MCP2551 CAN transceiver | Connect STM32 CAN signals to the physical bus | Proposed hardware |
-| STM32F407ZG AFS ECU | Decide beam patterns, supervise feedback, and drive the lamps | Zephyr firmware planned |
-| PCA9685 and two feedback servos | Rotate the left and right headlight platforms with steering | Proposed hardware; limits need calibration |
-| Two MAX7219 8×8 matrix modules | Provide one shared low/high-beam pixel array per side | Proposed bench display; optical performance needs evaluation |
-| Dedicated LED and servo supplies | Power the matrix modules and moving platforms | Select and size for the chosen hardware |
-
-See the [hardware guide](docs/hardware/hardware.md) for wiring, power, and
-bring-up constraints.
-
-## Headlight matrix design
-
-The same row layout applies to the **left** and **right** headlights. Each matrix has eight columns, so road sectors are projected to the two lamp positions and mapped to columns; a sector number is not a fixed LED column number.
-
-```text
-Each 8×8 matrix, viewed from the front
-
-row 1   H H H H H H H H  ┐
-row 2   H H H H H H H H  │ high-beam extension
-row 3   H H H H H H H H  │ with adaptive pixel masking
-row 4   H H H H H H H H  ┘
-row 5   L L L L L L L L  ┐
-row 6   L L L L L L L L  │ low-beam base
-row 7   L L L L L L L L  │
-row 8   L L L L L L L L  ┘
-```
-
-| Behavior | Low beam | High beam with low-beam base |
-|---|---|---|
-| Rows 1–4 | Off | On except masked pixels around relevant vehicles |
-| Rows 5–8 | On | Stay on |
-| Both matrix platforms | Turn by different angles; the outside matrix turns farther, and speed reduces both | Return to center; no swivel |
-| Preview light footprint | Shorter and wider: 40 m, ±18° | Longer and narrower extension: 100 m, ±10° |
-| Adaptive masking | Inactive | Only affected high-beam pixels switch off; the rest stay on |
-
-The high-beam preview also shows coarse vertical masking in affected columns:
-
-| Vehicle distance (example) | About 100 m | About 70 m | About 50 m | About 30 m |
-|---|---:|---:|---:|---:|
-| Upper pixels switched off per affected column | 1 | 2 | 3 | 4 |
-
-Its ten logical road sectors can affect columns in either or both headlights. MAX7219 pixels are individually **on or off**; brightness is **global per matrix**, not individually dimmable per pixel.
-
-The low-beam preview keeps the car still while a steering wheel and speed bar set separate left and right matrix angles. The overall swivel is modest: at full wheel input, the outside matrix turns three times farther than the inside matrix. In a left turn, the right (outside) matrix turns up to 6° while the left (inside) turns 2°; right turns mirror this. At 60 km/h the angles are 3.75°/1.25°, and at 120 km/h they are 1.5°/0.5°. The low-beam road view zooms to 60 m so its 40 m footprint is easy to inspect. These angles, ranges, distance bands, and speed response are visualization assumptions that need optical and mechanical calibration before firmware implementation. See the [ADB grid and lamp mapping](docs/architecture/adb-grid-and-lamps.md) and [headlights design](docs/architecture/components/headlights.md).
-
-## Visual examples
-
-These beam views illustrate the planned behavior. The screenshot spaces are
-for preview pictures; they do not show live ECU or hardware output.
-
-### Built system photo
-
-> **Place a photo of the real built system here.**
-
-The [System in Action view](tools/system_visualization/system-in-action/index.html) is a concept illustration for design reference. It is not a photo of the completed hardware.
-
-### [High beam visual](tools/system_visualization/beam-visual/beam-segments.html)
-
-The two matrices stay centered. Rows 5–8 provide the low-beam base; rows 1–4 add high beam and switch off selected pixels around vehicles.
-
-| One car in the high-beam shine zone | Two cars in the high-beam shine zone |
+| Ready on the Linux host | Next hardware phase |
 |---|---|
-| ![HIGH-BEAM-ONE-CAR](docs/figures/high_beam_one_car.png) | ![HIGH-BEAM-TWO-CAR](docs/figures/high_beam_two_car.png) |
+| Runner → Bridge IPC; Dashboard ↔ Bridge IPC; opt-in SocketCAN TX/RX; Zephyr 3.7 ECU CAN receive/status firmware builds; earlier LED image confirmed; USB-CAN detected as `can0`, configured at 500 kbit/s, bridge IDs `0x100`–`0x400` observed in controller loopback | Diagnose the reported `ENOBUFS` warning; flash and verify ECU CAN against a physical bus; implement servo and matrix control |
 
-### [Low beam visual](tools/system_visualization/beam-visual/beam-segments.html?mode=low)
+The bridge owns host CAN traffic; the ECU will make the final lighting and fallback decisions. [Architecture](docs/architecture/overview.md) · [Data flow](docs/architecture/data-flow.md)
 
-Rows 1–4 are off while rows 5–8 swivel with steering. Higher speed reduces the preview swivel response.
+## CAN contract
 
-| Full right turn at 50 km/h | Full right turn at 10 km/h |
+| ID | Bridge ↔ ECU message | Period |
+|---|---|---:|
+| `0x100` | Speed → ECU | 20 ms |
+| `0x200` | Steering → ECU | 20 ms |
+| `0x300` | Ten-sector vehicle grid → ECU | 100 ms |
+| `0x400` | Dashboard command → ECU | 50 ms |
+| `0x500` | Executed state and faults ← ECU | 50 ms suggested |
+
+The [DBC](bridge/can/afs.dbc) defines the wire format; the [CAN guide](docs/can/README.md) covers validity, timeouts, and checksums. SocketCAN is enabled with `--can-interface NAME`. A virtual CAN integration test is included. Linux detects the adapter as `can0`; 500 kbit/s setup and bridge transmission through controller loopback pass, with IDs `0x100`–`0x400` observed. A reported `ENOBUFS` transmit warning is under investigation; physical bus verification remains pending.
+
+## Light behavior
+
+```mermaid
+flowchart LR
+    REQUEST["ECU selects executed mode"] --> LOW["Low beam<br/>rows 5–8 on<br/>swivel with steering and speed"]
+    REQUEST --> HIGH["High beam<br/>platforms centered<br/>rows 5–8 stay on"]
+    HIGH --> FULL["No dimming<br/>rows 1–4 on"]
+    HIGH --> ADB["ADB dimming<br/>affected pixels in rows 1–4 off"]
+    REQUEST --> SAFE["Fault or stale input<br/>safe fallback"]
+```
+
+| [High-beam preview](tools/system_visualization/beam-visual/beam-segments.html) | [Low-beam preview](tools/system_visualization/beam-visual/beam-segments.html?mode=low) |
 |---|---|
-| ![LOW-BEAM-RIGHT-50KMH](docs/figures/low_beam_right_50kmh.png) | ![LOW-BEAM-RIGHT-10KMH](docs/figures/low_beam_right_10kmh.png) |
+| ![High beam masking one vehicle](docs/figures/high_beam_one_car.png) | ![Low beam swivel at 50 km/h](docs/figures/low_beam_right_50kmh.png) |
 
-## Current implementation
+These are design previews, not live ECU output. The [lamp mapping](docs/architecture/adb-grid-and-lamps.md) records the sector geometry and calibration assumptions.
 
-The Python runner extracts MetaDrive scene data and publishes it to the C++
-bridge over a local socket. The bridge receives and retains the latest scene.
-The production bridge validates steering and speed, projects vehicle geometry,
-and uses the DBC-generated C codec to pack and transmit CAN frames. A separate
-diagnostic logger exercises the encoders against live runner data without CAN
-transport. The native Dashboard window sends mode and power requests to the
-bridge and displays fresh runner ego fields, nearby vehicles, and decoded ECU
-status when available. The proximity grid and ECU values use clearly labeled
-simulated fallbacks until live sources arrive. Optional SocketCAN sends
-`0x100`/`0x200` every 20 ms, `0x300` every 100 ms, and `0x400` every 50 ms.
-Virtual CAN end-to-end coverage is available; physical adapter/ECU verification,
-Zephyr-based STM32 firmware, and physical lamp control remain future work. The headlight illustrations and beam
-screenshots above describe the proposed design; they are not connected to the
-runtime or hardware.
+## Firmware plan
 
-## Development tools
-
-The [System Visualization](tools/system_visualization/README.md) pages help
-inspect the code, review CAN layouts, and explore the proposed beam behavior. To open them, run from
-the repository root:
-
-```bash
-bash tools/system_visualization/start_system_visualization.sh
+```mermaid
+flowchart TB
+    APP["Application<br/>AFS swivel · ADB mask · safe fallback"]
+    RTE["Typed interfaces<br/>RTE-style boundary"]
+    SVC["BSW-style services<br/>CAN signals · diagnostics · ECU state"]
+    IO["ECU abstraction<br/>servo · matrix · feedback"]
+    ZEPHYR["Zephyr kernel and STM32 drivers<br/>CAN · I2C · SPI · ADC"]
+    APP <--> RTE
+    RTE <--> SVC
+    RTE <--> IO
+    SVC --> ZEPHYR
+    IO --> ZEPHYR
 ```
 
-Open the printed address (normally
-`http://127.0.0.1:8000/tools/system_visualization/`) and use the tabs across
-the top. The [Code graph](tools/system_visualization/code-graph/index.html) maps
-implemented classes and code paths. The [System in Action page](tools/system_visualization/system-in-action/index.html)
-is a static design illustration, not a photo of the built rig. The [High beam
-visual](tools/system_visualization/beam-visual/beam-segments.html) and [Low beam visual](tools/system_visualization/beam-visual/beam-segments.html?mode=low)
-are interactive previews with no live simulator or hardware connection. The
-[CAN messages tab](tools/system_visualization/can-messages/index.html) shows a
-byte-by-byte map for each documented frame, with bit cells and arrows linking
-to signal names, followed by a table of positions, meanings, and sample values.
-It is a static design reference, not live bus traffic. The
-**Code updated** timestamp beside the tabs shows the newest modification time
-reported by the current page and its local CSS/JavaScript files.
+The C application in `firmware/afs_ecu/` uses AUTOSAR-inspired layers. The CAN communication slice builds for Zephyr 3.7 and reports `0x500` at 50 ms while holding `Safe_Default`; incoming `0x100`–`0x400` frames are validated with agreed timeouts and counter rules. The earlier LED image was flashed and confirmed. ECU `printk` diagnostics use RTT over the existing ST-Link SWD connection; the [RTT guide](firmware/docs/rtt_debugging.md) covers setup and startup. Servo/matrix control, CAN transceiver wiring, and physical CAN verification remain. See the [firmware guide](firmware/README.md), [wiring draft](docs/hardware/wiring-draft.md), [ECU design](docs/architecture/components/afs-ecu.md), and [target file layout](docs/temporary/desired_file_system.md).
 
-## Run the implemented simulation
+## Run on Linux
 
-On Linux, run from the repository root:
+Start each component in its own terminal from the repository root.
 
-```bash
-bash simulation_runner/scripts/start_metadrive_simulation.sh --scene-display
-```
-
-The launcher checks requirements before startup. The optional live [scene display](simulation_runner/src/scene_display/README.md) shows extracted ego and surrounding objects; it is separate from the five design/development tabs above. See the [runner guide](simulation_runner/runner.md) for controls and other modes.
-
-Run Python tests with the configured MetaDrive environment when pytest is installed:
-
-```bash
-PYTHONPATH=simulation_runner/src \
-simulation/metadrive/metadrive_venv/bin/python -m pytest simulation_runner/tests -v
-```
-
-If pytest is unavailable, use the [dependency-free test procedure](docs/verification/testing.md).
-
-## Run the native Dashboard
-
-From the repository root, start the native window with:
-
-```bash
-bash dashboard/scripts/start_dashboard.sh
-```
-
-The window opens without a browser or port. Start the bridge separately with
-`bash bridge/scripts/run_runner_bridge.sh` to show fresh runner ego fields and
-nearby vehicles and send mode/power requests. Its three sections
-show surrounding objects, speed/steering meters with a lighting selection
-preview, and driver controls. Mouse-wheel and trackpad scrolling work across
-the main window. Mode buttons are disabled while the headlights are off. Live
-ECU status appears when CAN is enabled; simulated values remain as labeled
-fallbacks until a valid status frame arrives. See the
-[Dashboard guide](dashboard/README.md) and [IPC contract](docs/architecture/dashboard-bridge-communication.md).
-
-## Repository guide
-
-| Location | Purpose and current state |
+| Component | Command |
 |---|---|
-| [`simulation_runner/`](simulation_runner/README.md) | MetaDrive lifecycle, controls, scene extraction, optional live display, and implemented scene publishing |
-| [`bridge/`](bridge/README.md) | C++ runner receiver, Dashboard IPC, opt-in SocketCAN TX/RX, DBC frame encoding, `0x500` decoding, and diagnostic frame smoke tool |
-| [`dashboard/`](dashboard/README.md) | Native Tkinter window with bridge mode/power requests, fresh runner ego fields/vehicles, decoded ECU status, and simulated fallback values |
-| `firmware/` | Zephyr-based STM32 control and hardware drivers planned |
-| [`tools/system_visualization/`](tools/system_visualization/README.md) | Five interactive or static development/design views |
-| [`docs/`](docs/README.md) | Architecture, CAN, hardware, tools, and verification guides |
-| [`agents/`](agents/README.md) | Repository agent rules, working context, and plans |
+| Bridge | `bash bridge/scripts/run_runner_bridge.sh` |
+| MetaDrive runner | `bash simulation_runner/scripts/start_metadrive_simulation.sh --scene-display` |
+| Native Dashboard | `bash dashboard/scripts/start_dashboard.sh` |
+| Development visualizations | `bash tools/system_visualization/start_system_visualization.sh` |
 
-The [development guide](docs/development.md) indexes the runnable scripts. The [CAN DBC](bridge/can/afs.dbc) defines the agreed message layouts. Production SocketCAN and an opt-in `vcan0` integration test are implemented; physical `can0` adapter/ECU validation remains a hardware step.
+The Dashboard opens as a native window. The visualizations are separate browser-based development aids. [Development commands](docs/development.md) · [Verification](docs/verification/testing.md)
+
+## Test changes
+
+Run `bash tools/test_components.sh COMPONENT` after changing `runner`,
+`bridge`, `dashboard`, `ecu`, or `visualization`. Run
+`bash tools/test_components.sh all` before an integration handoff. The
+[testing guide](docs/verification/testing.md) lists the checks and their
+hardware limits.
+
+## Project guides
+
+| Component | Guide |
+|---|---|
+| Simulation | [Runner and scene extraction](simulation_runner/runner.md) |
+| Gateway | [Bridge and SocketCAN](bridge/README.md) |
+| Dashboard | [Native Dashboard](dashboard/README.md) |
+| Firmware and rig | [AFS ECU](docs/architecture/components/afs-ecu.md) · [Wiring draft](docs/hardware/wiring-draft.md) · [Hardware](docs/hardware/hardware.md) |
+| Reference | [Documentation index](docs/README.md) · [System Visualization](tools/system_visualization/README.md) · [Hardware wiring view](tools/system_visualization/hardware-wiring/index.html) |
+| Contributors | [Agent guide](agents/README.md) |
