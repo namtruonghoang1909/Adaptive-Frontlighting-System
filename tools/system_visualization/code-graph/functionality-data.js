@@ -6,6 +6,7 @@
   const O = "simulation_runner/src/object_extraction/";
   const D = "simulation_runner/src/scene_display/";
   const A = "dashboard/src/afs_dashboard/";
+  const F = "firmware/afs_ecu/";
   const step = (from, to, action, detail, evidence) =>
     ({ from, to, action, detail, evidence });
 
@@ -171,6 +172,33 @@
         step("dashboard_client", "dashboard_state", "updates fallback request", "accepted power/mode is reflected in local fallback preview without claiming ECU execution", A + "gateway_client/client.py#GatewayDashboardState"),
         step("dashboard_state", "dashboard_client", "supplies fallback snapshot", "illustrative ego and surrounding objects plus simulated ECU fields", A + "models/state.py#DemoDashboardState.snapshot"),
         step("dashboard_client", "dashboard_window", "supplies merged snapshot", "fresh runner ego, vehicles, and decoded ECU status override fallbacks; retained ECU values show stale age, while the proximity grid remains simulated", A + "gateway_client/client.py#GatewayDashboardState.snapshot"),
+      ],
+    },
+    {
+      id: "firmware_can_communication",
+      title: "Zephyr ECU CAN communication and status",
+      summary: "Receive the bridge's CAN inputs, decode them through the shared DBC codec, retain typed values, apply freshness checks, discard delayed backlog and invalidate inputs after RX queue loss, and transmit current Safe_Default status as 0x500.",
+      steps: [
+        step("firmware_main", "firmware_application", "starts ECU application", "main() delegates to afs_ecu_application_run()", F + "src/main.c#main"),
+        step("firmware_application", "firmware_can_bus", "initializes CAN2", "Uses the board's zephyr,canbus devicetree choice, standard-ID filter, and 500 kbit/s overlay", F + "src/bsw/ecu_abstraction/can_bus.c#afs_can_bus_init"),
+        step("firmware_can_bus", "firmware_application", "returns queued input frames", "Zephyr CAN callback copies frames into a bounded 32-frame queue; the application polls it, and on overrun discards delayed frames and invalidates every input", F + "src/bsw/ecu_abstraction/can_bus.c#can_bus_rx_callback"),
+        step("firmware_application", "firmware_can_service", "dispatches received IDs", "0x100 Vehicle_Speed, 0x200 Vehicle_Steering, 0x300 Vehicle_Object, and 0x400 Dashboard_Command", F + "src/application/afs_ecu_application.c#afs_ecu_application_run"),
+        step("firmware_can_service", "firmware_rte", "validates and stores decoded inputs", "Checks DLC, reserved/range/validity fields, 0x400 XOR checksum, and modulo-16 counters; accepts forward deltas 1–8 and rebaselines after 500 ms without accepted frames; rejected frames immediately invalidate that input", F + "src/bsw/services/communication/can_message_service.c#afs_can_message_service_process"),
+        step("firmware_application", "firmware_rte", "reads latest typed inputs", "Single-thread RTE snapshot contains speed, steering, object grid, Dashboard command, and decode-fault state", F + "src/rte/afs_rte.c#afs_rte_read_inputs"),
+        step("firmware_application", "firmware_controller", "checks freshness and status", "Speed/steering 100 ms, object grid 250 ms, command 200 ms; unavailable output drivers force Safe_Default", F + "src/application/afs_controller.c#afs_controller_update"),
+        step("firmware_controller", "firmware_rte", "publishes current ECU status", "SafeFallback=1, BeamControlLost=1, ServoControlLost=1, placeholder zero feedback/mask until actuator drivers exist", F + "src/application/afs_controller.c#afs_controller_update"),
+        step("firmware_application", "firmware_can_status_send", "sends status every 50 ms", "Reads the RTE status, packs 0x500 with the shared DBC C codec and XOR checksum", F + "src/bsw/services/communication/can_message_service.c#afs_can_message_service_send_status"),
+        step("firmware_can_status_send", "firmware_can_bus", "transmits ECU status", "Sends standard CAN ID 0x500, DLC 8, on the selected Zephyr CAN controller", F + "src/bsw/ecu_abstraction/can_bus.c#afs_can_bus_send"),
+      ],
+    },
+    {
+      id: "firmware_led_heartbeat",
+      title: "Zephyr board LED heartbeat",
+      summary: "Initialize the board led0 GPIO and toggle it every 500 ms while the ECU CAN application runs.",
+      steps: [
+        step("firmware_main", "firmware_application", "starts application loop", "main() returns the result of afs_ecu_application_run()", F + "src/main.c#main"),
+        step("firmware_application", "firmware_led_init", "initializes board output", "Resolves led0 from devicetree, verifies GPIO readiness, and configures the LED inactive", F + "src/bsw/ecu_abstraction/board_led.c#afs_board_led_init"),
+        step("firmware_application", "firmware_led_toggle", "toggles output periodically", "The running ECU loop toggles the board LED every 500 ms", F + "src/application/afs_ecu_application.c#afs_ecu_application_run"),
       ],
     },
   ];
