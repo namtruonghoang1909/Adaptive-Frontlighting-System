@@ -1,5 +1,9 @@
 # Bridge Tests
 
+Run `bash tools/test_components.sh bridge` from the repository root for the
+build and standard CTest suite. The optional SocketCAN bus case uses
+`bash tools/test_components.sh bridge-vcan` after preparing `vcan0`.
+
 The bridge has IPC integration coverage and a host-side CAN signal-value test:
 
 - `runner_ipc_integration.cpp` exercises the C++ receiver with a small local

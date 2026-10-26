@@ -64,7 +64,15 @@ For each implementation or fix:
 
 ## Verification
 
-Run commands from the repository root on Linux. Use the configured MetaDrive interpreter when available:
+Run the changed component's suite from the repository root on Linux. Use `all`
+for cross-component changes:
+
+```bash
+bash tools/test_components.sh COMPONENT
+bash tools/test_components.sh all
+```
+
+The runner suite uses the configured MetaDrive interpreter when available:
 
 ```bash
 PYTHONPATH=simulation_runner/src \

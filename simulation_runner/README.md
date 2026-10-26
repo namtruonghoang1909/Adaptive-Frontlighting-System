@@ -69,6 +69,10 @@ Python extracts simulator ground truth and normalizes coordinates. It does not p
 
 ## Tests
 
+Run `bash tools/test_components.sh runner` from the repository root. It runs the
+runner tests with pytest when available and uses the dependency-free fallback
+otherwise.
+
 When pytest is installed:
 
 ```bash

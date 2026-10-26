@@ -7,6 +7,7 @@ links.
 | Tool | Purpose |
 |---|---|
 | [system_visualization/](system_visualization/README.md) | [Code graph](system_visualization/code-graph/index.html), static [System in Action](system_visualization/system-in-action/index.html) 3D view, [High beam visual](system_visualization/beam-visual/beam-segments.html), and [Low beam visual](system_visualization/beam-visual/beam-segments.html?mode=low) |
+| [test_components.sh](test_components.sh) | Runs one component's software regression checks or all component suites |
 
 Start System Visualization with
 `bash tools/system_visualization/start_system_visualization.sh` and open the

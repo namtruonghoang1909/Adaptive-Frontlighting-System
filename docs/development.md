@@ -13,7 +13,12 @@ says otherwise.
 | `bridge/scripts/run_runner_bridge.sh` | C++ bridge | Configures and builds `afs_runner_bridge`, then runs the receiver in the foreground. |
 | `bridge/scripts/run_can_frame_smoke.sh` | C++ bridge / CAN | Runs headless MetaDrive through the diagnostic frame logger and independently checks captured payloads against the DBC with cantools. |
 | `dashboard/scripts/start_dashboard.sh` | Dashboard | Opens the native Tkinter Dashboard window with the configured Python environment. |
-| `tools/system_visualization/start_system_visualization.sh` | System Visualization | Serves the Code graph, static System in Action page, and High beam visual / Low beam visual tabs on localhost. |
+| `firmware/scripts/build_firmware.sh` | Zephyr firmware | Builds the ECU CAN receive/status application for `black_f407ve`. |
+| `firmware/scripts/check_stlink.sh` | Zephyr firmware | Checks USB/SWD access and the no-NRST OpenOCD reset/halt sequence without flashing. |
+| `firmware/scripts/flash_firmware.sh` | Zephyr firmware | Repeats the ST-LINK check, then flashes with the project no-NRST OpenOCD config. |
+| `firmware/scripts/read_rtt.sh` | Zephyr firmware | Reads ECU `printk` diagnostics through ST-Link SWD and OpenOCD RTT. |
+| `tools/test_components.sh` | All software components | Runs one component's regression tests or all suites. |
+| `tools/system_visualization/start_system_visualization.sh` | System Visualization | Serves the Code graph, System in Action, high/low beam, CAN messages, and hardware wiring views on localhost. |
 
 The scripts under `simulation_runner/scripts/` use
 `simulation/metadrive/metadrive_venv/bin/python` by default. Set
@@ -22,6 +27,14 @@ launcher uses `build/bridge` and a `Release` CMake build by default; override
 these with `AFS_BRIDGE_BUILD_DIR` and `AFS_BRIDGE_BUILD_TYPE`. The Dashboard
 launcher also defaults to the MetaDrive environment; use `DASHBOARD_PYTHON` to
 select another Tkinter-capable Python.
+
+## Run Component Tests
+
+Use `bash tools/test_components.sh COMPONENT` after changing a component. Use
+`all` before an integration handoff. Components are `runner`, `bridge`,
+`dashboard`, `ecu`, and `visualization`; omitting the argument runs all. The
+optional `bridge-vcan` target requires an already configured `vcan0` interface.
+The [testing guide](verification/testing.md) lists coverage and hardware limits.
 
 ## Run The Simulation And Bridge
 
@@ -85,7 +98,7 @@ timeout is 250 ms, and its suggested `0x500` reporting period is 50 ms. The
 Dashboard marks retained ECU status stale after 250 ms without a valid report.
 The opt-in vcan integration test is described in
 [bridge/tests/README.md](../bridge/tests/README.md); physical adapter/ECU
-validation still requires the hardware; see the
+frame exchange and ECU validation remain pending; see the
 [host CAN bring-up steps](hardware/hardware.md#host-can-bring-up). See the
 [SocketCAN implementation notes](../bridge/src/can/README.md).
 
@@ -170,6 +183,7 @@ node --check tools/system_visualization/code-graph/functionality-overlay.js
 node --check tools/system_visualization/code-graph/validate.mjs
 node --check tools/system_visualization/beam-visual/beam-model.js
 node --check tools/system_visualization/beam-visual/beam-segments.js
+node --check tools/system_visualization/hardware-wiring/hardware-wiring.js
 node --check tools/system_visualization/shared/code-timestamp.js
 node tools/system_visualization/tests/beam-model.test.cjs
 node tools/system_visualization/tests/beam-segments.test.cjs
@@ -195,10 +209,31 @@ Fresh runner ego fields and nearby vehicles appear when available; mode and powe
 reach the bridge. ECU values use simulated fallbacks until valid CAN status is received. See
 the [Dashboard guide](../dashboard/README.md).
 
-## Components Without A Runnable Entry Point
+## Build The Zephyr Firmware
 
-`firmware/` does not yet have an implemented application. The bridge forwards
-decoded ECU status through Dashboard IPC. The CAN frame smoke script above
-checks DBC encoding without a CAN interface; production SocketCAN transmission
-and status reception are enabled with `--can-interface NAME`. Firmware does
-not yet have a launch script.
+The STM32 application receives and validates the bridge CAN messages, reports
+`0x500` status every 50 ms, and blinks the board's `led0` at 500 ms intervals.
+It is built for Zephyr 3.7 and `black_f407ve`; see the
+[firmware guide](../firmware/README.md) for workspace setup and SDK details.
+From the repository root, with Zephyr SDK 0.16.8 installed locally:
+
+```bash
+bash firmware/scripts/build_firmware.sh --pristine
+```
+
+Use `bash firmware/scripts/build_firmware.sh --no-ccache` if the ccache
+directory is not writable.
+
+After the ST-Link is passed through to Linux and the board mapping is verified,
+run `bash firmware/scripts/check_stlink.sh` to verify the four-wire SWD
+connection and OpenOCD software-reset/halt sequence without flashing. Then
+flash with `bash firmware/scripts/flash_firmware.sh`. Both wrappers use the
+project-owned OpenOCD config, which supports SWD without a physical NRST wire.
+Read the flashed image's diagnostic console with
+`bash firmware/scripts/read_rtt.sh`; reset the board after the reader connects
+to see startup messages. RTT needs only the existing SWD wires. Close the reader
+before flashing or using GDB because OpenOCD owns the ST-Link while it runs.
+See the [RTT setup guide](../firmware/docs/rtt_debugging.md) for prerequisites,
+expected output, and connection errors.
+The bridge forwards decoded ECU status through Dashboard IPC; the CAN frame
+smoke script above checks DBC encoding without a CAN interface.
