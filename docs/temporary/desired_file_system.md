@@ -1,6 +1,11 @@
 # Target Project File System
 
-The component-level structure below is now established. Implemented Python simulation code was moved from the former all-Python `bridge/` into `simulation_runner/`. The C++ bridge and Python Dashboard have organized scaffolds; their runtime behavior remains future work.
+This is a target directory sketch, not a complete source inventory. The
+simulation code moved from the former all-Python `bridge/` into
+`simulation_runner/`; the C++ bridge and Python Dashboard now have runtime
+implementations. The firmware workspace and ECU CAN communication slice now
+exist; actuator and feedback layers remain planned. See the
+[working context](../../agents/working-context.md) for current status.
 
 ```text
 Adaptive-Frontlighting-System/
@@ -51,16 +56,33 @@ Adaptive-Frontlighting-System/
 |   |   |-- gateway_client/          # future Unix-socket client
 |   |   `-- models/                  # future UI-facing values
 |   `-- tests/
-|-- firmware/
-|   `-- afs_ecu/                     # future STM32F407VE Zephyr firmware (C)
-|       |-- Core/                    # Cube-generated application code, if used
-|       |-- Drivers/                 # HAL/CMSIS, if used
-|       `-- afs/
-|           |-- can/                 # CAN reception/transmission and validation
-|           |-- control/             # mode logic, swivel, and ADB decisions
-|           |-- diagnostics/         # stale inputs, feedback, and fault flags
-|           |-- hardware/            # PWM, ADC, I2C, and board pins
-|           `-- calibration/         # servo and LED-zone calibration
+|-- firmware/                        # STM32F407VET6 Zephyr application (C)
+|   |-- README.md                    # Zephyr setup, build, and flash instructions
+|   |-- west.yml                     # Zephyr 3.7.0 manifest
+|   |-- requirements.txt             # pinned west version
+|   |-- docs/
+|   |   `-- hardware_check.md        # ST-Link and target bring-up checks
+|   |-- scripts/
+|   |   |-- build_firmware.sh        # Zephyr application build wrapper
+|   |   |-- check_stlink.sh          # non-flashing OpenOCD probe
+|   |   `-- flash_firmware.sh        # probe, then program with west
+|   `-- afs_ecu/                     # project-owned Zephyr application only
+|       |-- CMakeLists.txt           # Zephyr application build
+|       |-- prj.conf                 # enabled software features
+|       |-- boards/                  # overlay for the confirmed physical board
+|       |-- include/afs/
+|       |   |-- application/         # ECU app and controller APIs
+|       |   |-- bsw/                 # CAN service and bus abstraction APIs
+|       |   `-- rte/                 # typed inputs/status boundary
+|       `-- src/
+|           |-- main.c               # Zephyr startup entry point
+|           |-- application/         # CAN loop, freshness controller, LED heartbeat
+|           |-- rte/                 # typed input/status storage
+|           `-- bsw/
+|               |-- services/communication/ # CAN decoding and 0x500 packing
+|               `-- ecu_abstraction/        # Zephyr CAN and GPIO adapters
+|-- zephyr/                          # ignored west checkout
+|-- modules/                         # ignored west-imported modules
 |-- simulation/
 |   `-- metadrive/                   # ignored upstream/local dependency
 |-- contracts/
@@ -84,7 +106,13 @@ Adaptive-Frontlighting-System/
 | CAN conversion, scheduling, and SocketCAN | `bridge/src/can/` |
 | CAN signal packing, units, scaling, and enums | `bridge/can/afs.dbc` |
 | Operator requests and presentation | `dashboard/` |
-| Final lighting decision and hardware control | `firmware/afs_ecu/` |
+| Final lighting decision and hardware control | `firmware/` |
 | Development helper implementations | `tools/` |
 
 Do not place project code in the ignored `simulation/metadrive/` dependency. Add deeper implementation files only with their milestone instead of creating empty source trees in advance.
+The firmware folders mirror AUTOSAR application, RTE, and BSW boundaries;
+Zephyr supplies the kernel and STM32 peripheral drivers. The ECU CAN
+communication/status slice builds for the upstream `black_f407ve` target and
+the `led0` alias remains a 500 ms heartbeat. The earlier LED image was flashed
+and the board LED was confirmed. Physical CAN verification and servo/matrix
+drivers will be added with their milestones.
