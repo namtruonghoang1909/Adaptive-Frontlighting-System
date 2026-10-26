@@ -68,3 +68,9 @@ for ownership and remaining ECU integration.
 
 A future combined launcher can start this window and the MetaDrive process
 together. That launcher is not part of the current Dashboard command.
+
+## Tests
+
+Run `bash tools/test_components.sh dashboard` from the repository root after
+changing commands, state mapping, or window controls. The headless suite checks
+power and mode selection, bridge request handling, and ECU status display data.
