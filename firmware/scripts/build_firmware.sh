@@ -3,7 +3,6 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 FIRMWARE_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
-REPO_ROOT="$(cd -- "${FIRMWARE_DIR}/.." && pwd)"
 SDK_DIR="${ZEPHYR_SDK_INSTALL_DIR:-${FIRMWARE_DIR}/.sdk/zephyr-sdk-0.16.8}"
 WEST_BIN="${FIRMWARE_DIR}/.venv/bin/west"
 BUILD_DIR="${FIRMWARE_DIR}/build"
@@ -59,7 +58,7 @@ if [[ ! -f "${APP_DIR}/CMakeLists.txt" ]]; then
 fi
 
 export ZEPHYR_SDK_INSTALL_DIR="${SDK_DIR}"
-cd "${REPO_ROOT}"
+cd "${FIRMWARE_DIR}"
 
 WEST_ARGS=(build -b black_f407ve -d "${BUILD_DIR}" "${APP_DIR}")
 if [[ "${PRISTINE}" == true ]]; then

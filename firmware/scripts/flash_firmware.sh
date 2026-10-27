@@ -3,7 +3,6 @@ set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 FIRMWARE_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
-REPO_ROOT="$(cd -- "${FIRMWARE_DIR}/.." && pwd)"
 SDK_DIR="${ZEPHYR_SDK_INSTALL_DIR:-${FIRMWARE_DIR}/.sdk/zephyr-sdk-0.16.8}"
 WEST_BIN="${FIRMWARE_DIR}/.venv/bin/west"
 BUILD_DIR="${FIRMWARE_DIR}/build"
@@ -34,5 +33,5 @@ fi
 export ZEPHYR_SDK_INSTALL_DIR="${SDK_DIR}"
 "${SCRIPT_DIR}/check_stlink.sh"
 
-cd "${REPO_ROOT}"
+cd "${FIRMWARE_DIR}"
 exec "${WEST_BIN}" flash -d "${BUILD_DIR}" --config "${OPENOCD_CONFIG}" "$@"

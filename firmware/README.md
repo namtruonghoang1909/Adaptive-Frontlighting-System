@@ -10,10 +10,12 @@ heartbeat for bring-up.
 
 ## Workspace Layout
 
-- `firmware/afs_ecu/`: project-owned Zephyr application source and build files.
-- `firmware/west.yml`: west manifest, pinning Zephyr to `v3.7.0`.
-- `zephyr/`, `modules/`, and other imported west projects at repository root:
-  local Zephyr dependencies ignored by Git.
+- `firmware/.west/`: local west workspace configuration, ignored by Git.
+- `firmware/afs_ecu/`: project-owned Zephyr application and west manifest,
+  pinning Zephyr to `v3.7.0`.
+- `firmware/zephyr/`, `firmware/modules/`, and imported projects under
+  `firmware/bootloader/` and `firmware/tools/`: local Zephyr dependencies
+  fetched by west and ignored by Git.
 - `firmware/.venv/`, `firmware/.sdk/`, and `firmware/build/`: local tools and
   generated files, ignored by Git.
 - `firmware/docs/` and `firmware/scripts/`: hardware bring-up notes and scripts.
@@ -54,15 +56,15 @@ guide](../docs/architecture/components/afs-ecu.md).
 
 ## Initialize The Zephyr Workspace
 
-From the repository root, create the local Python environment and fetch the
-pinned west projects:
+From the repository root, create the local Python environment and initialize
+the Zephyr workspace inside `firmware/`:
 
 ```bash
 python3.11 -m venv firmware/.venv
 firmware/.venv/bin/pip install -r firmware/requirements.txt
-firmware/.venv/bin/west init -l firmware
-firmware/.venv/bin/west update
-firmware/.venv/bin/pip install -r zephyr/scripts/requirements.txt
+firmware/.venv/bin/west init -l firmware/afs_ecu
+(cd firmware && .venv/bin/west update)
+firmware/.venv/bin/pip install -r firmware/zephyr/scripts/requirements.txt
 ```
 
 Install the Zephyr SDK 0.16.8 minimal bundle and its ARM toolchain under
@@ -87,8 +89,10 @@ env PATH="$PWD/firmware/.venv/bin:$PATH" \
 ```
 
 The `-h` option installs the SDK host tools, including OpenOCD; the ARM
-compiler archive is unpacked separately above. The workspace stays at the
-repository root, while the application source is `firmware/afs_ecu/`.
+compiler archive is unpacked separately above. The west workspace root and its
+Zephyr checkouts are under `firmware/`. The manifest is beside the application
+in `firmware/afs_ecu/west.yml`. Run west commands from `firmware/`, or use the
+project scripts that select that working directory automatically.
 
 ## Build The Application
 
@@ -139,9 +143,9 @@ access to the ST-Link. The current firmware does not print every CAN frame.
 Other useful Zephyr commands, run from the repository root:
 
 ```bash
-firmware/.venv/bin/west update
-firmware/.venv/bin/west build -t menuconfig -d firmware/build
-firmware/.venv/bin/west debug -d firmware/build
+(cd firmware && .venv/bin/west update)
+(cd firmware && .venv/bin/west build -t menuconfig -d build)
+(cd firmware && .venv/bin/west debug -d build)
 ```
 
 ## Check And Flash The Board

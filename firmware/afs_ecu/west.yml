@@ -9,4 +9,4 @@ manifest:
       revision: v3.7.0
       import: true
   self:
-    path: firmware
+    path: afs_ecu
