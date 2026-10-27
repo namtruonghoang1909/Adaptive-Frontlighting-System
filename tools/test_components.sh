@@ -7,7 +7,7 @@ cd "${REPO_ROOT}"
 
 usage() {
   cat <<'USAGE'
-Usage: bash tools/test_components.sh [all|runner|bridge|dashboard|ecu|visualization|bridge-vcan]
+Usage: bash tools/test_components.sh [all|runner|bridge|dashboard|ecu|visualization|launchers|bridge-vcan]
 
 Run software regression checks for one component, or all components by default.
 bridge-vcan is optional and needs an already configured vcan0 interface.
@@ -86,6 +86,11 @@ run_visualization() {
   node tools/system_visualization/code-graph/validate.mjs
 }
 
+run_launchers() {
+  echo "==> Root launchers: command-line and dispatch checks"
+  python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+}
+
 run_bridge_vcan() {
   echo "==> Bridge virtual CAN: requires configured vcan0"
   if ! ip link show vcan0 >/dev/null 2>&1; then
@@ -110,12 +115,14 @@ case "${1:-all}" in
     run_dashboard
     run_ecu
     run_visualization
+    run_launchers
     ;;
   runner) run_runner ;;
   bridge) run_bridge ;;
   dashboard) run_dashboard ;;
   ecu) run_ecu ;;
   visualization) run_visualization ;;
+  launchers) run_launchers ;;
   bridge-vcan) run_bridge_vcan ;;
   -h|--help) usage ;;
   *) usage >&2; exit 2 ;;

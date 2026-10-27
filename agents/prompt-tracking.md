@@ -13,6 +13,35 @@ Future agents should read this file with the rest of `agents/` before making cha
 
 ## Entries
 
+### 2026-10-26 - Consolidate Firmware Workspace And Add Host Launchers
+
+**User prompt**
+
+User asked to keep Zephyr and ECU-related files under `firmware/`, then asked for
+separate component start scripts and one script to start the host system.
+
+**Agent changes**
+
+- Moved the local west metadata and ignored Zephyr/module/tool checkouts into
+  `firmware/`; moved the tracked manifest beside the ECU app and updated west
+  configuration, ignore rules, and firmware wrappers.
+- Added root launchers for the runner, bridge, Dashboard, and visualization, plus
+  `scripts/start_system.sh` for bridge + Dashboard + MetaDrive with sibling
+  shutdown. Added launcher checks and updated project/agent documentation.
+
+**Files modified**
+
+- `.gitignore`, `firmware/`, `scripts/`, `tools/test_components.sh`,
+  `tools/system_visualization/code-graph/`, `README.md`, `docs/development.md`,
+  `docs/verification/testing.md`, `docs/temporary/desired_file_system.md`, and
+  `agents/`.
+
+**Verification**
+
+- West reports `firmware/` as the workspace root; manifest validation and `west list` resolve Zephyr, modules, and tools under that directory.
+- Four launcher tests pass; the ECU suite passes five host cases and a clean STM32 build; visualization model tests and Code graph validation pass. Shell syntax and `git diff --check` pass.
+- The old ignored build cache had an absolute Zephyr path from before relocation; after removing that generated cache, a pristine build succeeded with `--no-ccache`. No hardware was flashed or accessed.
+
 ### 2026-10-26 - Add Component Regression Suites
 
 **User prompt**
@@ -310,27 +339,3 @@ environment cannot access the USB devices passed through to the user's VM.
 
 - Checked the upstream Linux kernel driver's USB ID table, Markdown links,
 code fences, and whitespace. No project tests were run.
-
-### 2026-10-25 - Narrow The Linux Command Reference
-
-**User prompt**
-
-User requested that `linux_commands.md` contain common commands for checking
-ports, IP addresses, USB devices, and CAN.
-
-**Agent changes**
-
-- Replaced the broad Linux troubleshooting guide with concise network, port,
-  USB/ST-Link, SocketCAN, and `vcan0` commands.
-- Updated the documentation index and recorded that the VM now enumerates the
-  ST-LINK/V2, while SWD connectivity and flashing are still unverified.
-
-**Files modified**
-
-- `docs/temporary/linux_commands.md`, `docs/README.md`,
-  `agents/working-context.md`, and `agents/prompt-tracking.md`.
-
-**Verification**
-
-- Markdown link targets, fenced code blocks, and whitespace were checked.
-- No project test suites were run.

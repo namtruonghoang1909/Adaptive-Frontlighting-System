@@ -19,6 +19,7 @@
       { id: "bridge", label: "CAN bridge", folder: "bridge", color: "#c49be8", status: "implemented", description: "Runner and Dashboard Unix sockets serve validated scene reception, retained identified power/mode requests, and fresh ego/nearby-vehicle status. Optional production CAN runtime sends 0x100/0x200 every 20 ms, 0x300 every 100 ms, and 0x400 every 50 ms over SocketCAN; it validates 0x500 ECU status and forwards the latest decoded snapshot with freshness to the Dashboard." },
       { id: "dashboard", label: "Dashboard", folder: "dashboard", color: "#e9a5c6", status: "implemented", description: "Three-section native Tkinter Dashboard previews local headlight selection, uses a reconnecting bridge client for operator requests and fresh runner ego/vehicle fields, maps decoded 0x500 ECU status with freshness, and labels simulated fallbacks." },
       { id: "firmware", label: "Firmware", folder: "firmware/afs_ecu", color: "#e4d37b", status: "implemented", description: "Zephyr 3.7 STM32 app receives and validates bridge CAN inputs, keeps data behind an RTE-style boundary, checks freshness, and reports 0x500 Safe_Default status. Startup and error printk diagnostics use RTT over SWD. Servo/matrix actuation remains planned; the board LED is a 500 ms heartbeat." },
+      { id: "startup", label: "System launchers", folder: "scripts", color: "#dc93ae", status: "implemented", description: "Per-component host launchers delegate to component-owned scripts. The system launcher starts bridge, Dashboard, and MetaDrive together with opt-in CAN and coordinated shutdown; STM32 firmware is flashed and powered separately." },
     ],
     // Local panel coordinates follow the implemented paths; expanded members orbit their parent.
     layout: {
@@ -52,6 +53,10 @@
       firmware_can_status_send: [8600, 1080],
       firmware_controller: [8600, 650], firmware_rte: [9200, 650],
       firmware_led_init: [7400, 1080], firmware_led_toggle: [8000, 1120],
+      system_launcher: [200, 350], host_bridge_launcher: [750, 250],
+      host_dashboard_launcher: [750, 550], host_runner_launcher: [750, 850],
+      host_visualization_launcher: [750, 1150],
+      runner_component_launcher: [1200, 300], bridge_component_launcher: [2550, 300],
     },
     nodes: [
       top("main", "main()", "runner", "function", R + "__main__.py#main", "Parses runner options, starts the optional display, then runs the simulation."),
@@ -112,6 +117,14 @@
       top("firmware_rte", "RTE input/status store", "firmware", "function", "firmware/afs_ecu/src/rte/afs_rte.c#afs_rte_read_inputs", "Single-application-thread typed boundary for decoded vehicle/object/dashboard inputs, CAN decode diagnostics, and status fields."),
       top("firmware_led_init", "afs_board_led_init()", "firmware", "function", "firmware/afs_ecu/src/bsw/ecu_abstraction/board_led.c#afs_board_led_init", "BSW-style board abstraction resolves the devicetree led0 GPIO, checks device readiness, and configures the pin inactive."),
       top("firmware_led_toggle", "afs_board_led_toggle()", "firmware", "function", "firmware/afs_ecu/src/bsw/ecu_abstraction/board_led.c#afs_board_led_toggle", "Toggles the devicetree-selected board LED through Zephyr's GPIO driver."),
+
+      top("system_launcher", "start_system.sh", "startup", "function", "scripts/start_system.sh", "Starts the bridge, native Dashboard, and MetaDrive runner in order, optionally enables SocketCAN, and stops remaining host processes when one exits. It never flashes the STM32."),
+      top("host_bridge_launcher", "start_bridge.sh", "startup", "function", "scripts/start_bridge.sh", "Starts the C++ bridge through its component-owned launcher and forwards optional SocketCAN arguments."),
+      top("host_dashboard_launcher", "start_dashboard.sh", "startup", "function", "scripts/start_dashboard.sh", "Starts the native Dashboard through its component-owned launcher."),
+      top("host_runner_launcher", "start_runner.sh", "startup", "function", "scripts/start_runner.sh", "Starts MetaDrive through the simulation runner's component-owned launcher and forwards runner arguments."),
+      top("host_visualization_launcher", "start_visualization.sh", "startup", "function", "scripts/start_visualization.sh", "Starts the optional browser-based system visualization through its tool-owned launcher."),
+      top("runner_component_launcher", "start_metadrive_simulation.sh", "runner", "function", "simulation_runner/scripts/start_metadrive_simulation.sh", "Checks runtime requirements and launches the Python MetaDrive runner."),
+      top("bridge_component_launcher", "run_runner_bridge.sh", "bridge", "function", "bridge/scripts/run_runner_bridge.sh", "Builds and starts the C++ bridge, forwarding optional CAN interface arguments."),
 
       child("run", "publish_scene()", "function", R + "runner.py#run_single_agent", "Nested function called after reset and each step; builds and stores one matching scene."),
       child("policy", "act()", "method", R + "controls/metadrive_policy.py#TargetSpeedKeyboardPolicy.act", "Samples input and returns a MetaDrive action for the active control mode."),
@@ -211,6 +224,13 @@
       edge("firmware_can_status_send", "firmware_can_bus", "sends DBC-packed 0x500", "call", "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#afs_can_message_service_send_status"),
       edge("firmware_application", "firmware_led_init", "initializes board LED heartbeat", "call", "firmware/afs_ecu/src/application/afs_ecu_application.c#afs_ecu_application_run"),
       edge("firmware_application", "firmware_led_toggle", "toggles every 500 ms", "call", "firmware/afs_ecu/src/application/afs_ecu_application.c#afs_ecu_application_run"),
+      edge("system_launcher", "host_bridge_launcher", "starts first", "call", "scripts/start_system.sh"),
+      edge("system_launcher", "host_dashboard_launcher", "starts second", "call", "scripts/start_system.sh"),
+      edge("system_launcher", "host_runner_launcher", "starts third", "call", "scripts/start_system.sh"),
+      edge("host_bridge_launcher", "bridge_component_launcher", "delegates to component launcher", "call", "scripts/start_bridge.sh"),
+      edge("host_dashboard_launcher", "dashboard_launcher", "delegates to component launcher", "call", "scripts/start_dashboard.sh"),
+      edge("host_runner_launcher", "runner_component_launcher", "delegates to component launcher", "call", "scripts/start_runner.sh"),
+      edge("runner_component_launcher", "main", "executes Python runner module", "call", "simulation_runner/scripts/start_metadrive_simulation.sh"),
     ],
   };
 })();

@@ -10,9 +10,10 @@ bash tools/test_components.sh bridge
 bash tools/test_components.sh dashboard
 bash tools/test_components.sh ecu
 bash tools/test_components.sh visualization
+bash tools/test_components.sh launchers
 ```
 
-`bash tools/test_components.sh all` runs all five software suites. A failing
+`bash tools/test_components.sh all` runs all six software suites. A failing
 command exits nonzero. The script uses the configured MetaDrive Python
 environment, with a direct runner-test fallback when pytest is unavailable.
 The optional `bash tools/test_components.sh bridge-vcan` checks SocketCAN on an
@@ -31,6 +32,7 @@ local Unix sockets.
 | Dashboard | Headless unittest cases for commands, power/mode gating, bridge results, and ECU status presentation |
 | ECU | Host tests of the real CAN service, RTE, controller, and DBC codec; Zephyr `black_f407ve` build |
 | Visualization | Node model tests plus Code graph inventory and mapping checks |
+| Launchers | Help, argument validation, and per-component startup entrypoints without opening windows or using hardware |
 
 These are repeatable software regression gates. Changes to physical CAN,
 ST-Link/RTT, servo, matrix, or board wiring also need on-target checks when the

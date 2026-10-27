@@ -8,6 +8,11 @@ says otherwise.
 
 | Script | Project part | What it does |
 |---|---|---|
+| `scripts/start_system.sh` | Whole host system | Starts the bridge, native Dashboard, and MetaDrive; optional `--can-interface NAME` enables CAN and any child exit stops the others. |
+| `scripts/start_runner.sh` | Simulation runner | Starts MetaDrive through its component-owned launcher. |
+| `scripts/start_bridge.sh` | C++ bridge | Starts the bridge; accepts `--can-interface NAME` for SocketCAN. |
+| `scripts/start_dashboard.sh` | Dashboard | Opens the native Dashboard through its component-owned launcher. |
+| `scripts/start_visualization.sh` | System Visualization | Starts the optional browser-based development visualization server. |
 | `simulation_runner/scripts/check_simulation_requirements.sh` | Simulation runner | Checks the Python environment, MetaDrive imports and assets, and selected display requirements without launching MetaDrive. |
 | `simulation_runner/scripts/start_metadrive_simulation.sh` | Simulation runner | Launches `metadrive_runner` and forwards all runner options. Runner-to-bridge publishing starts automatically. |
 | `bridge/scripts/run_runner_bridge.sh` | C++ bridge | Configures and builds `afs_runner_bridge`, then runs the receiver in the foreground. |
@@ -28,13 +33,31 @@ these with `AFS_BRIDGE_BUILD_DIR` and `AFS_BRIDGE_BUILD_TYPE`. The Dashboard
 launcher also defaults to the MetaDrive environment; use `DASHBOARD_PYTHON` to
 select another Tkinter-capable Python.
 
+## Start The Host System
+
+From the repository root, start the bridge, Dashboard, and MetaDrive runner
+together:
+
+```bash
+bash scripts/start_system.sh
+```
+
+Pass `--can-interface can0` to enable SocketCAN on an interface that is already
+configured. Runner options go after `--`, for example
+`bash scripts/start_system.sh -- --headless --max-steps 100`. Press Ctrl+C to
+stop the host processes; if one exits, the launcher stops the others. To run
+only one host component, use `scripts/start_runner.sh`,
+`scripts/start_bridge.sh`, or `scripts/start_dashboard.sh`. The STM32 is
+separately built and flashed using the scripts under `firmware/scripts/`.
+
 ## Run Component Tests
 
 Use `bash tools/test_components.sh COMPONENT` after changing a component. Use
 `all` before an integration handoff. Components are `runner`, `bridge`,
-`dashboard`, `ecu`, and `visualization`; omitting the argument runs all. The
-optional `bridge-vcan` target requires an already configured `vcan0` interface.
-The [testing guide](verification/testing.md) lists coverage and hardware limits.
+`dashboard`, `ecu`, `visualization`, and `launchers`; omitting the argument
+runs all. The optional `bridge-vcan` target requires an already configured
+`vcan0` interface. The [testing guide](verification/testing.md) lists coverage
+and hardware limits.
 
 ## Run The Simulation And Bridge
 

@@ -4,7 +4,9 @@ This is a target directory sketch, not a complete source inventory. The
 simulation code moved from the former all-Python `bridge/` into
 `simulation_runner/`; the C++ bridge and Python Dashboard now have runtime
 implementations. The firmware workspace and ECU CAN communication slice now
-exist; actuator and feedback layers remain planned. See the
+exist under `firmware/`; actuator and feedback layers remain planned. The root
+`scripts/` directory contains individual host launchers and a combined launcher
+for the bridge, Dashboard, and MetaDrive runner. See the
 [working context](../../agents/working-context.md) for current status.
 
 ```text
@@ -19,6 +21,12 @@ Adaptive-Frontlighting-System/
 |   |-- prompt-tracking.md            # recent context-changing requests
 |   |-- roadmap.md                    # proposed order and open decisions
 |   `-- plans/                         # component plans
+|-- scripts/                           # per-component and whole-host launchers
+|   |-- start_runner.sh                # start MetaDrive
+|   |-- start_bridge.sh                # start the C++ bridge
+|   |-- start_dashboard.sh             # open the native Dashboard
+|   |-- start_visualization.sh         # open development visualization
+|   `-- start_system.sh                # start bridge, Dashboard, and runner
 |-- simulation_runner/
 |   |-- README.md
 |   |-- runner.md                     # requirements, scripts, arguments, run examples
@@ -58,16 +66,21 @@ Adaptive-Frontlighting-System/
 |   `-- tests/
 |-- firmware/                        # STM32F407VET6 Zephyr application (C)
 |   |-- README.md                    # Zephyr setup, build, and flash instructions
-|   |-- west.yml                     # Zephyr 3.7.0 manifest
 |   |-- requirements.txt             # pinned west version
+|   |-- .west/                       # ignored west workspace configuration
+|   |-- zephyr/                      # ignored Zephyr v3.7.0 checkout
+|   |-- modules/                     # ignored Zephyr-imported dependencies
+|   |-- bootloader/mcuboot/          # ignored west project
+|   |-- tools/edtt, net-tools/       # ignored west tools
 |   |-- docs/
 |   |   `-- hardware_check.md        # ST-Link and target bring-up checks
 |   |-- scripts/
 |   |   |-- build_firmware.sh        # Zephyr application build wrapper
 |   |   |-- check_stlink.sh          # non-flashing OpenOCD probe
 |   |   `-- flash_firmware.sh        # probe, then program with west
-|   `-- afs_ecu/                     # project-owned Zephyr application only
+|   `-- afs_ecu/                     # application and local west manifest
 |       |-- CMakeLists.txt           # Zephyr application build
+|       |-- west.yml                 # manifest for Zephyr and its modules
 |       |-- prj.conf                 # enabled software features
 |       |-- boards/                  # overlay for the confirmed physical board
 |       |-- include/afs/
@@ -81,8 +94,6 @@ Adaptive-Frontlighting-System/
 |           `-- bsw/
 |               |-- services/communication/ # CAN decoding and 0x500 packing
 |               `-- ecu_abstraction/        # Zephyr CAN and GPIO adapters
-|-- zephyr/                          # ignored west checkout
-|-- modules/                         # ignored west-imported modules
 |-- simulation/
 |   `-- metadrive/                   # ignored upstream/local dependency
 |-- contracts/

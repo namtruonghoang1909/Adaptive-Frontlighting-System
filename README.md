@@ -83,21 +83,30 @@ The C application in `firmware/afs_ecu/` uses AUTOSAR-inspired layers. The CAN c
 
 ## Run on Linux
 
-Start each component in its own terminal from the repository root.
+Start the whole host-side system or launch components separately from the
+repository root.
 
 | Component | Command |
 |---|---|
-| Bridge | `bash bridge/scripts/run_runner_bridge.sh` |
-| MetaDrive runner | `bash simulation_runner/scripts/start_metadrive_simulation.sh --scene-display` |
-| Native Dashboard | `bash dashboard/scripts/start_dashboard.sh` |
-| Development visualizations | `bash tools/system_visualization/start_system_visualization.sh` |
+| Full host system | `bash scripts/start_system.sh` |
+| Full host system with CAN | `bash scripts/start_system.sh --can-interface can0` |
+| MetaDrive runner | `bash scripts/start_runner.sh` |
+| Bridge | `bash scripts/start_bridge.sh` |
+| Native Dashboard | `bash scripts/start_dashboard.sh` |
+| Development visualizations | `bash scripts/start_visualization.sh` |
 
-The Dashboard opens as a native window. The visualizations are separate browser-based development aids. [Development commands](docs/development.md) · [Verification](docs/verification/testing.md)
+The system launcher starts the bridge, Dashboard, and MetaDrive runner, then
+stops the remaining processes if one exits. CAN stays disabled unless an
+interface is supplied. The STM32 runs on the board after it is flashed and
+powered; the launcher does not flash firmware. The visualizations are separate
+browser-based development aids. See [launch scripts](scripts/README.md),
+[development commands](docs/development.md), and
+[verification](docs/verification/testing.md).
 
 ## Test changes
 
 Run `bash tools/test_components.sh COMPONENT` after changing `runner`,
-`bridge`, `dashboard`, `ecu`, or `visualization`. Run
+`bridge`, `dashboard`, `ecu`, `visualization`, or `launchers`. Run
 `bash tools/test_components.sh all` before an integration handoff. The
 [testing guide](docs/verification/testing.md) lists the checks and their
 hardware limits.

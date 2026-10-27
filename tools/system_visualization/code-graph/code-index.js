@@ -1744,19 +1744,9 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
-    "id": "firmware/afs_ecu",
-    "label": "afs_ecu",
-    "parent": "firmware",
-    "kind": "module",
-    "path": "firmware/afs_ecu",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
     "id": "firmware/afs_ecu/include",
     "label": "include",
-    "parent": "firmware/afs_ecu",
+    "parent": "firmware",
     "kind": "module",
     "path": "firmware/afs_ecu/include",
     "status": "implemented",
@@ -1966,7 +1956,7 @@ globalThis.CODE_INDEX = [
   {
     "id": "firmware/afs_ecu/src",
     "label": "src",
-    "parent": "firmware/afs_ecu",
+    "parent": "firmware",
     "kind": "module",
     "path": "firmware/afs_ecu/src",
     "status": "implemented",
@@ -2489,237 +2479,6 @@ globalThis.CODE_INDEX = [
     "line": 4
   },
   {
-    "id": "firmware/scripts",
-    "label": "scripts",
-    "parent": "firmware",
-    "kind": "module",
-    "path": "firmware/scripts",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
-    "id": "firmware/scripts/build_firmware.sh",
-    "label": "build_firmware.sh",
-    "parent": "firmware/scripts",
-    "kind": "file",
-    "path": "firmware/scripts/build_firmware.sh",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
-    "id": "firmware/scripts/check_stlink.sh",
-    "label": "check_stlink.sh",
-    "parent": "firmware/scripts",
-    "kind": "file",
-    "path": "firmware/scripts/check_stlink.sh",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
-    "id": "firmware/scripts/flash_firmware.sh",
-    "label": "flash_firmware.sh",
-    "parent": "firmware/scripts",
-    "kind": "file",
-    "path": "firmware/scripts/flash_firmware.sh",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
-    "id": "firmware/scripts/read_rtt.sh",
-    "label": "read_rtt.sh",
-    "parent": "firmware/scripts",
-    "kind": "file",
-    "path": "firmware/scripts/read_rtt.sh",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
-    "id": "firmware/tests",
-    "label": "tests",
-    "parent": "firmware",
-    "kind": "module",
-    "path": "firmware/tests",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
-    "id": "firmware/tests/stubs",
-    "label": "stubs",
-    "parent": "firmware/tests",
-    "kind": "module",
-    "path": "firmware/tests/stubs",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
-    "id": "firmware/tests/stubs/zephyr",
-    "label": "zephyr",
-    "parent": "firmware/tests/stubs",
-    "kind": "module",
-    "path": "firmware/tests/stubs/zephyr",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
-    "id": "firmware/tests/stubs/zephyr/sys",
-    "label": "sys",
-    "parent": "firmware/tests/stubs/zephyr",
-    "kind": "module",
-    "path": "firmware/tests/stubs/zephyr/sys",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
-    "id": "firmware/tests/stubs/zephyr/sys/util.h",
-    "label": "util.h",
-    "parent": "firmware/tests/stubs/zephyr/sys",
-    "kind": "file",
-    "path": "firmware/tests/stubs/zephyr/sys/util.h",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c",
-    "label": "afs_ecu_logic_test.c",
-    "parent": "firmware/tests",
-    "kind": "file",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": ""
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c#afs_can_bus_send",
-    "label": "afs_can_bus_send",
-    "parent": "firmware/tests/afs_ecu_logic_test.c",
-    "kind": "function",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": "",
-    "line": 24
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c#reset_state",
-    "label": "reset_state",
-    "parent": "firmware/tests/afs_ecu_logic_test.c",
-    "kind": "function",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": "",
-    "line": 32
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c#speed_frame",
-    "label": "speed_frame",
-    "parent": "firmware/tests/afs_ecu_logic_test.c",
-    "kind": "function",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": "",
-    "line": 41
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c#command_frame",
-    "label": "command_frame",
-    "parent": "firmware/tests/afs_ecu_logic_test.c",
-    "kind": "function",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": "",
-    "line": 54
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c#read_inputs",
-    "label": "read_inputs",
-    "parent": "firmware/tests/afs_ecu_logic_test.c",
-    "kind": "function",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": "",
-    "line": 70
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c#counter_policy",
-    "label": "counter_policy",
-    "parent": "firmware/tests/afs_ecu_logic_test.c",
-    "kind": "function",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": "",
-    "line": 78
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c#freshness_and_fallback",
-    "label": "freshness_and_fallback",
-    "parent": "firmware/tests/afs_ecu_logic_test.c",
-    "kind": "function",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": "",
-    "line": 113
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c#frame_validation",
-    "label": "frame_validation",
-    "parent": "firmware/tests/afs_ecu_logic_test.c",
-    "kind": "function",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": "",
-    "line": 152
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c#command_lease_and_clear_fault_edge",
-    "label": "command_lease_and_clear_fault_edge",
-    "parent": "firmware/tests/afs_ecu_logic_test.c",
-    "kind": "function",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": "",
-    "line": 207
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c#status_encoding",
-    "label": "status_encoding",
-    "parent": "firmware/tests/afs_ecu_logic_test.c",
-    "kind": "function",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": "",
-    "line": 252
-  },
-  {
-    "id": "firmware/tests/afs_ecu_logic_test.c#main",
-    "label": "main",
-    "parent": "firmware/tests/afs_ecu_logic_test.c",
-    "kind": "function",
-    "path": "firmware/tests/afs_ecu_logic_test.c",
-    "status": "implemented",
-    "color": "#e7b877",
-    "description": "",
-    "line": 290
-  },
-  {
     "id": "tools",
     "label": "tools",
     "parent": "repository",
@@ -2858,7 +2617,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#dc93ae",
     "description": "",
-    "line": 27
+    "line": 28
   },
   {
     "id": "tools/system_visualization/code-graph/build_index.py#main",
@@ -2869,7 +2628,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#dc93ae",
     "description": "",
-    "line": 127
+    "line": 128
   },
   {
     "id": "tools/system_visualization/code-graph/functionality-data.js",
@@ -3087,6 +2846,152 @@ globalThis.CODE_INDEX = [
     "parent": "tools",
     "kind": "file",
     "path": "tools/test_components.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts",
+    "label": "scripts",
+    "parent": "repository",
+    "kind": "component",
+    "path": "scripts",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/tests",
+    "label": "tests",
+    "parent": "scripts",
+    "kind": "module",
+    "path": "scripts/tests",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/tests/test_launchers.py",
+    "label": "test_launchers.py",
+    "parent": "scripts/tests",
+    "kind": "file",
+    "path": "scripts/tests/test_launchers.py",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/tests/test_launchers.py#RootLauncherTests",
+    "label": "RootLauncherTests",
+    "parent": "scripts/tests/test_launchers.py",
+    "kind": "class",
+    "path": "scripts/tests/test_launchers.py",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": "",
+    "line": 11
+  },
+  {
+    "id": "scripts/tests/test_launchers.py#RootLauncherTests.run_script",
+    "label": "run_script",
+    "parent": "scripts/tests/test_launchers.py#RootLauncherTests",
+    "kind": "method",
+    "path": "scripts/tests/test_launchers.py",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": "",
+    "line": 12
+  },
+  {
+    "id": "scripts/tests/test_launchers.py#RootLauncherTests.test_system_help_describes_host_processes_and_opt_in_can",
+    "label": "test_system_help_describes_host_processes_and_opt_in_can",
+    "parent": "scripts/tests/test_launchers.py#RootLauncherTests",
+    "kind": "method",
+    "path": "scripts/tests/test_launchers.py",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": "",
+    "line": 22
+  },
+  {
+    "id": "scripts/tests/test_launchers.py#RootLauncherTests.test_system_rejects_missing_can_interface_before_starting_processes",
+    "label": "test_system_rejects_missing_can_interface_before_starting_processes",
+    "parent": "scripts/tests/test_launchers.py#RootLauncherTests",
+    "kind": "method",
+    "path": "scripts/tests/test_launchers.py",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": "",
+    "line": 29
+  },
+  {
+    "id": "scripts/tests/test_launchers.py#RootLauncherTests.test_system_rejects_unknown_system_option",
+    "label": "test_system_rejects_unknown_system_option",
+    "parent": "scripts/tests/test_launchers.py#RootLauncherTests",
+    "kind": "method",
+    "path": "scripts/tests/test_launchers.py",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": "",
+    "line": 34
+  },
+  {
+    "id": "scripts/tests/test_launchers.py#RootLauncherTests.test_each_host_component_has_a_help_only_entrypoint",
+    "label": "test_each_host_component_has_a_help_only_entrypoint",
+    "parent": "scripts/tests/test_launchers.py#RootLauncherTests",
+    "kind": "method",
+    "path": "scripts/tests/test_launchers.py",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": "",
+    "line": 39
+  },
+  {
+    "id": "scripts/start_bridge.sh",
+    "label": "start_bridge.sh",
+    "parent": "scripts",
+    "kind": "file",
+    "path": "scripts/start_bridge.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/start_dashboard.sh",
+    "label": "start_dashboard.sh",
+    "parent": "scripts",
+    "kind": "file",
+    "path": "scripts/start_dashboard.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/start_runner.sh",
+    "label": "start_runner.sh",
+    "parent": "scripts",
+    "kind": "file",
+    "path": "scripts/start_runner.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/start_system.sh",
+    "label": "start_system.sh",
+    "parent": "scripts",
+    "kind": "file",
+    "path": "scripts/start_system.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/start_visualization.sh",
+    "label": "start_visualization.sh",
+    "parent": "scripts",
+    "kind": "file",
+    "path": "scripts/start_visualization.sh",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""

@@ -12,7 +12,7 @@ This file records future work, not authorization to implement it. Runner-to-brid
 6. Connect the standalone CAN APIs to scheduled SocketCAN TX/RX and decode `0x500` ECU status. (Implemented on `feat/bridge-ecu/can`; startup is opt-in through `--can-interface NAME`.)
 7. Add focused coverage and integrate on a preconfigured `vcan0` with synthetic inputs and injected ECU status. (Tests are implemented and the bridge CTest suite passes 8/8; this host cannot create or access a CAN interface, so execute vcan integration on a CAN-capable Linux host.)
 8. Diagnose the reported transmit queue warning, flash and verify STM32 ECU CAN reception/transmission over a physical bus, then implement servo/matrix drivers and AFS control. Keep control and fallback in the ECU firmware.
-9. Add a combined `start_system` launcher that starts the MetaDrive and Dashboard windows together with the bridge and coordinates shutdown. (Deferred by user during the native Dashboard conversion.)
+9. Add a combined `start_system` launcher and separate root launchers for the host components. (Implemented: the system launcher starts the bridge, Dashboard, and MetaDrive runner and stops its siblings when one exits; the individual host launchers remain available.)
 10. Retire transitional notes and tighten component-level build/run documentation after the process boundary works.
 
 The [simulation-runner plans](plans/simulation_runner/) describe the preserved Python work; the [bridge plans](plans/bridge/) replace the superseded all-Python gateway design. No Python CAN sender currently exists to port. Keep project-owned code outside the ignored `simulation/metadrive/` dependency.

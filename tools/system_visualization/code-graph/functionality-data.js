@@ -7,6 +7,7 @@
   const D = "simulation_runner/src/scene_display/";
   const A = "dashboard/src/afs_dashboard/";
   const F = "firmware/afs_ecu/";
+  const S = "scripts/";
   const step = (from, to, action, detail, evidence) =>
     ({ from, to, action, detail, evidence });
 
@@ -199,6 +200,20 @@
         step("firmware_main", "firmware_application", "starts application loop", "main() returns the result of afs_ecu_application_run()", F + "src/main.c#main"),
         step("firmware_application", "firmware_led_init", "initializes board output", "Resolves led0 from devicetree, verifies GPIO readiness, and configures the LED inactive", F + "src/bsw/ecu_abstraction/board_led.c#afs_board_led_init"),
         step("firmware_application", "firmware_led_toggle", "toggles output periodically", "The running ECU loop toggles the board LED every 500 ms", F + "src/application/afs_ecu_application.c#afs_ecu_application_run"),
+      ],
+    },
+    {
+      id: "host_system_startup",
+      title: "Start the host system",
+      summary: "Start bridge, Dashboard, and MetaDrive through their individual launchers, with optional CAN and coordinated shutdown.",
+      steps: [
+        step("system_launcher", "host_bridge_launcher", "starts bridge first", "Starts the C++ bridge before its clients; forwards --can-interface NAME only when requested", S + "start_system.sh"),
+        step("host_bridge_launcher", "bridge_component_launcher", "delegates to bridge launcher", "Passes bridge arguments through to run_runner_bridge.sh", S + "start_bridge.sh"),
+        step("system_launcher", "host_dashboard_launcher", "starts native Dashboard", "Starts the native Dashboard after the bridge", S + "start_system.sh"),
+        step("host_dashboard_launcher", "dashboard_launcher", "delegates to Dashboard launcher", "Opens the Tkinter window through dashboard/scripts/start_dashboard.sh", S + "start_dashboard.sh"),
+        step("system_launcher", "host_runner_launcher", "starts MetaDrive last", "Starts the simulation after bridge and Dashboard; runner options after -- are forwarded", S + "start_system.sh"),
+        step("host_runner_launcher", "runner_component_launcher", "delegates to runner launcher", "Passes runner arguments to the simulation runner script", S + "start_runner.sh"),
+        step("runner_component_launcher", "main", "executes runner module", "Starts metadrive_runner; the STM32 is already flashed and powered separately", "simulation_runner/scripts/start_metadrive_simulation.sh"),
       ],
     },
   ];
