@@ -154,7 +154,7 @@ def test_scene_display_app_reports_provider_errors_without_stopping() -> None:
 
 
 def test_scene_display_assets_are_bundled_and_server_validates_ports() -> None:
-    assets = Path(__file__).parents[1] / "src" / "scene_display" / "assets"
+    assets = Path(__file__).resolve().parents[3] / "simulation_runner" / "src" / "scene_display" / "assets"
     assert "scene-canvas" in (assets / "index.html").read_text(encoding="utf-8")
     assert "lidar-canvas" not in (assets / "index.html").read_text(encoding="utf-8")
     assert "pollScene" in (assets / "app.js").read_text(encoding="utf-8")

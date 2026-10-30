@@ -13,9 +13,12 @@ src/
 |   `-- scene.py               # matching ego + surrounding samples
 |-- scene_display/             # optional live browser observer
 `-- ipc_adapter/               # versioned Unix socket publisher to C++ bridge
-tests/                         # dependency-free unit tests with MetaDrive-like fakes
 scripts/                       # runtime checker and launcher
 ```
+
+Project-owned runner tests mirror these modules under the root
+[`tests/runner/`](../tests/runner/) tree; they are not stored beside the
+component implementation.
 
 After every reset and step, the runner:
 
@@ -69,15 +72,17 @@ Python extracts simulator ground truth and normalizes coordinates. It does not p
 
 ## Tests
 
-Run `bash tools/test_components.sh runner` from the repository root. It runs the
-runner tests with pytest when available and uses the dependency-free fallback
-otherwise.
+Run `bash tests/scripts/test_runner.sh` from the repository root. It runs the runner
+tests with pytest when available and uses the dependency-free fallback
+otherwise. Add a module name, for example
+`bash tests/scripts/test_runner.sh ego_extraction`, to run only that module. See the
+[component test guide](../tests/scripts/test_guide.md).
 
 When pytest is installed:
 
 ```bash
 PYTHONPATH=simulation_runner/src \
-simulation/metadrive/metadrive_venv/bin/python -m pytest simulation_runner/tests -v
+simulation/metadrive/metadrive_venv/bin/python -m pytest tests/runner -v
 ```
 
 The configured environment may not contain pytest. The dependency-free fallback is documented in [docs/verification/testing.md](../docs/verification/testing.md).
