@@ -104,3 +104,13 @@ The Dashboard consumes decoded values and enums from gateway IPC. It does not lo
 Open and edit `bridge/can/afs.dbc` in Vector CANdb++. Use SavvyCAN to view CAN traffic and decode frames using that DBC. SavvyCAN can connect to a Linux SocketCAN interface such as `vcan0` for virtual traffic or `can0` for a physical adapter. A USB-CAN adapter for the Linux host must expose SocketCAN to work with the gateway and this monitoring setup.
 
 The DBC only describes and decodes frames; it does not create CAN traffic or connect the PC to the bus. The production bridge sends `0x100`–`0x400` and receives `0x500` only when started with `--can-interface NAME`. The separate diagnostic logger checks live MetaDrive samples against the DBC without opening SocketCAN. Live physical monitoring needs a CAN adapter connected to the bus; virtual integration is available with the opt-in CTest `socketcan_vcan_end_to_end` on a prepared `vcan0`. `cantools` generates the C signal encoders and message pack/unpack functions from the DBC; it is separate from the DBC editor and live viewer.
+
+## CAN Regression Tests
+
+Run `bash tests/scripts/test_can.sh` for bridge CAN regression coverage and ECU host
+CAN-service tests. Focus one bridge area with commands such as
+`bash tests/scripts/test_can.sh bridge encoder` or
+`bash tests/scripts/test_can.sh bridge socketcan`; run only ECU host cases with
+`bash tests/scripts/test_can.sh ecu`. These are host software checks and do not
+require an adapter. See the [component test guide](../../tests/scripts/test_guide.md)
+for dependencies and the optional `vcan0` test.

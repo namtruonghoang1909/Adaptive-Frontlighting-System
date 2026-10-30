@@ -15,7 +15,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-REPOSITORY = Path(__file__).resolve().parents[2]
+REPOSITORY = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPOSITORY / "simulation_runner" / "src"))
 
 from ipc_adapter import publisher as publisher_module  # noqa: E402

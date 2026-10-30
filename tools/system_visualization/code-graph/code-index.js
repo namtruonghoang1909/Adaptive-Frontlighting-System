@@ -1441,16 +1441,6 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
-    "id": "bridge/scripts/run_can_frame_smoke.sh",
-    "label": "run_can_frame_smoke.sh",
-    "parent": "bridge",
-    "kind": "file",
-    "path": "bridge/scripts/run_can_frame_smoke.sh",
-    "status": "implemented",
-    "color": "#82c6a0",
-    "description": ""
-  },
-  {
     "id": "bridge/scripts/run_runner_bridge.sh",
     "label": "run_runner_bridge.sh",
     "parent": "bridge",
@@ -1461,21 +1451,31 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
-    "id": "bridge/scripts/verify_can_frame_capture.py",
-    "label": "verify_can_frame_capture.py",
+    "id": "tests/can/bridge/frame_smoke/run_can_frame_smoke.sh",
+    "label": "run_can_frame_smoke.sh",
     "parent": "bridge",
     "kind": "file",
-    "path": "bridge/scripts/verify_can_frame_capture.py",
+    "path": "tests/can/bridge/frame_smoke/run_can_frame_smoke.sh",
     "status": "implemented",
     "color": "#82c6a0",
     "description": ""
   },
   {
-    "id": "bridge/scripts/verify_can_frame_capture.py#main",
+    "id": "tests/can/bridge/frame_smoke/verify_can_frame_capture.py",
+    "label": "verify_can_frame_capture.py",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "tests/can/bridge/frame_smoke/verify_can_frame_capture.py",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "tests/can/bridge/frame_smoke/verify_can_frame_capture.py#main",
     "label": "main",
-    "parent": "bridge/scripts/verify_can_frame_capture.py",
+    "parent": "tests/can/bridge/frame_smoke/verify_can_frame_capture.py",
     "kind": "function",
-    "path": "bridge/scripts/verify_can_frame_capture.py",
+    "path": "tests/can/bridge/frame_smoke/verify_can_frame_capture.py",
     "status": "implemented",
     "color": "#82c6a0",
     "description": "",
@@ -2617,7 +2617,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#dc93ae",
     "description": "",
-    "line": 28
+    "line": 29
   },
   {
     "id": "tools/system_visualization/code-graph/build_index.py#main",
@@ -2628,7 +2628,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#dc93ae",
     "description": "",
-    "line": 128
+    "line": 129
   },
   {
     "id": "tools/system_visualization/code-graph/functionality-data.js",
@@ -2841,16 +2841,6 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
-    "id": "tools/test_components.sh",
-    "label": "test_components.sh",
-    "parent": "tools",
-    "kind": "file",
-    "path": "tools/test_components.sh",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
     "id": "scripts",
     "label": "scripts",
     "parent": "repository",
@@ -2859,92 +2849,6 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
-  },
-  {
-    "id": "scripts/tests",
-    "label": "tests",
-    "parent": "scripts",
-    "kind": "module",
-    "path": "scripts/tests",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "scripts/tests/test_launchers.py",
-    "label": "test_launchers.py",
-    "parent": "scripts/tests",
-    "kind": "file",
-    "path": "scripts/tests/test_launchers.py",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": ""
-  },
-  {
-    "id": "scripts/tests/test_launchers.py#RootLauncherTests",
-    "label": "RootLauncherTests",
-    "parent": "scripts/tests/test_launchers.py",
-    "kind": "class",
-    "path": "scripts/tests/test_launchers.py",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": "",
-    "line": 11
-  },
-  {
-    "id": "scripts/tests/test_launchers.py#RootLauncherTests.run_script",
-    "label": "run_script",
-    "parent": "scripts/tests/test_launchers.py#RootLauncherTests",
-    "kind": "method",
-    "path": "scripts/tests/test_launchers.py",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": "",
-    "line": 12
-  },
-  {
-    "id": "scripts/tests/test_launchers.py#RootLauncherTests.test_system_help_describes_host_processes_and_opt_in_can",
-    "label": "test_system_help_describes_host_processes_and_opt_in_can",
-    "parent": "scripts/tests/test_launchers.py#RootLauncherTests",
-    "kind": "method",
-    "path": "scripts/tests/test_launchers.py",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": "",
-    "line": 22
-  },
-  {
-    "id": "scripts/tests/test_launchers.py#RootLauncherTests.test_system_rejects_missing_can_interface_before_starting_processes",
-    "label": "test_system_rejects_missing_can_interface_before_starting_processes",
-    "parent": "scripts/tests/test_launchers.py#RootLauncherTests",
-    "kind": "method",
-    "path": "scripts/tests/test_launchers.py",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": "",
-    "line": 29
-  },
-  {
-    "id": "scripts/tests/test_launchers.py#RootLauncherTests.test_system_rejects_unknown_system_option",
-    "label": "test_system_rejects_unknown_system_option",
-    "parent": "scripts/tests/test_launchers.py#RootLauncherTests",
-    "kind": "method",
-    "path": "scripts/tests/test_launchers.py",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": "",
-    "line": 34
-  },
-  {
-    "id": "scripts/tests/test_launchers.py#RootLauncherTests.test_each_host_component_has_a_help_only_entrypoint",
-    "label": "test_each_host_component_has_a_help_only_entrypoint",
-    "parent": "scripts/tests/test_launchers.py#RootLauncherTests",
-    "kind": "method",
-    "path": "scripts/tests/test_launchers.py",
-    "status": "implemented",
-    "color": "#dc93ae",
-    "description": "",
-    "line": 39
   },
   {
     "id": "scripts/start_bridge.sh",
@@ -2992,6 +2896,16 @@ globalThis.CODE_INDEX = [
     "parent": "scripts",
     "kind": "file",
     "path": "scripts/start_visualization.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/test_all.sh",
+    "label": "test_all.sh",
+    "parent": "scripts",
+    "kind": "file",
+    "path": "scripts/test_all.sh",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""

@@ -12,7 +12,8 @@ ROOT = TOOL.parent.parent.parent
 OUTPUT = TOOL / "code-index.js"
 COMPONENTS = [
     ("simulation_runner", ("simulation_runner/src", "simulation_runner/scripts"), "#73b8f4", "implemented"),
-    ("bridge", ("bridge/src", "bridge/include/afs_bridge", "bridge/scripts"), "#82c6a0", "implemented"),
+    ("bridge", ("bridge/src", "bridge/include/afs_bridge", "bridge/scripts",
+                 "tests/can/bridge/frame_smoke"), "#82c6a0", "implemented"),
     ("dashboard", ("dashboard/src/afs_dashboard", "dashboard/scripts"), "#b69bea", "implemented"),
     ("firmware", ("firmware/afs_ecu",), "#e7b877", "implemented"),
     ("tools", ("tools",), "#dc93ae", "implemented"),

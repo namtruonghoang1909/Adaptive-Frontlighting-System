@@ -115,7 +115,7 @@
         step("can_signals", "can_frame_encoder", "passes signal values", "CanFrameEncoder::encode(const CanSignalValues&) calls the generated C signal encoders and message packers", "bridge/src/can/can_frame_encoder.cpp"),
         step("can_frame_encoder", "can_frames", "returns three frames", "standard CAN ID, DLC, and payload values in speed (0x100), steering (0x200), object (0x300) order; no scheduling or transmission", "bridge/src/can/can_frame_encoder.cpp"),
         step("can_frames", "can_frame_logger", "captures each payload", "writes every encoded frame and expected signals to temporary JSONL; generated C unpackers verify each batch", "bridge/src/app/can_frame_logger.cpp"),
-        step("can_frame_logger", "can_capture_verifier", "checks the DBC independently", "the smoke shell script invokes cantools against bridge/can/afs.dbc and checks every decoded signal and reserved zero", "bridge/scripts/verify_can_frame_capture.py#main"),
+        step("can_frame_logger", "can_capture_verifier", "checks the DBC independently", "the smoke shell script invokes cantools against bridge/can/afs.dbc and checks every decoded signal and reserved zero", "tests/can/bridge/frame_smoke/verify_can_frame_capture.py#main"),
       ],
     },
     {

@@ -25,7 +25,8 @@ All three host applications run on the same Linux system as separate processes. 
 | `bridge/src/state/` | Complete current input/status snapshots and synchronization |
 | `bridge/src/can/` | CAN signal validation/projection, DBC-generated frame packing, SocketCAN transport, and ECU status decoding |
 | `bridge/src/diagnostics/` | Planned production freshness, communication health, counters, and logging |
-| `bridge/tests/` | Native unit and Linux IPC/SocketCAN integration tests |
+| `tests/unix_socket/` | Runner and Dashboard Unix socket integration tests |
+| `tests/can/bridge/` | Bridge CAN encoding, status, SocketCAN, and vcan tests |
 
 `afs_runner_bridge` accepts the Python runner's versioned scene stream. When
 CAN is enabled, its worker samples the latest scene on monotonic deadlines,
@@ -76,7 +77,7 @@ frames only after checksum, reserved-field, enum, mask, and alive-counter
 validation. Counter gaps up to half the four-bit range are tolerated; duplicate
 or backward values are rejected, and a quiet interval permits a new baseline.
 Accepted status is retained by `CanRuntime` and `DashboardIpcServer` for the
-Dashboard response. `bridge/tests/socketcan_vcan_end_to_end.py` exercises the
+Dashboard response. `tests/can/bridge/socketcan_vcan_end_to_end.py` exercises the
 command and status paths on a prepared virtual interface.
 
 For `0x300 Vehicle_Object`, the agreed design projects vehicle footprints from

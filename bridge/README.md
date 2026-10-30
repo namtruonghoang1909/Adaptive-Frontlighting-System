@@ -15,7 +15,7 @@ src/
 |-- can/                  # DBC schema and CAN encoders/transport
 `-- diagnostics/          # freshness, health, counters, and logging
 scripts/                  # bridge launch and encoder smoke scripts
-tests/                    # unit and Linux integration tests
+../tests/                 # centralized unit and Linux integration tests
 ```
 
 The runner receiver validates messages on its IPC thread and replaces one
@@ -63,7 +63,7 @@ network tools to prepare the interface before launching the bridge.
 Run the headless MetaDrive CAN encoding smoke check with:
 
 ```bash
-bash bridge/scripts/run_can_frame_smoke.sh
+bash tests/can/bridge/frame_smoke/run_can_frame_smoke.sh
 ```
 
 It receives live runner scenes, encodes diagnostic batches every 20 ms, and
@@ -87,10 +87,12 @@ the Dashboard socket after the script name. Set
 Run the receiver integration test with:
 
 ```bash
-cmake -S bridge -B build/bridge
-cmake --build build/bridge --target afs_runner_ipc_integration_test
-ctest --test-dir build/bridge --output-on-failure
+bash tests/scripts/test_bridge.sh unix_socket runner_bridge
 ```
+
+Run all bridge tests with `bash tests/scripts/test_bridge.sh`, or focus a CAN module
+with a command such as `bash tests/scripts/test_bridge.sh can socketcan`. See the
+[component test guide](../tests/scripts/test_guide.md) for modules and prerequisites.
 
 Start MetaDrive normally; the runner always publishes and retries until this
 receiver is available. Set `AFS_BRIDGE_SOCKET` for a custom path; otherwise both

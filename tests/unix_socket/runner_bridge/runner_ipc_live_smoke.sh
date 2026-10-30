@@ -3,7 +3,7 @@
 set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+readonly REPO_ROOT="$(cd -- "$SCRIPT_DIR/../../.." && pwd)"
 readonly REQUESTED_BUILD_DIR="${AFS_BRIDGE_BUILD_DIR:-$REPO_ROOT/build/bridge}"
 readonly METADRIVE_PYTHON="${METADRIVE_PYTHON:-$REPO_ROOT/simulation/metadrive/metadrive_venv/bin/python}"
 

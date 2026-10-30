@@ -8,6 +8,7 @@ option(AFS_ENABLE_SOCKETCAN_VCAN_TEST
     "Run the end-to-end bridge test on an already configured vcan interface" OFF)
 set(AFS_VCAN_INTERFACE "vcan0" CACHE STRING
     "CAN interface used by the opt-in SocketCAN integration test")
+set(AFS_PROJECT_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../tests")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -53,35 +54,40 @@ target_link_libraries(afs_can_frame_logger PRIVATE afs_can_encoding Threads::Thr
 target_compile_options(afs_can_frame_logger PRIVATE -Wall -Wextra -Wpedantic)
 
 if(BUILD_TESTING)
-    add_executable(afs_runner_ipc_integration_test tests/runner_ipc_integration.cpp)
+    add_executable(afs_runner_ipc_integration_test
+        ${AFS_PROJECT_TESTS_DIR}/unix_socket/runner_bridge/runner_ipc_integration.cpp)
     target_link_libraries(afs_runner_ipc_integration_test PRIVATE afs_runner_ipc)
     target_compile_options(afs_runner_ipc_integration_test PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME runner_ipc_integration COMMAND afs_runner_ipc_integration_test)
     set_tests_properties(runner_ipc_integration PROPERTIES TIMEOUT 15)
 
     add_executable(afs_dashboard_ipc_integration_test
-        tests/dashboard_ipc_integration.cpp)
+        ${AFS_PROJECT_TESTS_DIR}/unix_socket/dashboard_bridge/dashboard_ipc_integration.cpp)
     target_link_libraries(afs_dashboard_ipc_integration_test PRIVATE afs_runner_ipc)
     target_compile_options(afs_dashboard_ipc_integration_test PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME dashboard_ipc_integration COMMAND afs_dashboard_ipc_integration_test)
     set_tests_properties(dashboard_ipc_integration PROPERTIES TIMEOUT 10)
 
-    add_executable(afs_can_encoder_test tests/can_encoder_test.cpp)
+    add_executable(afs_can_encoder_test
+        ${AFS_PROJECT_TESTS_DIR}/can/bridge/encoder/can_encoder_test.cpp)
     target_link_libraries(afs_can_encoder_test PRIVATE afs_can_encoding)
     target_compile_options(afs_can_encoder_test PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME can_encoder_signal_values COMMAND afs_can_encoder_test)
 
-    add_executable(afs_can_frame_encoder_test tests/can_frame_encoder_test.cpp)
+    add_executable(afs_can_frame_encoder_test
+        ${AFS_PROJECT_TESTS_DIR}/can/bridge/encoder/can_frame_encoder_test.cpp)
     target_link_libraries(afs_can_frame_encoder_test PRIVATE afs_can_encoding)
     target_compile_options(afs_can_frame_encoder_test PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME can_frame_encoder COMMAND afs_can_frame_encoder_test)
 
-    add_executable(afs_status_test tests/afs_status_test.cpp)
+    add_executable(afs_status_test
+        ${AFS_PROJECT_TESTS_DIR}/can/bridge/status_decoder/afs_status_test.cpp)
     target_link_libraries(afs_status_test PRIVATE afs_can_runtime)
     target_compile_options(afs_status_test PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME afs_status_decoder COMMAND afs_status_test)
 
-    add_executable(afs_socketcan_frame_test tests/socketcan_frame_test.cpp)
+    add_executable(afs_socketcan_frame_test
+        ${AFS_PROJECT_TESTS_DIR}/can/bridge/socketcan/socketcan_frame_test.cpp)
     target_link_libraries(afs_socketcan_frame_test PRIVATE afs_can_runtime)
     target_compile_options(afs_socketcan_frame_test PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME socketcan_frame_conversion COMMAND afs_socketcan_frame_test)
@@ -89,18 +95,9 @@ if(BUILD_TESTING)
     find_package(Python3 COMPONENTS Interpreter QUIET)
     if(Python3_Interpreter_FOUND)
         add_test(
-            NAME dashboard_gateway_status
-            COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/../dashboard/tests/test_gateway_status.py
-        )
-        set_tests_properties(dashboard_gateway_status PROPERTIES
-            TIMEOUT 10
-            ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/../dashboard/src")
-
-        add_test(
             NAME runner_ipc_python_end_to_end
             COMMAND ${Python3_EXECUTABLE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/tests/runner_ipc_end_to_end.py
+                ${AFS_PROJECT_TESTS_DIR}/unix_socket/runner_bridge/runner_ipc_end_to_end.py
                 $<TARGET_FILE:afs_runner_bridge>
         )
         set_tests_properties(runner_ipc_python_end_to_end PROPERTIES TIMEOUT 20)
@@ -108,7 +105,7 @@ if(BUILD_TESTING)
             add_test(
                 NAME socketcan_vcan_end_to_end
                 COMMAND ${Python3_EXECUTABLE}
-                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/socketcan_vcan_end_to_end.py
+                    ${AFS_PROJECT_TESTS_DIR}/can/bridge/socketcan/socketcan_vcan_end_to_end.py
                     $<TARGET_FILE:afs_runner_bridge>
                     --interface ${AFS_VCAN_INTERFACE}
             )
