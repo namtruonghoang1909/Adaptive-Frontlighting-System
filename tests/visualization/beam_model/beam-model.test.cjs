@@ -1,8 +1,10 @@
 const assert = require("node:assert/strict");
+const path = require("node:path");
 const test = require("node:test");
+const beamModelPath = path.resolve(__dirname, "../../../tools/system_visualization/beam-visual/beam-model.js");
 const { createLamps, pointFromLamp, projectSectorToLamp, maskedRowsByColumnForSectors,
   highBeamRowsToMask, sectorsLitByZone, matrixPixelState, lowBeamSwivelForInputs, MATRIX_SIZE,
-  HIGH_BEAM_ROW_COUNT } = require("../beam-visual/beam-model.js");
+  HIGH_BEAM_ROW_COUNT } = require(beamModelPath);
 
 const lamps = createLamps({
   vehicleWidthM: 1.8,

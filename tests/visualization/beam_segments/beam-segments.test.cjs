@@ -4,10 +4,10 @@ const path = require("node:path");
 const test = require("node:test");
 const vm = require("node:vm");
 
-const root = path.resolve(__dirname, "../beam-visual");
+const root = path.resolve(__dirname, "../../../tools/system_visualization/beam-visual");
 const html = fs.readFileSync(path.join(root, "beam-segments.html"), "utf8");
 const source = fs.readFileSync(path.join(root, "beam-segments.js"), "utf8");
-const model = require("../beam-visual/beam-model.js");
+const model = require(path.join(root, "beam-model.js"));
 
 function scene(search = "") {
   const elements = new Map();

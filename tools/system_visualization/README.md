@@ -7,9 +7,11 @@ This tool has six tabs. **Code graph** maps implemented classes and calls.
 **CAN messages** maps every payload bit and explains each signal in the documented frames.
 **Hardware wiring** shows component symbols, candidate pins, and selectable wire routes.
 
-Run `bash tools/test_components.sh visualization` from the repository root after
+Run `bash tests/scripts/test_visualization.sh` from the repository root after
 changing a page, model, or graph. It runs the model tests, JavaScript syntax
-checks, and Code graph validation.
+checks, and Code graph validation. To run one module, use for example
+`bash tests/scripts/test_visualization.sh beam_model`. The full list is in the
+[component test guide](../../tests/scripts/test_guide.md).
 
 ## Folder Layout
 
@@ -21,10 +23,12 @@ tools/system_visualization/
 ├── hardware-wiring/  Pin-level bench wiring illustration and connection explorer
 ├── system-in-action/ Static hardware illustration and artwork
 ├── shared/           Common page styles and timestamp loader
-├── tests/            Focused model and page tests
 ├── index.html        Redirect to the Code graph
 └── start_system_visualization.sh
 ```
+
+Visualization tests are grouped by module under the repository-root
+[`tests/visualization/`](../../tests/visualization/) tree.
 
 The root `beam-segments.html` and `system-in-action.html` are small redirects
 kept for existing links. New links should point to the folders above.
@@ -177,10 +181,10 @@ ADB masking here switches individual pixels on/off. See the
 [ADB grid and lamp design](../../docs/architecture/adb-grid-and-lamps.md).
 
 Run the focused lamp geometry and page interaction checks with
-`node tools/system_visualization/tests/beam-model.test.cjs`,
-`node tools/system_visualization/tests/beam-segments.test.cjs`, and
-`node tools/system_visualization/tests/code-timestamp.test.cjs` and
-`node tools/system_visualization/tests/can-messages.test.cjs`.
+`bash tests/scripts/test_components.sh visualization/beam_model`,
+`bash tests/scripts/test_components.sh visualization/beam_segments`,
+`bash tests/scripts/test_components.sh visualization/code_timestamp`, and
+`bash tests/scripts/test_components.sh visualization/can_messages`.
 
 The **Code updated** label beside the view tabs uses the newest modification
 time reported by the current HTML page and its local CSS/JavaScript files. It

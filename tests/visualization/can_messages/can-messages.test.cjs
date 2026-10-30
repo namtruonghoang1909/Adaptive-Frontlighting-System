@@ -2,7 +2,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
-const { layouts, renderByteMap, renderTable } = require("../can-messages/can-messages.js");
+const canMessagesRoot = path.resolve(__dirname, "../../../tools/system_visualization/can-messages");
+const { layouts, renderByteMap, renderTable } = require(path.join(canMessagesRoot, "can-messages.js"));
 
 class TestElement {
   constructor(tagName) {
@@ -113,7 +114,7 @@ test("byte map follows the message DLC and splits multi-byte signal locations", 
 });
 
 test("all message byte maps cover every bit and link to existing signal rows", () => {
-  const html = fs.readFileSync(path.resolve(__dirname, "../can-messages/index.html"), "utf8");
+  const html = fs.readFileSync(path.join(canMessagesRoot, "index.html"), "utf8");
   for (const messageId of Object.keys(layouts)) {
     const article = html.match(new RegExp(`<article id="message-${messageId.slice(2)}"[\\s\\S]*?<\\/article>`))?.[0];
     assert.ok(article, `${messageId} card exists`);
@@ -138,8 +139,8 @@ test("all message byte maps cover every bit and link to existing signal rows", (
 });
 
 test("the page shows each message with its sample payload and linked byte map", () => {
-  const html = fs.readFileSync(path.resolve(__dirname, "../can-messages/index.html"), "utf8");
-  const script = fs.readFileSync(path.resolve(__dirname, "../can-messages/can-messages.js"), "utf8");
+  const html = fs.readFileSync(path.join(canMessagesRoot, "index.html"), "utf8");
+  const script = fs.readFileSync(path.join(canMessagesRoot, "can-messages.js"), "utf8");
   for (const id of Object.keys(layouts)) {
     assert.match(html, new RegExp(`data-message-table="${id}"`));
     assert.match(html, new RegExp(`data-message-map="${id}"`));
@@ -152,7 +153,7 @@ test("the page shows each message with its sample payload and linked byte map", 
 });
 
 test("runner-derived CAN messages show their transmit periods and ECU timeouts", () => {
-  const html = fs.readFileSync(path.resolve(__dirname, "../can-messages/index.html"), "utf8");
+  const html = fs.readFileSync(path.join(canMessagesRoot, "index.html"), "utf8");
   for (const [id, period, timeout] of [
     ["100", "20 ms TX", "100 ms ECU timeout"],
     ["200", "20 ms TX", "100 ms ECU timeout"],
@@ -190,14 +191,14 @@ test("0x100 and 0x200 reserve byte 7 and rely on the CAN CRC", () => {
     assert.match(specification, /\| 7 \| 0\.\.7 \| `Reserved`/);
     assert.doesNotMatch(specification, /\| 7 \| 0\.\.7 \| `Checksum`/);
   }
-  const html = fs.readFileSync(path.resolve(__dirname, "../can-messages/index.html"), "utf8");
+  const html = fs.readFileSync(path.join(canMessagesRoot, "index.html"), "utf8");
   assert.match(html, /17 7B 00 00 00 00 00 00/);
   assert.match(html, /18 E8 03 00 00 00 00 00/);
 });
 
 test("the CAN page opts into a light surface with orange navigation accents", () => {
-  const html = fs.readFileSync(path.resolve(__dirname, "../can-messages/index.html"), "utf8");
-  const css = fs.readFileSync(path.resolve(__dirname, "../can-messages/can-messages.css"), "utf8");
+  const html = fs.readFileSync(path.join(canMessagesRoot, "index.html"), "utf8");
+  const css = fs.readFileSync(path.join(canMessagesRoot, "can-messages.css"), "utf8");
   assert.match(html, /<meta name="color-scheme" content="light">/);
   assert.match(css, /background: #fff8f0/);
   assert.match(css, /background: #dc6d1c/);

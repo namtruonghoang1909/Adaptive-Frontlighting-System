@@ -1,6 +1,9 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { newestCodeModification, formatLocalTimestamp } = require("../shared/code-timestamp.js");
+const timestampPath = require("node:path").resolve(
+  __dirname, "../../../tools/system_visualization/shared/code-timestamp.js"
+);
+const { newestCodeModification, formatLocalTimestamp } = require(timestampPath);
 
 const responseWithDate = (value) => ({
   ok: true,
@@ -48,7 +51,7 @@ test("local time formatting is explicit and invalid dates are reported as unavai
 test("each visualization tab includes the shared timestamp label and loader", () => {
   const fs = require("node:fs");
   const path = require("node:path");
-  const toolRoot = path.resolve(__dirname, "..");
+  const toolRoot = path.resolve(__dirname, "../../../tools/system_visualization");
   for (const page of [
     "code-graph/index.html",
     "system-in-action/index.html",
