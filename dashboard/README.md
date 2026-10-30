@@ -71,6 +71,10 @@ together. That launcher is not part of the current Dashboard command.
 
 ## Tests
 
-Run `bash tools/test_components.sh dashboard` from the repository root after
+Run `bash tests/scripts/test_dashboard.sh` from the repository root after
 changing commands, state mapping, or window controls. The headless suite checks
 power and mode selection, bridge request handling, and ECU status display data.
+The test cases are grouped in the root [`tests/dashboard/`](../tests/dashboard/)
+tree; run one module with `bash tests/scripts/test_dashboard.sh commands` or
+`bash tests/scripts/test_dashboard.sh gateway_status`. See the
+[component test guide](../tests/scripts/test_guide.md).
