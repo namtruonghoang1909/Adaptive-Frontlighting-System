@@ -105,10 +105,11 @@ browser-based development aids. See [launch scripts](scripts/README.md),
 
 ## Test changes
 
-Run `bash tools/test_components.sh COMPONENT` after changing `runner`,
-`bridge`, `dashboard`, `ecu`, `visualization`, or `launchers`. Run
-`bash tools/test_components.sh all` before an integration handoff. The
-[testing guide](docs/verification/testing.md) lists the checks and their
+Run the matching focused entrypoint under `tests/scripts/` after changing a
+component, for example `bash tests/scripts/test_bridge.sh can socketcan`. The
+single root test command, `bash scripts/test_all.sh`, runs every standard
+software suite. The [central test tree](tests/README.md) lists test locations,
+and the [testing guide](docs/verification/testing.md) describes coverage and
 hardware limits.
 
 ## Project guides

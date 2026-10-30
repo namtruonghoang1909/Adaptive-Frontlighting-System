@@ -23,7 +23,7 @@ The runtime platform is Linux. Run commands from the repository root and use rep
 | Dashboard UI | Python UI toolkit | Command and status HMI |
 | Embedded target | STM32F407VET6 | Physical AFS/ADB ECU |
 | Hardware debug | Logic analyzer, multimeter, ST-Link | Electrical and firmware bring-up |
-| Regression checks | [Component test runner](../../tools/test_components.sh) | Runs the runner, bridge, Dashboard, ECU, and visualization software suites by component or together |
+| Regression checks | [Component test scripts](../../tests/scripts/test_guide.md) · [Focused test dispatcher](../../tests/scripts/test_components.sh) · [Full suite](../../scripts/test_all.sh) · [Central test tree](../../tests/README.md) | Run one component/module suite, or all suites through the single root test command |
 | Code map | [Interactive System Visualization](../../tools/system_visualization/README.md) | Class interactions, expandable members, and highlighted sequences for implemented functionality |
 | Visitor 3D view | [System in Action](../../tools/system_visualization/system-in-action/index.html) | Static MetaDrive-to-headlight prototype render; one 8×8 MAX7219 matrix per side and no live data |
 | High beam visual | [High beam visual](../../tools/system_visualization/beam-visual/beam-segments.html) | Centered matrices with low rows on and upper high-beam rows masked around vehicles |

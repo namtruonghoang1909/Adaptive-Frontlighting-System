@@ -2,37 +2,37 @@
 
 ## Run Tests After A Change
 
-From the repository root, run the suite for the component you changed:
-
-```bash
-bash tools/test_components.sh runner
-bash tools/test_components.sh bridge
-bash tools/test_components.sh dashboard
-bash tools/test_components.sh ecu
-bash tools/test_components.sh visualization
-bash tools/test_components.sh launchers
-```
-
-`bash tools/test_components.sh all` runs all six software suites. A failing
-command exits nonzero. The script uses the configured MetaDrive Python
+From the repository root, use the component entrypoint listed in the
+[test script guide](../../tests/scripts/test_guide.md). Root `scripts/` has one
+test runner, `bash scripts/test_all.sh`, which runs all standard software suites.
+A failing command exits nonzero. The shared runner
+uses the configured MetaDrive Python
 environment, with a direct runner-test fallback when pytest is unavailable.
-The optional `bash tools/test_components.sh bridge-vcan` checks SocketCAN on an
+The optional `bash tests/scripts/test_components.sh bridge-vcan` checks SocketCAN on an
 already configured `vcan0` interface.
 
+Every project test case is stored under the root [`tests/`](../../tests/)
+directory. For example, run `bash tests/scripts/test_runner.sh ego_extraction`,
+`bash tests/scripts/test_bridge.sh can socketcan`, or
+`bash tests/scripts/test_firmware.sh can_service` for focused module checks.
+
 The combined command expects Python 3, CMake, a host C/C++ compiler, Node.js,
-`rg`, the local MetaDrive environment, and the Zephyr workspace/SDK described
-in the [firmware guide](../../firmware/README.md). Set `METADRIVE_PYTHON` if
-the runner interpreter is elsewhere. Bridge IPC tests must be allowed to bind
-local Unix sockets.
+`rg`, the local MetaDrive environment, cantools 45.0.0, and the Zephyr
+workspace/SDK described in the [firmware guide](../../firmware/README.md).
+Install cantools with the command in [`tests/README.md`](../../tests/README.md).
+Set `METADRIVE_PYTHON` if the runner interpreter is elsewhere and
+`CANTOOLS_PYTHON` if cantools uses a different Python. Bridge IPC tests must be
+allowed to bind local Unix sockets.
 
 | Component | Regression gate |
 |---|---|
 | Runner | Extraction, controls, scene snapshots, display payload, lifecycle, and IPC projection tests |
-| Bridge | CMake build and CTest for IPC, CAN signals/frames, status decoding, and Python-to-C++ delivery |
+| Bridge | CMake build and CTest for IPC, CAN signals/frames, status decoding, and Python-to-C++ delivery, plus the headless runner-to-DBC frame smoke |
 | Dashboard | Headless unittest cases for commands, power/mode gating, bridge results, and ECU status presentation |
 | ECU | Host tests of the real CAN service, RTE, controller, and DBC codec; Zephyr `black_f407ve` build |
 | Visualization | Node model tests plus Code graph inventory and mapping checks |
 | Launchers | Help, argument validation, and per-component startup entrypoints without opening windows or using hardware |
+| Test runner | Central test-tree layout and component/module selector regression checks |
 
 These are repeatable software regression gates. Changes to physical CAN,
 ST-Link/RTT, servo, matrix, or board wiring also need on-target checks when the
@@ -79,26 +79,17 @@ The optional CAN frame smoke check runs the standalone validation and DBC
 encoders at the bridge's 20 ms diagnostic cadence. Each batch is round-tripped
 with the generated C unpackers; captured frames are also decoded with cantools
 and compared with the signal values supplied to the frame encoder. Run it with
-`bash bridge/scripts/run_can_frame_smoke.sh` after making cantools importable in
+`bash tests/can/bridge/frame_smoke/run_can_frame_smoke.sh` after making cantools importable in
 the configured MetaDrive Python environment. It does not exercise SocketCAN.
 
 The current tests use fake MetaDrive-like objects and a pure controller model. They cover ego extraction, runner lifecycle behavior, controls, supported surrounding types, radius boundaries, ego exclusion, coordinate and velocity rotation, deterministic ordering, missing and non-finite fields, disappearing objects, valid empty scans, invalid registry/ego pose handling, scene sample matching, snapshot immutability, latest-value replacement, concurrent store access, retention, callback compatibility, invalid-scene counting, scene-display normalization, state classification, provider replacement, error reporting, assets, and port validation. Later evidence should include DBC revisions, CAN logs, Dashboard captures, firmware versions, calibration notes, and observed physical behavior.
 
-The configured MetaDrive environment may not include pytest. In that case, run every dependency-free test function directly:
+The configured MetaDrive environment may not include pytest. The component
+runner then executes each dependency-free test function recursively from
+`tests/runner`; use the same command:
 
 ```bash
-PYTHONPATH=simulation_runner/src:simulation_runner \
-simulation/metadrive/metadrive_venv/bin/python - <<'PY'
-import importlib
-import inspect
-from pathlib import Path
-
-for path in sorted(Path("simulation_runner/tests").glob("test_*.py")):
-    module = importlib.import_module(f"tests.{path.stem}")
-    for name, function in inspect.getmembers(module, inspect.isfunction):
-        if name.startswith("test_"):
-            function()
-PY
+bash tests/scripts/test_runner.sh
 ```
 
 Validate the interactive architecture explorer independently of the simulation runtime:

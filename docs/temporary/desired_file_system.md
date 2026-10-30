@@ -41,8 +41,7 @@ Adaptive-Frontlighting-System/
 |   |   |   |-- surrounding/        # implemented registry extraction
 |   |   |   `-- scene.py            # matching ego/surrounding datatype
 |   |   |-- scene_display/          # optional development browser observer
-|   |   `-- ipc_adapter/             # planned simulation-to-bridge client
-|   `-- tests/                       # implemented runner/control/extractor tests
+|   |   `-- ipc_adapter/             # implemented simulation-to-bridge client
 |-- bridge/
 |   |-- README.md
 |   |-- CMakeLists.txt               # C++17 baseline
@@ -55,7 +54,6 @@ Adaptive-Frontlighting-System/
 |   |   |-- state/                   # synchronized current snapshots
 |   |   |-- can/                     # codec, scheduler, SocketCAN TX/RX
 |   |   `-- diagnostics/             # freshness, health, and logging
-|   `-- tests/                       # future native and Linux integration tests
 |-- dashboard/
 |   |-- README.md
 |   |-- pyproject.toml
@@ -63,7 +61,6 @@ Adaptive-Frontlighting-System/
 |   |   |-- app/                     # future UI composition
 |   |   |-- gateway_client/          # future Unix-socket client
 |   |   `-- models/                  # future UI-facing values
-|   `-- tests/
 |-- firmware/                        # STM32F407VET6 Zephyr application (C)
 |   |-- README.md                    # Zephyr setup, build, and flash instructions
 |   |-- requirements.txt             # pinned west version
@@ -99,7 +96,7 @@ Adaptive-Frontlighting-System/
 |-- contracts/
 |   `-- ipc/                         # future Python/C++ message specification
 |-- docs/
-|-- tests/                           # cross-component SIL/HIL integration
+|-- tests/                           # all project-owned component and cross-component tests
 |-- tools/                           # development helpers and detailed tool guidance
 |   `-- system_visualization/        # interactive class interaction graph
 |-- hardware/                        # wiring, parts, mechanics, and calibration

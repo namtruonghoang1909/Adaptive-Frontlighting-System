@@ -13,6 +13,147 @@ Future agents should read this file with the rest of `agents/` before making cha
 
 ## Entries
 
+### 2026-10-30 - Add Test-Area Readmes
+
+**User prompt**
+
+User asked for a `README.md` inside each test component folder that explains what
+its folders or files cover, with the CAN guide distinguishing bridge and ECU
+tests.
+
+**Agent changes**
+
+- Added a README to every top-level test area, describing its module coverage
+  and focused test command. The CAN README explicitly documents `bridge/` and
+  `ecu/` ownership.
+- Added a component-guide index to `tests/README.md` and a dedicated regression
+  test requiring each top-level test area to keep its README.
+
+**Files modified**
+
+- `tests/*/README.md`, `tests/README.md`,
+  `tests/test_runner/test_area_readmes.py`, `agents/working-context.md`, and
+  `agents/prompt-tracking.md`.
+
+**Verification**
+
+- `bash tests/scripts/test_test_runner.sh` passes 7 tests, including the new
+  check that every top-level test area has a README and the CAN guide covers
+  both bridge and ECU tests.
+- Local Markdown links and fenced blocks pass in 32 changed Markdown files. The Code graph
+  inventory remains current at 281 nodes and its validator passes. `git diff --check`
+  also passes. The curated AFS graph is unchanged because these additions
+  document test ownership and do not change runtime code paths.
+
+### 2026-10-30 - Scope Component Test Scripts And Root Test Runner
+
+**User prompt**
+
+User asked for a test script and guide for each component so they can test only
+what changed instead of running the whole system each time. They clarified that
+root `scripts/` should keep only one all-components test command, while focused
+test scripts belong under `tests/scripts/`.
+
+**Agent changes**
+
+- Added component entrypoints for runner, bridge, Dashboard, firmware/ECU,
+  visualization, CAN, Unix sockets, launchers, and test-runner checks under
+  `tests/scripts/`; the root `scripts/test_all.sh` is the only all-suites command.
+- Moved the shared component dispatcher from `tools/` to `tests/scripts/` and
+  made it reject the `all` selector, so it runs one suite at a time.
+- Added regression checks for root-script layout, focused help, invalid module
+  routing, and safe dispatcher argument handling; documented the directory roles.
+
+**Files modified**
+
+- `tests/scripts/`, `scripts/test_all.sh`, `scripts/README.md`, `tests/launchers/`,
+  `tests/test_runner/`,
+  `README.md`, `docs/can/README.md`, `docs/development.md`,
+  `docs/tools/tools.md`, `docs/verification/testing.md`, `tests/README.md`,
+  `agents/README.md`, `agents/working-context.md`, `agents/prompt-tracking.md`,
+  `bridge/README.md`, `dashboard/README.md`, `firmware/README.md`,
+  `simulation_runner/README.md`, `tools/README.md`,
+  `tools/system_visualization/README.md`, and the generated Code graph source
+  inventory.
+
+**Verification**
+
+- `bash tests/scripts/test_launchers.sh` passes 9 tests and
+  `bash tests/scripts/test_test_runner.sh` passes 5 tests. They confirm root
+  `scripts/` has only `test_all.sh` among test commands, focused scripts live
+  under `tests/scripts/`, and the dispatcher cannot invoke the full suite. No
+  full-system suite was run for this scripts-only change.
+- Shell syntax, source inventory freshness, Code graph validation, and
+  `git diff --check` pass. The generated inventory has 278 nodes; the curated
+  AFS behavior graph remains unchanged because these are test launchers, not
+  runtime AFS paths.
+
+### 2026-10-30 - Centralize Tests And Require Regression Coverage
+
+**User prompt**
+
+User asked to gather tests for every project component under the repository-root
+`tests/` tree, organized by module, with a unified runner. They emphasized that
+tests are as important as implementation because test results are their primary
+way to validate changes.
+
+**Agent changes**
+
+- Moved project-owned tests, test CMake projects, and test-only smoke helpers
+  from component folders into `tests/`, preserving component/module ownership.
+- Rewired bridge and ECU CMake projects, fixed visualization tests to resolve
+  component assets from their new location, and added module selectors and a
+  regression test for the central tree and selector interface.
+- Included the live headless CAN frame smoke in the bridge and full-system
+  software gates. Pinned cantools 45.0.0 in `tests/requirements.txt`.
+- Updated the test index, development and verification docs, component guides,
+  system visualization notes, Code graph evidence, and agent coding rules.
+
+**Files modified**
+
+- `tests/`, `tests/scripts/test_components.sh`, `bridge/CMakeLists.txt`,
+  `tests/can/ecu/can_service/CMakeLists.txt`, `tools/system_visualization/`,
+  `agents/`, `docs/`, `README.md`, `bridge/README.md`, `dashboard/README.md`,
+  `firmware/README.md`, `scripts/README.md`, `simulation_runner/README.md`,
+  and `tools/README.md`.
+
+**Verification**
+
+- `bash tests/scripts/test_components.sh all` passes: runner 45, bridge CTest 7, CAN
+  frame smoke with 144 DBC-checked frames, Dashboard 9, ECU host 5 plus Zephyr
+  build, visualization 37 plus Code graph validation, launchers 4, and test
+  runner 4. Unix socket tests ran with the required local socket permission.
+- Shell syntax, `git diff --check`, source inventory freshness, and Code graph
+  validation pass. Physical CAN and MCU checks remain outside host tests.
+
+### 2026-10-30 - Document Launch Scripts And Result Observation
+
+**User prompt**
+
+User asked for guides describing what the current scripts start and how to
+observe their results, and reported that the hardware is now available.
+
+**Agent changes**
+
+- Added a host launcher guide explaining the combined and standalone processes,
+  terminal/window output, SocketCAN monitoring, controller-loopback limits,
+  and the no-bus CAN frame smoke command.
+- Added a firmware script guide for build, ST-Link check, flash, RTT, and ECU
+  CAN-status observations; linked both guides from the script indexes.
+- Recorded hardware availability and the next physical verification steps in
+  the working context.
+
+**Files modified**
+
+- `scripts/README.md`, `scripts/guide.md`, `firmware/scripts/guide.md`,
+  `firmware/README.md`, `docs/development.md`, `agents/working-context.md`,
+  and `agents/prompt-tracking.md`.
+
+**Verification**
+
+- Relative Markdown links, fenced blocks, the ten-entry history limit, and
+  `git diff --check` pass. No hardware commands are run from this environment.
+
 ### 2026-10-26 - Consolidate Firmware Workspace And Add Host Launchers
 
 **User prompt**
@@ -31,7 +172,7 @@ separate component start scripts and one script to start the host system.
 
 **Files modified**
 
-- `.gitignore`, `firmware/`, `scripts/`, `tools/test_components.sh`,
+- `.gitignore`, `firmware/`, `scripts/`, `tests/scripts/test_components.sh`,
   `tools/system_visualization/code-graph/`, `README.md`, `docs/development.md`,
   `docs/verification/testing.md`, `docs/temporary/desired_file_system.md`, and
   `agents/`.
@@ -56,13 +197,13 @@ command to run after changing a component.
   also builds the Zephyr image.
 - Added headless Dashboard command and power/mode tests. Retained existing
   runner, bridge, Dashboard status, and visualization suites.
-- Added `tools/test_components.sh` to run one component or all software suites,
+- Added `tests/scripts/test_components.sh` to run one component or all software suites,
   documented commands and coverage, and made component testing a code-change
   rule. Physical interface checks remain a separate hardware gate.
 
 **Files modified**
 
-- `firmware/tests/`, `dashboard/tests/`, `tools/test_components.sh`,
+- `firmware/tests/`, `dashboard/tests/`, `tests/scripts/test_components.sh`,
   `tools/system_visualization/code-graph/code-index.js`, component READMEs,
   `README.md`, `docs/development.md`, `docs/verification/testing.md`,
   `docs/tools/tools.md`, `tools/README.md`, `agents/README.md`,
@@ -219,123 +360,3 @@ the USB-CAN adapter and bridge controller-loopback results.
   transmission through it. Physical bus exchange and diagnosis of the reported
   `ENOBUFS` warning remain pending. This execution environment cannot access
   the user's USB device or CAN netlink socket; no project test suites were run.
-
-### 2026-10-25 - Configure OpenOCD For Four-Wire SWD
-
-**User prompt**
-
-User asked to fix the OpenOCD setup after confirming that the same STM32F4VE
-board programs in STM32CubeIDE with SWDIO, SWCLK, GND, and 3.3 V VTref, without
-an NRST wire, and requested the needed commands.
-
-**Agent changes**
-
-- Added a project-owned OpenOCD config that declares no external reset wire and
-  uses Cortex-M software reset handling, while preserving the STM32F4 target setup and
-  debug attach/detach handlers.
-- Changed the ST-LINK check to reset, halt, and resume without programming flash.
-- Made the flash wrapper select the same config and documented the behavior and
-  commands.
-
-**Files modified**
-
-- `firmware/scripts/openocd_stm32f4_swd.cfg`, `firmware/scripts/check_stlink.sh`,
-  `firmware/scripts/flash_firmware.sh`, `firmware/README.md`,
-  `firmware/docs/hardware_check.md`, `docs/development.md`,
-  `docs/hardware/wiring-draft.md`, `agents/working-context.md`, and
-  `tools/system_visualization/code-graph/code-index.js`.
-
-**Verification**
-
-- Shell syntax, OpenOCD runner option parsing, source inventory freshness, graph
-  validation, Markdown links/fences, and whitespace checks are recorded in the
-  handoff. The current environment cannot access the USB probe, so the hardware
-  reset/halt and flash sequence still needs to be run on the user's Ubuntu VM.
-  No project test suites were run.
-
-### 2026-10-25 - Build Firmware And Add Development Wrappers
-
-**User prompt**
-
-User asked to build the current firmware, then requested build and flash scripts
-and a short set of common Zephyr development commands.
-
-**Agent changes**
-
-- Completed a pristine `black_f407ve` build from `firmware/afs_ecu/`; it
-  produced `zephyr.elf`, `zephyr.hex`, and `zephyr.bin`.
-- Added build and flash wrappers. Flash first runs the non-flashing ST-Link
-  probe, then invokes `west flash` only if the target is reachable.
-- Documented incremental/pristine builds, ccache override, menuconfig, debug,
-  update, and flash commands.
-
-**Files modified**
-
-- `agents/prompt-tracking.md`, `agents/working-context.md`,
-  `docs/development.md`, `docs/temporary/desired_file_system.md`,
-  `firmware/README.md`, `firmware/docs/hardware_check.md`,
-  `firmware/scripts/`, and `tools/system_visualization/code-graph/code-index.js`.
-
-**Verification**
-
-- The Zephyr build completed successfully. Shell syntax, Code graph inventory
-  and validation, Markdown links/fences, and whitespace checks pass. No flash
-  was attempted; the ST-LINK udev permission rule remains to be applied.
-
-### 2026-10-25 - Organize The Zephyr Application Under afs_ecu
-
-**User prompt**
-
-User asked to group firmware application code under `firmware/afs_ecu/`, add
-`firmware/docs/hardware_check.md`, and provide ST-Link check scripts. User chose
-to keep the full Zephyr checkout and imported modules outside `afs_ecu/` so they
-remain ignored dependencies.
-
-**Agent changes**
-
-- Moved the application CMake file, configuration, headers, and sources into
-  `firmware/afs_ecu/`; kept the west manifest and Zephyr dependencies in their
-  existing workspace locations.
-- Added a non-flashing OpenOCD probe script and hardware-check guide, including
-  the `LIBUSB_ERROR_ACCESS` udev fix found during diagnosis.
-- Updated firmware build/flash guidance, project layout documentation, handoff,
-  and firmware Code graph paths.
-
-**Files modified**
-
-- `README.md`, `agents/prompt-tracking.md`, `agents/working-context.md`,
-  `docs/README.md`, `docs/architecture/components/afs-ecu.md`,
-  `docs/development.md`, `docs/temporary/desired_file_system.md`, `firmware/`,
-  and `tools/system_visualization/code-graph/`.
-
-**Verification**
-
-- Shell syntax, Code graph inventory and validation, Markdown links/fences, and
-  whitespace checks are recorded in the handoff. No firmware build or project
-  test suites were run; the OpenOCD probe remains blocked by USB permissions.
-
-### 2026-10-25 - Detect USB-CAN Adapter In Linux VM
-
-**User prompt**
-
-User shared `lsusb` output showing the ST-LINK/V2 (`0483:3748`) and a
-Geschwister Schneider CAN adapter (`1d50:606f`), then asked to continue without
-waiting on `ip -brief link`.
-
-**Agent changes**
-
-- Confirmed the upstream Linux `gs_usb` driver lists USB ID `1d50:606f`.
-- Updated the Linux command reference and workspace handoff to distinguish USB
-enumeration from SocketCAN interface creation and physical bus validation.
-- Physical CAN transmit/receive verification remains pending; this execution
-environment cannot access the USB devices passed through to the user's VM.
-
-**Files modified**
-
-- `docs/temporary/linux_commands.md`, `agents/working-context.md`, and
-  `agents/prompt-tracking.md`.
-
-**Verification**
-
-- Checked the upstream Linux kernel driver's USB ID table, Markdown links,
-code fences, and whitespace. No project tests were run.

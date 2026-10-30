@@ -66,5 +66,5 @@ Complete the laptop-side CAN gateway on `feat/bridge-ecu/can`: transmit runner a
 - [0x400 Dashboard_Command](../../docs/can/messages/0x400_Dashboard_Command.md)
 - [0x500 AFS_Status](../../docs/can/messages/0x500_AFS_Status.md)
 - [Bridge CAN module notes](../../bridge/src/can/README.md)
-- [Bridge test instructions](../../bridge/tests/README.md)
+- [Central test instructions](../../tests/README.md)
 - [Code graph maintenance rules](../code_visualize.md)

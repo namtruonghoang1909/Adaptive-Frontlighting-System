@@ -4,6 +4,11 @@ Use this guide to find the command or script for each runnable part of the
 repository. Run commands from the repository root on Linux unless a section
 says otherwise.
 
+For step-by-step startup and observation instructions, see the
+[host launcher guide](../scripts/guide.md) and
+[firmware script guide](../firmware/scripts/guide.md). They distinguish
+terminal logs, native windows, RTT output, and physical CAN observations.
+
 ## Script Index
 
 | Script | Project part | What it does |
@@ -16,13 +21,15 @@ says otherwise.
 | `simulation_runner/scripts/check_simulation_requirements.sh` | Simulation runner | Checks the Python environment, MetaDrive imports and assets, and selected display requirements without launching MetaDrive. |
 | `simulation_runner/scripts/start_metadrive_simulation.sh` | Simulation runner | Launches `metadrive_runner` and forwards all runner options. Runner-to-bridge publishing starts automatically. |
 | `bridge/scripts/run_runner_bridge.sh` | C++ bridge | Configures and builds `afs_runner_bridge`, then runs the receiver in the foreground. |
-| `bridge/scripts/run_can_frame_smoke.sh` | C++ bridge / CAN | Runs headless MetaDrive through the diagnostic frame logger and independently checks captured payloads against the DBC with cantools. |
+| `tests/can/bridge/frame_smoke/run_can_frame_smoke.sh` | C++ bridge / CAN | Runs headless MetaDrive through the diagnostic frame logger and independently checks captured payloads against the DBC with cantools. |
 | `dashboard/scripts/start_dashboard.sh` | Dashboard | Opens the native Tkinter Dashboard window with the configured Python environment. |
 | `firmware/scripts/build_firmware.sh` | Zephyr firmware | Builds the ECU CAN receive/status application for `black_f407ve`. |
 | `firmware/scripts/check_stlink.sh` | Zephyr firmware | Checks USB/SWD access and the no-NRST OpenOCD reset/halt sequence without flashing. |
 | `firmware/scripts/flash_firmware.sh` | Zephyr firmware | Repeats the ST-LINK check, then flashes with the project no-NRST OpenOCD config. |
 | `firmware/scripts/read_rtt.sh` | Zephyr firmware | Reads ECU `printk` diagnostics through ST-Link SWD and OpenOCD RTT. |
-| `tools/test_components.sh` | All software components | Runs one component's regression tests or all suites. |
+| `scripts/test_all.sh` | All software components | Runs every standard software regression suite. |
+| `tests/scripts/test_<component>.sh` | One component | Runs focused tests; module arguments narrow the selection further. |
+| `tests/scripts/test_components.sh` | Test dispatcher | Selects a component or module suite; also used by the root full-suite script. |
 | `tools/system_visualization/start_system_visualization.sh` | System Visualization | Serves the Code graph, System in Action, high/low beam, CAN messages, and hardware wiring views on localhost. |
 
 The scripts under `simulation_runner/scripts/` use
@@ -52,12 +59,14 @@ separately built and flashed using the scripts under `firmware/scripts/`.
 
 ## Run Component Tests
 
-Use `bash tools/test_components.sh COMPONENT` after changing a component. Use
-`all` before an integration handoff. Components are `runner`, `bridge`,
-`dashboard`, `ecu`, `visualization`, and `launchers`; omitting the argument
-runs all. The optional `bridge-vcan` target requires an already configured
-`vcan0` interface. The [testing guide](verification/testing.md) lists coverage
-and hardware limits.
+Use the component entrypoint in [the test script guide](../tests/scripts/test_guide.md)
+for a focused regression check. Root `scripts/` has one test command,
+`bash scripts/test_all.sh`, which runs all standard software suites. The shared
+dispatcher also accepts component/module selectors; optional `bridge-vcan`
+requires a configured `vcan0`. The [central test tree](../tests/README.md) lists
+modules; the [testing guide](verification/testing.md) lists coverage and hardware
+limits. Examples include `bash tests/scripts/test_bridge.sh can socketcan` and
+`bash tests/scripts/test_firmware.sh can_service`.
 
 ## Run The Simulation And Bridge
 
@@ -120,7 +129,7 @@ frames and forwards decoded status to Dashboard IPC. The ECU's `0x300` receive
 timeout is 250 ms, and its suggested `0x500` reporting period is 50 ms. The
 Dashboard marks retained ECU status stale after 250 ms without a valid report.
 The opt-in vcan integration test is described in
-[bridge/tests/README.md](../bridge/tests/README.md); physical adapter/ECU
+[tests/README.md](../tests/README.md); physical adapter/ECU
 frame exchange and ECU validation remain pending; see the
 [host CAN bring-up steps](hardware/hardware.md#host-can-bring-up). See the
 [SocketCAN implementation notes](../bridge/src/can/README.md).
@@ -129,10 +138,11 @@ frame exchange and ECU validation remain pending; see the
 
 CTest runs the runner and Dashboard socket integration checks, CAN signal/frame
 encoding, SocketCAN conversion, `0x500` decoder validation, and (when Python 3
-is available) Dashboard status mapping plus the real Python runner publisher
-against the C++ bridge. These tests need neither MetaDrive nor CAN hardware.
+is available) the real Python runner publisher against the C++ bridge. These
+tests need neither MetaDrive nor CAN hardware. Dashboard mapping tests run with
+the Dashboard suite from root `tests/`.
 The separate end-to-end vcan test is opt-in and needs a prepared CAN interface;
-see [bridge/tests/README.md](../bridge/tests/README.md).
+see [tests/README.md](../tests/README.md).
 
 ```bash
 cmake -S bridge -B build/bridge
@@ -145,7 +155,7 @@ the optional live smoke test. It checks that valid MetaDrive scenes reach the
 receiver; it does not require CAN hardware:
 
 ```bash
-bash bridge/tests/runner_ipc_live_smoke.sh
+bash tests/unix_socket/runner_bridge/runner_ipc_live_smoke.sh
 ```
 
 To also run the standalone signal and DBC frame encoders against live runner
@@ -154,7 +164,7 @@ bytes, and decoded signals, checks every batch with the generated C decoder,
 then cross-checks every captured frame using cantools and `bridge/can/afs.dbc`:
 
 ```bash
-bash bridge/scripts/run_can_frame_smoke.sh
+bash tests/can/bridge/frame_smoke/run_can_frame_smoke.sh
 ```
 
 The script uses the configured MetaDrive Python environment and expects
@@ -163,7 +173,7 @@ cantools to be importable there. Set `CANTOOLS_PYTHON` and
 set `AFS_CAN_SMOKE_STEPS` to change the default 10 simulation steps. This is a
 diagnostic smoke path and does not transmit on SocketCAN.
 
-See [bridge/tests/README.md](../bridge/tests/README.md) for coverage and
+See [tests/README.md](../tests/README.md) for coverage and
 [verification/testing.md](verification/testing.md) for the broader
 verification plan.
 
@@ -174,7 +184,7 @@ environment when pytest is installed:
 
 ```bash
 PYTHONPATH=simulation_runner/src \
-simulation/metadrive/metadrive_venv/bin/python -m pytest simulation_runner/tests -v
+simulation/metadrive/metadrive_venv/bin/python -m pytest tests/runner -v
 ```
 
 The direct, dependency-free test procedure for environments without pytest is
@@ -208,9 +218,7 @@ node --check tools/system_visualization/beam-visual/beam-model.js
 node --check tools/system_visualization/beam-visual/beam-segments.js
 node --check tools/system_visualization/hardware-wiring/hardware-wiring.js
 node --check tools/system_visualization/shared/code-timestamp.js
-node tools/system_visualization/tests/beam-model.test.cjs
-node tools/system_visualization/tests/beam-segments.test.cjs
-node tools/system_visualization/tests/code-timestamp.test.cjs
+node --test tests/visualization/*/*.test.cjs
 ```
 
 Run `python3 tools/system_visualization/code-graph/build_index.py` to regenerate the

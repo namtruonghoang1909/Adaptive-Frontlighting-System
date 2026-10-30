@@ -19,11 +19,13 @@ Rules in this file apply to source code, configuration, and tests.
 
 ## Testing And Verification
 
-- After changing a component's source or configuration, run its suite with
-  `bash tools/test_components.sh COMPONENT` and report the result. Run
-  `bash tools/test_components.sh all` for changes that cross component
-  boundaries or before a project integration handoff. Keep test cases aligned
-  with changed behavior and add a regression case for fixed defects.
+- Treat tests as a required part of implementation. When changing behavior,
+  add or update a focused regression case under the matching module in root
+  `tests/`; then run the matching `tests/scripts/test_<component>.sh MODULE` and
+  the containing component suite. Run `bash scripts/test_all.sh` for
+  cross-component changes and integration handoffs. Report the exact commands
+  and results, including any suite that could not run. Do not describe an
+  implementation as validated if its applicable tests were not run.
 - Software suites cover host behavior and the ECU build. Verify physical CAN,
   SWD/RTT, and actuators on the rig when changes affect those interfaces.
 - Do not consider a code change ready for handoff until the source inventory is
