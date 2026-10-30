@@ -3,8 +3,8 @@ project(afs_ecu_host_tests C)
 
 include(CTest)
 
-set(AFS_APP_DIR "${CMAKE_CURRENT_LIST_DIR}/../afs_ecu")
-set(AFS_DBC_DIR "${CMAKE_CURRENT_LIST_DIR}/../../bridge/src/can/generated")
+set(AFS_APP_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../../firmware/afs_ecu")
+set(AFS_DBC_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../../bridge/src/can/generated")
 
 add_executable(afs_ecu_logic_test
     afs_ecu_logic_test.c
