@@ -20,6 +20,9 @@ heartbeat for bring-up.
   generated files, ignored by Git.
 - `firmware/docs/` and `firmware/scripts/`: hardware bring-up notes and scripts.
 
+For each build, ST-Link, flash, and RTT script's expected result, see the
+[firmware script guide](scripts/guide.md).
+
 `requirements.txt` pins west to 1.2.0. The build uses Zephyr SDK 0.16.8 and the
 `black_f407ve` board target. Zephyr's board definition matches the STM32F407VET6,
 and the user has flashed the earlier LED app and confirmed the board LED blinks.
@@ -115,10 +118,13 @@ The expected image is `firmware/build/zephyr/zephyr.elf` with a matching
 
 ## Test The ECU Software
 
-Run `bash tools/test_components.sh ecu` from the repository root after changing
-ECU logic. It runs the [host logic tests](tests/README.md) and builds the
-STM32 image. The host tests exercise CAN decoding, freshness, conservative
-fallback, command policy, and `0x500` packing without a board.
+Run `bash tests/scripts/test_firmware.sh` from the repository root after changing
+ECU logic. It runs the [host logic tests](../tests/can/ecu/can_service/) and
+builds the STM32 image. To run only the host CAN-service tests, use
+`bash tests/scripts/test_firmware.sh can_service`; they cover decoding, freshness,
+conservative fallback, command policy, and `0x500` packing without a board.
+See the root [test tree index](../tests/README.md) and
+[component test guide](../tests/scripts/test_guide.md).
 
 ## Read ECU Diagnostics Over RTT
 
