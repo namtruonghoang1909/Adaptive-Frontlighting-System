@@ -6,6 +6,7 @@ This tool has six tabs. **Code graph** maps implemented classes and calls.
 **Low beam visual** shows shorter, wider light that follows steering.
 **CAN messages** maps every payload bit and explains each signal in the documented frames.
 **Hardware wiring** shows component symbols, candidate pins, and selectable wire routes.
+For diagnosed page or graph issues, see [visualization errors](../../docs/errors/visualization_errors.md).
 
 Run `bash tests/scripts/test_visualization.sh` from the repository root after
 changing a page, model, or graph. It runs the model tests, JavaScript syntax

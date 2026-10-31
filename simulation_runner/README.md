@@ -1,6 +1,8 @@
 # Simulation Runner
 
 This Python application owns MetaDrive lifecycle, driving controls, ego and surrounding-object extraction, the latest in-process scene snapshot, and automatic publishing to the C++ gateway.
+For diagnosed runner issues, see [runner errors](../docs/errors/simulation_runner_errors.md)
+and [IPC errors](../docs/errors/ipc_errors.md).
 
 ## Current Implementation
 

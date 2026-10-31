@@ -6,13 +6,14 @@ steering, position, heading, and nearby vehicles are shown when fresh and
 available. ECU data uses clearly marked simulated fallbacks until decoded CAN
 status is available. No
 browser or localhost port is needed.
+For Dashboard troubleshooting records, see [Dashboard errors](../docs/errors/dashboard_errors.md).
 
 ## Run
 
 From the repository root:
 
 ```bash
-bash dashboard/scripts/start_dashboard.sh
+bash scripts/start.sh dashboard
 ```
 
 The script selects the configured MetaDrive Python environment, sets the
@@ -59,7 +60,7 @@ src/afs_dashboard/
 |   `-- window.py          # Native Tkinter window and controls
 |-- gateway_client/client.py # Reconnecting bridge IPC client
 `-- models/state.py        # Simulated ECU and fallback ego values
-scripts/start_dashboard.sh  # Native window launcher
+scripts/start.sh dashboard  # Native window launcher
 ```
 
 The Dashboard does not open SocketCAN, pack CAN frames, or access bridge process

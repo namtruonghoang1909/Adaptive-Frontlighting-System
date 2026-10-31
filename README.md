@@ -79,27 +79,31 @@ flowchart TB
     IO --> ZEPHYR
 ```
 
-The C application in `firmware/afs_ecu/` uses AUTOSAR-inspired layers. The CAN communication slice builds for Zephyr 3.7 and reports `0x500` at 50 ms while holding `Safe_Default`; incoming `0x100`–`0x400` frames are validated with agreed timeouts and counter rules. The earlier LED image was flashed and confirmed. ECU `printk` diagnostics use RTT over the existing ST-Link SWD connection; the [RTT guide](firmware/docs/rtt_debugging.md) covers setup and startup. Servo/matrix control, CAN transceiver wiring, and physical CAN verification remain. See the [firmware guide](firmware/README.md), [wiring draft](docs/hardware/wiring-draft.md), [ECU design](docs/architecture/components/afs-ecu.md), and [target file layout](docs/temporary/desired_file_system.md).
+The C application in `firmware/afs_ecu/` uses AUTOSAR-inspired layers. The CAN communication slice builds for Zephyr 3.7 and reports `0x500` at 50 ms while holding `Safe_Default`; incoming `0x100`–`0x400` frames are validated with agreed timeouts and counter rules. ECU `printk` diagnostics use RTT over the existing ST-Link SWD connection. See the [firmware guide](firmware/README.md), [STM32 build and ST-Link flash guide](firmware/docs/stlink_build_flash.md), [RTT guide](firmware/docs/rtt_debugging.md), and [CAN interface setup and hardware tests](docs/hardware/can_interface.md). Servo/matrix control, CAN transceiver wiring, and physical CAN verification remain. Also see the [wiring draft](docs/hardware/wiring-draft.md), [ECU design](docs/architecture/components/afs-ecu.md), and [target file layout](docs/temporary/desired_file_system.md).
 
 ## Run on Linux
 
-Start the whole host-side system or launch components separately from the
-repository root.
+Start the whole host-side system or choose a component through the shared
+launcher from the repository root.
 
 | Component | Command |
 |---|---|
-| Full host system | `bash scripts/start_system.sh` |
-| Full host system with CAN | `bash scripts/start_system.sh --can-interface can0` |
-| MetaDrive runner | `bash scripts/start_runner.sh` |
-| Bridge | `bash scripts/start_bridge.sh` |
-| Native Dashboard | `bash scripts/start_dashboard.sh` |
-| Development visualizations | `bash scripts/start_visualization.sh` |
+| Full host system | `bash scripts/start.sh system` |
+| Full host system with CAN | `bash scripts/start.sh system --can-interface can0` |
+| MetaDrive runner | `bash scripts/start.sh runner` |
+| Bridge | `bash scripts/start.sh bridge` |
+| Native Dashboard | `bash scripts/start.sh dashboard` |
+| CAN monitor | `bash scripts/start.sh savvycan` |
+| Development visualizations | `bash scripts/start.sh visualization` |
 
 The system launcher starts the bridge, Dashboard, and MetaDrive runner, then
 stops the remaining processes if one exits. CAN stays disabled unless an
 interface is supplied. The STM32 runs on the board after it is flashed and
 powered; the launcher does not flash firmware. The visualizations are separate
-browser-based development aids. See [launch scripts](scripts/README.md),
+browser-based development aids. SavvyCAN is an optional separate CAN monitor;
+launch it with `bash scripts/start.sh savvycan`, then select SocketCAN and load
+the project DBC in its window. It does not start with the host system. See
+[project scripts](scripts/dialogue.md),
 [development commands](docs/development.md), and
 [verification](docs/verification/testing.md).
 
@@ -107,7 +111,7 @@ browser-based development aids. See [launch scripts](scripts/README.md),
 
 Run the matching focused entrypoint under `tests/scripts/` after changing a
 component, for example `bash tests/scripts/test_bridge.sh can socketcan`. The
-single root test command, `bash scripts/test_all.sh`, runs every standard
+single full-suite command, `bash tests/test_all.sh`, runs every standard
 software suite. The [central test tree](tests/README.md) lists test locations,
 and the [testing guide](docs/verification/testing.md) describes coverage and
 hardware limits.
@@ -120,5 +124,5 @@ hardware limits.
 | Gateway | [Bridge and SocketCAN](bridge/README.md) |
 | Dashboard | [Native Dashboard](dashboard/README.md) |
 | Firmware and rig | [AFS ECU](docs/architecture/components/afs-ecu.md) · [Wiring draft](docs/hardware/wiring-draft.md) · [Hardware](docs/hardware/hardware.md) |
-| Reference | [Documentation index](docs/README.md) · [System Visualization](tools/system_visualization/README.md) · [Hardware wiring view](tools/system_visualization/hardware-wiring/index.html) |
+| Reference | [Documentation index](docs/README.md) · [Troubleshooting index](docs/errors/README.md) · [System Visualization](tools/system_visualization/README.md) · [Hardware wiring view](tools/system_visualization/hardware-wiring/index.html) |
 | Contributors | [Agent guide](agents/README.md) |

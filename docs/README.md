@@ -19,7 +19,8 @@ All documented paths are relative to the repository root unless explicitly state
 11. [hardware/datasheets/README.md](hardware/datasheets/README.md) - downloaded component datasheets and unresolved model-specific references.
 12. [tools/tools.md](tools/tools.md) - tools and runtime environment.
 13. [verification/testing.md](verification/testing.md) - verification approach.
-14. [agents/README.md](../agents/README.md) - agent working guide and handoff entry point.
+14. [errors/README.md](errors/README.md) - component error records and verified fixes.
+15. [agents/README.md](../agents/README.md) - agent working guide and handoff entry point.
 
 ## System Snapshot
 
@@ -48,15 +49,18 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 | [architecture/components/headlights.md](architecture/components/headlights.md) | Headlight rig |
 | [can/README.md](can/README.md) | CAN contract |
 | [hardware/hardware.md](hardware/hardware.md) | Hardware |
+| [hardware/can_interface.md](hardware/can_interface.md) | SocketCAN interface setup, adapter loopback, bridge traffic, and physical CAN tests |
 | [hardware/wiring-draft.md](hardware/wiring-draft.md) | ECU wiring diagram and candidate pin map |
 | [../tools/system_visualization/hardware-wiring/index.html](../tools/system_visualization/hardware-wiring/index.html) | Selectable, schematic-style pin-level hardware wiring view |
 | [hardware/datasheets/README.md](hardware/datasheets/README.md) | Datasheets, source revisions, and documents awaiting exact part numbers |
 | [tools/tools.md](tools/tools.md) | Tools |
 | [verification/testing.md](verification/testing.md) | Testing |
+| [errors/README.md](errors/README.md) | Component troubleshooting and diagnosed error records |
 | [../tools/system_visualization/README.md](../tools/system_visualization/README.md) | System Visualization pages, Code graph, and functionality paths |
 | [temporary/desired_file_system.md](temporary/desired_file_system.md) | Target repository layout |
 | [temporary/linux_commands.md](temporary/linux_commands.md) | Common Linux network, USB, and SocketCAN commands |
 | [../firmware/docs/hardware_check.md](../firmware/docs/hardware_check.md) | ST-LINK and STM32F4 host-side connection checks |
+| [../firmware/docs/stlink_build_flash.md](../firmware/docs/stlink_build_flash.md) | Build the ECU image and check/flash it over ST-Link |
 | [../firmware/docs/rtt_debugging.md](../firmware/docs/rtt_debugging.md) | ECU RTT console setup, startup, and troubleshooting |
 | [Agent guide](../agents/README.md) | Agent rules, working context, and plans |
 
@@ -78,5 +82,6 @@ The gateway owns host CAN transport; STM32 owns final lighting decisions. This i
 
 - Keep architecture files concise and explanatory.
 - Keep CAN details under [can/](can/README.md); the DBC is the source of truth for message layouts.
+- Keep diagnosed project failures under [errors/](errors/README.md); link to authoritative setup guides and label unresolved causes clearly.
 - Keep agent rules, context, and planning under the root [agents/](../agents/README.md).
 - Add source skeletons incrementally with their implementation milestones.

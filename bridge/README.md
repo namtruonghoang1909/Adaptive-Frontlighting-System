@@ -1,6 +1,8 @@
 # C++ Vehicle / CAN Bridge
 
 Native Linux gateway between the Python simulation runner, Python Dashboard, and the CAN network.
+For diagnosed runtime issues, see [bridge errors](../docs/errors/bridge_errors.md),
+[IPC errors](../docs/errors/ipc_errors.md), and [CAN errors](../docs/errors/can_errors.md).
 
 The bridge is a C++17 application built with CMake. It owns Unix Domain Socket IPC and the host CAN boundary. Runner scene reception, Dashboard request/status IPC, per-message CAN scheduling (`0x100`/`0x200` every 20 ms, `0x300` every 100 ms, and `0x400` every 50 ms), Linux SocketCAN TX/RX, and `0x500 AFS_Status` decoding/forwarding are implemented. CAN is opt-in: the runner and Dashboard IPC servers can run without a CAN adapter, or `--can-interface NAME` binds the CAN worker to an already configured interface.
 
