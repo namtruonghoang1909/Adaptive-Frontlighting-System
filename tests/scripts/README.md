@@ -2,7 +2,7 @@
 
 This folder contains focused test entrypoints and their shared dispatcher. The
 component wrappers run only their selected suite; module arguments narrow the
-selection further. The root [`scripts/test_all.sh`](../../scripts/test_all.sh)
+selection further. The root [`tests/test_all.sh`](../../tests/test_all.sh)
 is the only command that starts every standard suite.
 
 | Script | What it runs |

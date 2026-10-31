@@ -4,8 +4,8 @@ Use this guide to find the command or script for each runnable part of the
 repository. Run commands from the repository root on Linux unless a section
 says otherwise.
 
-For step-by-step startup and observation instructions, see the
-[host launcher guide](../scripts/guide.md) and
+For script selectors and startup/check guidance, see the
+[project scripts guide](../scripts/dialogue.md) and
 [firmware script guide](../firmware/scripts/guide.md). They distinguish
 terminal logs, native windows, RTT output, and physical CAN observations.
 
@@ -13,21 +13,27 @@ terminal logs, native windows, RTT output, and physical CAN observations.
 
 | Script | Project part | What it does |
 |---|---|---|
-| `scripts/start_system.sh` | Whole host system | Starts the bridge, native Dashboard, and MetaDrive; optional `--can-interface NAME` enables CAN and any child exit stops the others. |
-| `scripts/start_runner.sh` | Simulation runner | Starts MetaDrive through its component-owned launcher. |
-| `scripts/start_bridge.sh` | C++ bridge | Starts the bridge; accepts `--can-interface NAME` for SocketCAN. |
-| `scripts/start_dashboard.sh` | Dashboard | Opens the native Dashboard through its component-owned launcher. |
-| `scripts/start_visualization.sh` | System Visualization | Starts the optional browser-based development visualization server. |
+| `scripts/start.sh system` | Whole host system | Starts the bridge, native Dashboard, and MetaDrive; optional `--can-interface NAME` enables CAN and any child exit stops the others. |
+| `scripts/start.sh runner` | Simulation runner | Starts MetaDrive through its component-owned launcher. |
+| `scripts/start.sh bridge` | C++ bridge | Starts the bridge; accepts `--can-interface NAME` for SocketCAN. |
+| `scripts/start.sh dashboard` | Dashboard | Opens the native Dashboard through its component-owned launcher. |
+| `scripts/start.sh savvycan` | CAN monitor | Opens the optional SavvyCAN GUI; choose SocketCAN and load the project DBC in its windows. |
+| `scripts/start.sh visualization` | System Visualization | Starts the optional browser-based development visualization server. |
+| `scripts/setup_system.sh --component NAME` | Project setup | Installs selected runner, firmware, or test dependencies into ignored project-local environments; supports `--dry-run`. |
+| `scripts/check.sh system` | Whole project | Checks software dependencies and reports CAN/ST-Link USB visibility without changing interfaces or accessing the STM32. |
+| `scripts/check.sh system --hardware` | CAN and ECU hardware | Checks the CAN adapter/interface and runs the ST-Link/OpenOCD target reachability check; resets, halts, and resumes the STM32 without flashing. |
+| `scripts/check.sh can [INTERFACE]` | CAN adapter | Read-only check for a recognized USB SocketCAN interface that is UP at 500 kbit/s and in `ERROR-ACTIVE`. |
+| `scripts/check.sh can-up [INTERFACE]` | CAN adapter | Configures a down CAN interface at 500 kbit/s normal mode and brings it up; leaves an already-up interface untouched. |
+| `scripts/check.sh ecu` | ECU hardware | Checks ST-Link USB access and SWD target reachability; resets, halts, and resumes the STM32 without flashing. |
 | `simulation_runner/scripts/check_simulation_requirements.sh` | Simulation runner | Checks the Python environment, MetaDrive imports and assets, and selected display requirements without launching MetaDrive. |
 | `simulation_runner/scripts/start_metadrive_simulation.sh` | Simulation runner | Launches `metadrive_runner` and forwards all runner options. Runner-to-bridge publishing starts automatically. |
 | `bridge/scripts/run_runner_bridge.sh` | C++ bridge | Configures and builds `afs_runner_bridge`, then runs the receiver in the foreground. |
 | `tests/can/bridge/frame_smoke/run_can_frame_smoke.sh` | C++ bridge / CAN | Runs headless MetaDrive through the diagnostic frame logger and independently checks captured payloads against the DBC with cantools. |
-| `dashboard/scripts/start_dashboard.sh` | Dashboard | Opens the native Tkinter Dashboard window with the configured Python environment. |
 | `firmware/scripts/build_firmware.sh` | Zephyr firmware | Builds the ECU CAN receive/status application for `black_f407ve`. |
 | `firmware/scripts/check_stlink.sh` | Zephyr firmware | Checks USB/SWD access and the no-NRST OpenOCD reset/halt sequence without flashing. |
 | `firmware/scripts/flash_firmware.sh` | Zephyr firmware | Repeats the ST-LINK check, then flashes with the project no-NRST OpenOCD config. |
 | `firmware/scripts/read_rtt.sh` | Zephyr firmware | Reads ECU `printk` diagnostics through ST-Link SWD and OpenOCD RTT. |
-| `scripts/test_all.sh` | All software components | Runs every standard software regression suite. |
+| `tests/test_all.sh` | All software components | Runs every standard software regression suite. |
 | `tests/scripts/test_<component>.sh` | One component | Runs focused tests; module arguments narrow the selection further. |
 | `tests/scripts/test_components.sh` | Test dispatcher | Selects a component or module suite; also used by the root full-suite script. |
 | `tools/system_visualization/start_system_visualization.sh` | System Visualization | Serves the Code graph, System in Action, high/low beam, CAN messages, and hardware wiring views on localhost. |
@@ -46,22 +52,22 @@ From the repository root, start the bridge, Dashboard, and MetaDrive runner
 together:
 
 ```bash
-bash scripts/start_system.sh
+bash scripts/start.sh system
 ```
 
 Pass `--can-interface can0` to enable SocketCAN on an interface that is already
 configured. Runner options go after `--`, for example
-`bash scripts/start_system.sh -- --headless --max-steps 100`. Press Ctrl+C to
+`bash scripts/start.sh system -- --headless --max-steps 100`. Press Ctrl+C to
 stop the host processes; if one exits, the launcher stops the others. To run
-only one host component, use `scripts/start_runner.sh`,
-`scripts/start_bridge.sh`, or `scripts/start_dashboard.sh`. The STM32 is
+only one host component, use `scripts/start.sh runner`,
+`scripts/start.sh bridge`, or `scripts/start.sh dashboard`. The STM32 is
 separately built and flashed using the scripts under `firmware/scripts/`.
 
 ## Run Component Tests
 
 Use the component entrypoint in [the test script guide](../tests/scripts/test_guide.md)
-for a focused regression check. Root `scripts/` has one test command,
-`bash scripts/test_all.sh`, which runs all standard software suites. The shared
+for a focused regression check. Run `bash tests/test_all.sh` for all standard
+software suites. The shared
 dispatcher also accepts component/module selectors; optional `bridge-vcan`
 requires a configured `vcan0`. The [central test tree](../tests/README.md) lists
 modules; the [testing guide](verification/testing.md) lists coverage and hardware
@@ -131,7 +137,7 @@ Dashboard marks retained ECU status stale after 250 ms without a valid report.
 The opt-in vcan integration test is described in
 [tests/README.md](../tests/README.md); physical adapter/ECU
 frame exchange and ECU validation remain pending; see the
-[host CAN bring-up steps](hardware/hardware.md#host-can-bring-up). See the
+[CAN interface setup and hardware tests](hardware/can_interface.md). See the
 [SocketCAN implementation notes](../bridge/src/can/README.md).
 
 ## Check The Receiver
@@ -231,7 +237,7 @@ viewer instructions are in
 Open the native Dashboard window from the repository root:
 
 ```bash
-bash dashboard/scripts/start_dashboard.sh
+bash scripts/start.sh dashboard
 ```
 
 The window needs a graphical Linux session and uses no localhost port. Start

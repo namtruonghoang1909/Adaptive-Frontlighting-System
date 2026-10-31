@@ -18,10 +18,10 @@ you changed instead of running the full software suite.
 | `bash tests/scripts/test_can.sh [bridge [MODULE...] \| ecu]` | Bridge CAN and ECU host CAN-service regression tests. |
 | `bash tests/scripts/test_launchers.sh` | Host launcher argument and dispatch checks. |
 | `bash tests/scripts/test_test_runner.sh` | Central test-tree and selector regression checks. |
-| `bash scripts/test_all.sh` | The one command that runs every standard software suite. |
+| `bash tests/test_all.sh` | The one command that runs every standard software suite. |
 
 Use `--help` on an entrypoint to see its arguments. The shared dispatcher in
-this directory runs one selected suite; root `scripts/test_all.sh` is the only
+this directory runs one selected suite; root `tests/test_all.sh` is the only
 all-suites command.
 
 ## Focused Examples

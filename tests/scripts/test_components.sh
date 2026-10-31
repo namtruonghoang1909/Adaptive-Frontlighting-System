@@ -10,7 +10,7 @@ usage() {
 Usage: bash tests/scripts/test_components.sh SUITE
 
 Run one component or focused component/module suite. Use
-bash scripts/test_all.sh to run every standard software suite.
+bash tests/test_all.sh to run every standard software suite.
 
 Suites:
   runner[/MODULE]             Runner tests, optionally one module

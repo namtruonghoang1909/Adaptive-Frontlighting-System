@@ -4,7 +4,7 @@
 
 From the repository root, use the component entrypoint listed in the
 [test script guide](../../tests/scripts/test_guide.md). Root `scripts/` has one
-test runner, `bash scripts/test_all.sh`, which runs all standard software suites.
+test runner, `bash tests/test_all.sh`, which runs all standard software suites.
 A failing command exits nonzero. The shared runner
 uses the configured MetaDrive Python
 environment, with a direct runner-test fallback when pytest is unavailable.

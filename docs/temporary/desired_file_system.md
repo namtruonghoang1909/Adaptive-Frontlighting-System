@@ -5,8 +5,8 @@ simulation code moved from the former all-Python `bridge/` into
 `simulation_runner/`; the C++ bridge and Python Dashboard now have runtime
 implementations. The firmware workspace and ECU CAN communication slice now
 exist under `firmware/`; actuator and feedback layers remain planned. The root
-`scripts/` directory contains individual host launchers and a combined launcher
-for the bridge, Dashboard, and MetaDrive runner. See the
+`scripts/` directory uses shared `start.sh` and `check.sh` dispatchers with
+focused helpers grouped under `boot_scripts/` and `check_scripts/`. See the
 [working context](../../agents/working-context.md) for current status.
 
 ```text
@@ -22,11 +22,14 @@ Adaptive-Frontlighting-System/
 |   |-- roadmap.md                    # proposed order and open decisions
 |   `-- plans/                         # component plans
 |-- scripts/                           # per-component and whole-host launchers
-|   |-- start_runner.sh                # start MetaDrive
-|   |-- start_bridge.sh                # start the C++ bridge
-|   |-- start_dashboard.sh             # open the native Dashboard
-|   |-- start_visualization.sh         # open development visualization
-|   `-- start_system.sh                # start bridge, Dashboard, and runner
+|   |-- start.sh                       # start system or component by argument
+|   |-- check.sh                       # check dependencies/hardware by argument
+|   |-- dialogue.md                   # scripts and selector documentation
+|   |-- boot_scripts/                  # focused startup implementations
+|   |-- check_scripts/                 # focused readiness implementations
+|   `-- setup_system.sh                # project-local dependency setup
+|-- tests/
+|   `-- test_all.sh                    # full software regression suite
 |-- simulation_runner/
 |   |-- README.md
 |   |-- runner.md                     # requirements, scripts, arguments, run examples

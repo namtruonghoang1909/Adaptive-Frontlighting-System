@@ -5,9 +5,11 @@ smoke scripts live under this repository-root `tests/` directory. Component
 implementation stays in its normal component folder. Tests shipped with the
 ignored upstream Zephyr, MetaDrive, or Python dependency checkouts are vendor
 tests and are not part of this project test tree.
+For test-runner and verification failures, see [test errors](../docs/errors/test_errors.md).
 
 ```text
 tests/
+├── test_all.sh              # full software regression suite
 ├── unix_socket/
 │   ├── runner_bridge/       # C++ receiver, Python peer, process smoke check
 │   └── dashboard_bridge/    # Dashboard command/status IPC
@@ -37,6 +39,7 @@ files cover. Start with the guide for the component you changed:
 | Dashboard | [`dashboard/README.md`](dashboard/README.md) |
 | Host launchers | [`launchers/README.md`](launchers/README.md) |
 | Simulation runner | [`runner/README.md`](runner/README.md) |
+| Full suite | [`test_all.sh`](test_all.sh) |
 | Focused test scripts | [`scripts/README.md`](scripts/README.md) and [`scripts/test_guide.md`](scripts/test_guide.md) |
 | Test-runner infrastructure | [`test_runner/README.md`](test_runner/README.md) |
 | Unix-socket IPC | [`unix_socket/README.md`](unix_socket/README.md) |
@@ -82,7 +85,7 @@ simulation/metadrive/metadrive_venv/bin/python -m pip install -r tests/requireme
 If cantools is installed in another Python environment, set `CANTOOLS_PYTHON`
 to that interpreter when running the frame smoke or the full suite.
 
-Use `bash scripts/test_all.sh` for every standard software suite, including the
+Use `bash tests/test_all.sh` for every standard software suite, including the
 headless CAN frame smoke with an independent DBC cross-check. This is the only
 command that starts every suite; focused scripts stay in `tests/scripts/`.
 Use `bash tests/scripts/test_components.sh bridge-vcan` only after configuring a
@@ -96,7 +99,7 @@ verification.
 |---|---|---|
 | Unix socket | [`unix_socket/`](unix_socket/) | Runner and Dashboard IPC framing, validation, reconnects, lifecycle, and process-level publisher/receiver behavior. |
 | Bridge CAN | [`can/bridge/`](can/bridge/) | Encoder, status decoder, SocketCAN conversion, optional vcan integration, and live DBC smoke modules. |
-| ECU CAN service | [`can/ecu/can_service/`](can/ecu/can_service/) | The firmware's actual decoder, RTE, fallback controller, and status encoder compiled for the host. |
+| ECU CAN service | [`can/ecu/can_service/`](can/ecu/can_service/) | The firmware's actual decoder, RTE, fallback controller, status encoder, and temporary CAN RX log formatter compiled for the host. |
 | Simulation runner | [`runner/`](runner/) | Ego/surrounding extraction, scene matching/storage, controls, lifecycle, scene display, and IPC projection. |
 | Dashboard | [`dashboard/`](dashboard/) | Operator command gating and presentation of fresh/stale ECU status. |
 | Visualization | [`visualization/`](visualization/) | Beam model, page interaction, CAN message view, and source timestamp behavior. |

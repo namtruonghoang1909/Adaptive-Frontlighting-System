@@ -22,7 +22,7 @@ Rules in this file apply to source code, configuration, and tests.
 - Treat tests as a required part of implementation. When changing behavior,
   add or update a focused regression case under the matching module in root
   `tests/`; then run the matching `tests/scripts/test_<component>.sh MODULE` and
-  the containing component suite. Run `bash scripts/test_all.sh` for
+  the containing component suite. Run `bash tests/test_all.sh` for
   cross-component changes and integration handoffs. Report the exact commands
   and results, including any suite that could not run. Do not describe an
   implementation as validated if its applicable tests were not run.

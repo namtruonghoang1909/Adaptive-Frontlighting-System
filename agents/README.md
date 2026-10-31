@@ -69,7 +69,7 @@ root full-suite command for cross-component changes:
 
 ```bash
 bash tests/scripts/test_runner.sh
-bash scripts/test_all.sh
+bash tests/test_all.sh
 ```
 
 The shorter `tests/scripts/test_*.sh` component entrypoints and their module examples

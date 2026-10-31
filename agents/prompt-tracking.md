@@ -13,6 +13,293 @@ Future agents should read this file with the rest of `agents/` before making cha
 
 ## Entries
 
+### 2026-10-31 - Move Full Test Runner Into The Central Test Tree
+
+**User prompt**
+
+User asked to remove test runners from root `scripts/`, rename its `README.md`
+to `dialogue.md` as the guide for scripts in that folder, remove the separate
+start/check guides, and place `test_all.sh` under root `tests/`.
+
+**Agent changes**
+
+- Moved the full-suite entrypoint to `tests/test_all.sh` and updated its
+  dispatcher path and usage text. Focused test commands remain under
+  `tests/scripts/`.
+- Renamed the root scripts guide to `scripts/dialogue.md`; removed
+  `scripts/start.md` and `scripts/check.md`; updated launcher help and project
+  documentation links.
+- Updated the test tree and agent handoff notes to describe the new ownership.
+
+**Files modified**
+
+- `scripts/`, `tests/test_all.sh`, `tests/README.md`, `tests/launchers/`,
+  `tests/scripts/`, `docs/`, `README.md`, `agents/`, and the Code graph source
+  inventory.
+
+**Verification**
+
+- `bash tests/scripts/test_launchers.sh` passes all 34 launcher and test-entrypoint
+  cases; `bash tests/scripts/test_test_runner.sh` passes all 7 central test-tree
+  checks. Shell syntax, full-runner help, and public launcher help pass.
+- Source inventory freshness and Code graph validation pass at 293 nodes. The
+  curated AFS runtime graph remains unchanged because script organization does
+  not change runtime behavior. Markdown links/fences and `git diff --check`
+  pass. Hardware checks were not run.
+
+### 2026-10-31 - Consolidate Root Start And Check Commands
+
+**User prompt**
+
+User asked for a single argument-driven `start.sh` and `check.sh`, with
+`start.md` and `check.md` beside them. They chose two public dispatchers and
+asked to group focused helper scripts under `boot_scripts/` and
+`check_scripts/`.
+
+**Agent changes**
+
+- Added `scripts/start.sh COMPONENT [OPTIONS...]` for system, runner, bridge,
+  Dashboard, SavvyCAN, and visualization startup. Moved its focused helpers to
+  `scripts/boot_scripts/`.
+- Added `scripts/check.sh CHECK [OPTIONS...]` for software/system readiness,
+  read-only CAN adapter checks, CAN interface bring-up, and ST-Link-to-ECU
+  reachability. Moved its focused helpers to `scripts/check_scripts/`.
+- Kept `scripts/setup_system.sh` and `scripts/test_all.sh` as separate tasks.
+  Added `scripts/start.md` and `scripts/check.md` with selectors, arguments,
+  and hardware effects; updated project documentation and helper usage.
+- Added mocked dispatcher tests for selector routing and argument forwarding.
+  Updated the Code graph source paths for the moved startup helpers; its AFS
+  runtime model and ordered AFS paths remain unchanged.
+
+**Files modified**
+
+- `scripts/start.sh`, `scripts/check.sh`, `scripts/boot_scripts/`,
+  `scripts/check_scripts/`, `scripts/start.md`, `scripts/check.md`,
+  `scripts/README.md`, `scripts/setup_system.sh`,
+  `tests/launchers/test_launchers.py`, `tests/launchers/README.md`, `README.md`,
+  `docs/development.md`, `docs/hardware/can_interface.md`, `docs/can/README.md`,
+  `docs/errors/`, `docs/temporary/desired_file_system.md`, `dashboard/README.md`,
+  `firmware/docs/hardware_check.md`, `agents/working-context.md`,
+  `tools/system_visualization/code-graph/`, and `agents/prompt-tracking.md`.
+
+**Verification**
+
+- Shell syntax and Python compilation pass; the launcher suite passes 34 tests,
+  including mocked argument forwarding. `bash scripts/check.sh system --headless`
+  reports zero failures and three warnings here: no CAN adapter, no ST-Link, and
+  missing `cantools` in this environment.
+- Code inventory (294 nodes), Code graph validation and JavaScript syntax,
+  changed Markdown links/fences, and `git diff --check` pass. The hardware
+  reachability check was not run because OpenOCD resets and resumes the ECU.
+
+### 2026-10-31 - Add Project Setup And Hardware Readiness Checks
+
+**User prompt**
+
+User requested setup and check scripts alongside the start scripts, and
+clarified the hardware checks: CAN must confirm Linux recognized the USB
+adapter and `can0` is online; ECU must confirm ST-Link presence and that it can
+reach the STM32. Earlier in the same work, user renamed the interface
+configuration helper to `can_interface_check.sh` and asked for component error
+records under `docs/errors/`.
+
+**Agent changes**
+
+- Added `scripts/can_interface_check.sh`: it verifies the selected SocketCAN
+  netdev, configures a down interface for 500 kbit/s normal mode, and leaves an
+  already-up interface untouched. Its host-side tests use mocked `ip` and
+  `sudo` commands.
+- Added `scripts/check_can.sh` for read-only USB-backed SocketCAN recognition,
+  UP state, bitrate, driver, and `ERROR-ACTIVE` checks. It fails if the USB
+  parent cannot be confirmed. Added `scripts/check_system.sh` for host
+  dependency checks, default read-only CAN/ST-Link visibility, and an explicit
+  `--hardware` mode that runs OpenOCD reset/halt/resume to check ECU reachability.
+- Added `scripts/setup_system.sh` to prepare selected runner, test, or firmware
+  dependencies under ignored project-local directories. It does not call apt
+  or sudo and provides `--dry-run`; firmware setup can download several GB.
+- Added a `docs/errors/` index and troubleshooting pages for CAN, bridge, IPC,
+  simulation runner, Dashboard, ECU firmware, ST-Link/OpenOCD, bench hardware, scripts,
+  visualization, and tests. Recorded the observed CAN `ENOBUFS`, passive-bus,
+  local-loopback/SavvyCAN, ECU `-11`/`-114`, USB permission, and target-halt
+  symptoms while preserving uncertainty where the cause is not established.
+- Linked the error index from the root and component documentation. Kept the
+  detailed loopback, physical CAN, USB permission, and RTT procedures in their
+  existing hardware guides and linked to them from the error records.
+
+**Files modified**
+
+- `scripts/can_interface_check.sh`, `scripts/README.md`, `scripts/guide.md`,
+  `scripts/check_can.sh`, `scripts/check_system.sh`, `scripts/setup_system.sh`,
+  `tests/launchers/test_launchers.py`, `docs/errors/`, component READMEs,
+  `docs/README.md`, `docs/hardware/can_interface.md`, `firmware/docs/hardware_check.md`,
+  `README.md`, `agents/working-context.md`, and `agents/prompt-tracking.md`.
+
+**Verification**
+
+- Launcher suite passes (31 tests), including eight mocked CAN configuration
+  cases and eight mocked read-only CAN readiness cases, including rejection of
+  a non-USB CAN interface. Runner (45), Dashboard
+  (9), ECU host CAN (6), Zephyr build, CAN encoder (2), test-tree (7), and
+  visualization (4 Node suites) checks pass. The full suite reaches bridge
+  CTest but three Unix-socket cases fail because this execution environment
+  denies socket binds (`Operation not permitted`); four other bridge CTests pass.
+- Setup dry-runs pass for runner and firmware. The read-only system check passes
+  software checks but reports absent CAN/ST-Link hardware and missing cantools
+  in this execution environment. Code inventory (290 nodes), graph validation,
+  shell syntax, documentation links/fences, and `git diff --check` pass. No
+  OpenOCD hardware check was run because it resets and resumes the STM32.
+
+### 2026-10-31 - Install And Bind Local SavvyCAN
+
+**User prompt**
+
+User asked to install SavvyCAN and bind its path to the project launcher.
+
+**Agent changes**
+
+- Downloaded the official SavvyCAN V220 x86-64 AppImage into the ignored local
+  `.tools/savvycan/` directory and extracted it because this Ubuntu environment
+  does not have `libfuse.so.2`.
+- Updated `scripts/start_savvycan.sh` to find the extracted local `AppRun` after
+  checking `PATH`; `SAVVYCAN_BIN` remains the explicit override.
+- Added a launcher regression case and documented the local install and
+  resolution order. No system-wide packages were changed.
+
+**Files modified**
+
+- `.gitignore`, `.tools/savvycan/`, `scripts/start_savvycan.sh`,
+  `scripts/guide.md`, `scripts/README.md`, `tests/launchers/test_launchers.py`,
+  `agents/working-context.md`, and `agents/prompt-tracking.md`.
+
+**Verification**
+
+- `bash -n scripts/start_savvycan.sh` and
+  `bash tests/scripts/test_launchers.sh` pass; the launcher/test-script suite
+  ran 13 tests. The AppImage runtime reports version `8bbf694`.
+- The launcher resolves and invokes the local `AppRun`, but this command
+  environment has no `DISPLAY`, so it cannot show the GUI. Interactive
+  rendering and SocketCAN connection need checking from the Ubuntu desktop.
+- The source inventory and graph validation pass. The curated AFS graph remains
+  unchanged because the optional monitor does not participate in runtime AFS
+  data flow. `git diff --check` passes.
+
+### 2026-10-31 - Log Received ECU CAN Frames Over RTT
+
+**User prompt**
+
+User requested that the ECU print received CAN messages during the current
+hardware testing phase.
+
+**Agent changes**
+
+- Added compile-time-controlled `CONFIG_AFS_CAN_RX_LOGGING`; the current bench
+  configuration enables it and prints each dequeued frame's standard ID, DLC,
+  and payload over RTT before the existing decoder runs.
+- Kept formatting in a small pure function and added host regression coverage
+  for data frames, remote frames, invalid input, and short buffers.
+- Documented the expected RTT output and how to disable logging after bench
+  testing; refreshed the Code graph inventory and ECU flow descriptions.
+
+**Files modified**
+
+- `firmware/afs_ecu/Kconfig`, `firmware/afs_ecu/CMakeLists.txt`,
+  `firmware/afs_ecu/prj.conf`,
+  `firmware/afs_ecu/include/afs/bsw/services/communication/can_rx_log.h`,
+  `firmware/afs_ecu/src/bsw/services/communication/can_rx_log.c`,
+  `firmware/afs_ecu/src/application/afs_ecu_application.c`,
+  `firmware/README.md`, `firmware/scripts/guide.md`,
+  `tests/can/ecu/can_service/CMakeLists.txt`,
+  `tests/can/ecu/can_service/afs_ecu_logic_test.c`, `tests/can/README.md`,
+  `tests/README.md`, `agents/working-context.md`,
+  `agents/prompt-tracking.md`, and
+  `tools/system_visualization/code-graph/`.
+
+**Verification**
+
+- `CCACHE_DISABLE=1 bash tests/scripts/test_firmware.sh` passes all six ECU
+  host tests and builds the Zephyr `black_f407ve` target.
+- Code graph inventory check and validation pass; changed JavaScript parses and
+  `git diff --check` passes. Physical RTT/CAN output remains to be checked on
+  the user's board.
+
+### 2026-10-31 - Split ST-Link And CAN Hardware Guides
+
+**User prompt**
+
+User asked for two separate Markdown guides covering STM32 building/flashing
+over ST-Link and CAN interface setup.
+
+**Agent changes**
+
+- Added `firmware/docs/stlink_build_flash.md` for firmware build options,
+  non-flashing ST-Link checks, flashing, and expected results.
+- Added `docs/hardware/can_interface.md` for adapter detection, bitrate and
+  interface setup, loopback, bridge traffic, SavvyCAN, and physical bus checks.
+- Kept the ST-Link hardware check focused on Linux USB access and SWD wiring;
+  linked the focused guides from the project and component documentation.
+- Removed duplicate CAN commands from the hardware overview and launcher
+  guide, and updated references to the dedicated CAN guide.
+
+**Files modified**
+
+- `firmware/docs/stlink_build_flash.md`, `docs/hardware/can_interface.md`,
+  `firmware/docs/hardware_check.md`, `firmware/README.md`,
+  `docs/hardware/hardware.md`, `docs/README.md`, `docs/can/README.md`,
+  `docs/development.md`, `docs/temporary/linux_commands.md`, `scripts/guide.md`,
+  `firmware/scripts/guide.md`, `README.md`, `agents/working-context.md`, and
+  `agents/prompt-tracking.md`.
+
+**Verification**
+
+- Changed Markdown links and fences pass; no references to the removed
+  hardware-guide anchor remain. `git diff --check` passes.
+
+### 2026-10-31 - Add Optional SavvyCAN Monitor Launcher
+
+**User prompt**
+
+User asked to integrate SavvyCAN into the CAN branch for CAN testing and chose
+an optional standalone launcher with manual SocketCAN interface selection.
+They also asked for the CAN interface bring-up command beside the hardware and
+monitoring instructions.
+
+**Agent changes**
+
+- Added `scripts/start_savvycan.sh` to find SavvyCAN on `PATH` or through
+  `SAVVYCAN_BIN`, print the project DBC path, and open the GUI without passing
+  unsupported command-line arguments.
+- Kept SavvyCAN separate from `scripts/start_system.sh`; users select SocketCAN
+  and load the DBC inside the application.
+- Documented the normal-mode bitrate setup and `sudo ip link set can0 up` step
+  beside both the SavvyCAN instructions and hardware CAN bring-up section.
+- Documented launch and connection steps and added launcher regression tests.
+- Regenerated the Code graph source inventory. The curated AFS graph remains
+  unchanged because SavvyCAN is an optional external monitor and does not alter
+  the system runtime data or control path.
+
+**Files modified**
+
+- `scripts/start_savvycan.sh`, `scripts/README.md`, `scripts/guide.md`,
+  `README.md`, `docs/can/README.md`, `docs/development.md`,
+  `docs/hardware/hardware.md`, `tests/launchers/`,
+  `agents/working-context.md`, `agents/prompt-tracking.md`, and
+  `tools/system_visualization/code-graph/code-index.js`.
+
+**Verification**
+
+- `bash -n scripts/start_savvycan.sh` and
+  `bash tests/scripts/test_launchers.sh` pass; the launcher suite ran 12 tests,
+  including override, default command lookup, missing-executable, and help cases.
+- `bash tests/scripts/test_test_runner.sh` passes 7 tests, and
+  `bash tests/scripts/test_bridge.sh can socketcan` passes 1/1 conversion test.
+- The source inventory is current at 282 nodes; graph validation and syntax
+  checks pass. Documentation checks pass for 124 local links, fenced-code
+  parity, and `git diff --check`.
+- SavvyCAN is not installed in this execution environment, so its GUI and
+  physical SocketCAN connection still need verification on the user's Linux
+  machine.
+
+
 ### 2026-10-30 - Add Test-Area Readmes
 
 **User prompt**
@@ -125,238 +412,3 @@ way to validate changes.
   runner 4. Unix socket tests ran with the required local socket permission.
 - Shell syntax, `git diff --check`, source inventory freshness, and Code graph
   validation pass. Physical CAN and MCU checks remain outside host tests.
-
-### 2026-10-30 - Document Launch Scripts And Result Observation
-
-**User prompt**
-
-User asked for guides describing what the current scripts start and how to
-observe their results, and reported that the hardware is now available.
-
-**Agent changes**
-
-- Added a host launcher guide explaining the combined and standalone processes,
-  terminal/window output, SocketCAN monitoring, controller-loopback limits,
-  and the no-bus CAN frame smoke command.
-- Added a firmware script guide for build, ST-Link check, flash, RTT, and ECU
-  CAN-status observations; linked both guides from the script indexes.
-- Recorded hardware availability and the next physical verification steps in
-  the working context.
-
-**Files modified**
-
-- `scripts/README.md`, `scripts/guide.md`, `firmware/scripts/guide.md`,
-  `firmware/README.md`, `docs/development.md`, `agents/working-context.md`,
-  and `agents/prompt-tracking.md`.
-
-**Verification**
-
-- Relative Markdown links, fenced blocks, the ten-entry history limit, and
-  `git diff --check` pass. No hardware commands are run from this environment.
-
-### 2026-10-26 - Consolidate Firmware Workspace And Add Host Launchers
-
-**User prompt**
-
-User asked to keep Zephyr and ECU-related files under `firmware/`, then asked for
-separate component start scripts and one script to start the host system.
-
-**Agent changes**
-
-- Moved the local west metadata and ignored Zephyr/module/tool checkouts into
-  `firmware/`; moved the tracked manifest beside the ECU app and updated west
-  configuration, ignore rules, and firmware wrappers.
-- Added root launchers for the runner, bridge, Dashboard, and visualization, plus
-  `scripts/start_system.sh` for bridge + Dashboard + MetaDrive with sibling
-  shutdown. Added launcher checks and updated project/agent documentation.
-
-**Files modified**
-
-- `.gitignore`, `firmware/`, `scripts/`, `tests/scripts/test_components.sh`,
-  `tools/system_visualization/code-graph/`, `README.md`, `docs/development.md`,
-  `docs/verification/testing.md`, `docs/temporary/desired_file_system.md`, and
-  `agents/`.
-
-**Verification**
-
-- West reports `firmware/` as the workspace root; manifest validation and `west list` resolve Zephyr, modules, and tools under that directory.
-- Four launcher tests pass; the ECU suite passes five host cases and a clean STM32 build; visualization model tests and Code graph validation pass. Shell syntax and `git diff --check` pass.
-- The old ignored build cache had an absolute Zephyr path from before relocation; after removing that generated cache, a pristine build succeeded with `--no-ccache`. No hardware was flashed or accessed.
-
-### 2026-10-26 - Add Component Regression Suites
-
-**User prompt**
-
-User requested test cases for each project component and a repeatable test
-command to run after changing a component.
-
-**Agent changes**
-
-- Added ECU host tests for CAN counters, frame validation, Dashboard command
-  policy, freshness and fallback, and `0x500` status encoding. The ECU suite
-  also builds the Zephyr image.
-- Added headless Dashboard command and power/mode tests. Retained existing
-  runner, bridge, Dashboard status, and visualization suites.
-- Added `tests/scripts/test_components.sh` to run one component or all software suites,
-  documented commands and coverage, and made component testing a code-change
-  rule. Physical interface checks remain a separate hardware gate.
-
-**Files modified**
-
-- `firmware/tests/`, `dashboard/tests/`, `tests/scripts/test_components.sh`,
-  `tools/system_visualization/code-graph/code-index.js`, component READMEs,
-  `README.md`, `docs/development.md`, `docs/verification/testing.md`,
-  `docs/tools/tools.md`, `tools/README.md`, `agents/README.md`,
-  `agents/rules/coding.md`, `agents/working-context.md`, and
-  `agents/prompt-tracking.md`.
-
-**Verification**
-
-- The unified `all` command passes: 45 runner tests, eight bridge CTest cases,
-  nine Dashboard tests, five ECU host cases and an STM32 build, and 37
-  visualization tests plus graph validation. Bridge IPC cases needed permitted
-  Unix socket binding outside the execution sandbox.
-- Interactive Code graph inspection could not run because the Snap Firefox
-  launcher requires the unavailable `snapd.apparmor` service; the graph
-  inventory and validator pass.
-- Physical CAN/SWD/RTT and actuator behavior are not covered by host tests.
-
-### 2026-10-26 - Document ECU RTT Setup And Startup
-
-**User prompt**
-
-User requested documentation explaining how to set up and start the RTT tool.
-
-**Agent changes**
-
-- Added a dedicated ECU RTT guide covering Zephyr SDK/OpenOCD and `nc`
-  prerequisites, ST-Link checks, build/flash/start commands, expected output,
-  local port override, and common failures.
-- Linked the guide from the firmware, hardware-check, development, root, and
-  docs-index pages, and corrected the docs-index firmware status.
-
-**Files modified**
-
-- `firmware/docs/rtt_debugging.md`, `firmware/README.md`,
-  `firmware/docs/hardware_check.md`, `docs/development.md`, `docs/README.md`,
-  `README.md`, `agents/working-context.md`, and `agents/prompt-tracking.md`.
-
-**Verification**
-
-- Documentation links, fenced command blocks, and whitespace checked. Hardware
-  RTT output remains unverified in this environment.
-
-### 2026-10-26 - Route ECU Diagnostics Through RTT
-
-**User prompt**
-
-User chose RTT for ECU diagnostics over the existing ST-Link SWD connection.
-
-**Agent changes**
-
-- Enabled Zephyr's SEGGER RTT console for the ECU's existing `printk` messages
-  and disabled the UART console.
-- Added `firmware/scripts/read_rtt.sh` to start the SDK OpenOCD RTT server and
-  read channel 0 on a local terminal.
-- Documented the build, flash, reader, and board-reset sequence; updated the
-  Code graph's firmware descriptions.
-
-**Files modified**
-
-- `firmware/afs_ecu/prj.conf`, `firmware/scripts/read_rtt.sh`,
-  `firmware/README.md`, `firmware/docs/hardware_check.md`, `README.md`,
-  `docs/development.md`, `agents/working-context.md`,
-  `agents/prompt-tracking.md`, and `tools/system_visualization/code-graph/`.
-
-**Verification**
-
-- A pristine Zephyr 3.7 `black_f407ve` build passes with RTT console enabled,
-  UART console disabled, and the RTT control block in normal SRAM.
-- Shell syntax passes. The reader cannot connect to the physical ST-Link in
-  this environment; it reports OpenOCD's `open failed` error. Physical RTT
-  output must be checked after flashing in the user's Ubuntu VM.
-- Code inventory freshness, graph validation, JavaScript syntax, and whitespace
-  checks pass. Firefox could not open the interactive viewer because the Snap
-  launcher requires the unavailable `snapd.apparmor` service.
-
-### 2026-10-26 - Implement STM32 ECU CAN Communication Slice
-
-**User prompt**
-
-User approved the AUTOSAR-inspired firmware structure and requested the first
-STM32 CAN milestone: communication and status only, with outputs held at safe
-fallback until actuator drivers exist. User selected a 200 ms Dashboard
-command timeout and a modulo-16 alive-counter policy.
-
-**Agent changes**
-
-- Implemented Zephyr CAN2 receive and transmit abstraction, standard-frame RX
-  queue, shared DBC decoding/packing, validation for `0x100`–`0x400`, RTE-style
-  input/status storage, freshness supervision, and periodic `0x500` status.
-  Rejected frames invalidate that input immediately; RX overflow drops queued
-  backlog and invalidates every input until new frames arrive.
-- Configured CAN2 for 500 kbit/s and kept outputs explicitly in
-  `Safe_Default`, reporting beam/servo control unavailable.
-- Documented timeouts: speed/steering 100 ms, object grid 250 ms, and valid
-  Dashboard command 200 ms. Alive-counter deltas 1–8 are accepted; duplicates
-  and deltas 9–15 are rejected; restart baseline is allowed after 500 ms with
-  no accepted frame.
-- Removed the obsolete standalone LED demo; the application loop keeps the
-  board LED as a 500 ms heartbeat.
-- Updated the project guides and synchronized the Code graph and ordered
-  firmware communication path.
-
-**Files modified**
-
-- `firmware/afs_ecu/`, `firmware/README.md`,
-  `firmware/docs/hardware_check.md`, `README.md`, `docs/architecture/`,
-  `docs/can/`, `docs/development.md`, `docs/hardware/hardware.md`,
-  `docs/temporary/desired_file_system.md`, `agents/roadmap.md`,
-  `agents/working-context.md`, `agents/prompt-tracking.md`, and
-  `tools/system_visualization/code-graph/`.
-
-**Verification**
-
-- Zephyr 3.7 `black_f407ve` firmware build passes; no project tests were run.
-- Physical CAN transceiver wiring, flashing of this CAN image, and CAN bus
-  receive/status exchange remain pending.
-- Code inventory and graph validation pass. Interactive viewer inspection
-  could not run because the Firefox Snap launcher refuses to start without the
-  unavailable `snapd.apparmor` service.
-
-### 2026-10-25 - Verify CAN Adapter And Bridge Loopback
-
-**User prompt**
-
-User confirmed that flashing succeeded and the board LED blinks, then provided
-the USB-CAN adapter and bridge controller-loopback results.
-
-**Agent changes**
-
-- Updated project status to mark ST-Link flashing and the board LED as verified.
-- Recorded that the Ubuntu VM detects the USB-CAN adapter as `can0` with
-  `gs_usb`, accepts 500 kbit/s, and passes controller loopback; `candump` showed
-  a TX echo and matching RX frame for `123#DEADBEEF`.
-- Confirmed bridge frames `0x100`–`0x400` appear as matching TX/RX loopback
-  entries with counters advancing at the configured periods. Signal values are
-  fail-closed because no runner or Dashboard source was connected.
-- Documented that the reported `ENOBUFS` warning still needs interface-counter
-  diagnosis; physical-bus validation with an active peer remains pending.
-
-**Files modified**
-
-- `README.md`, `agents/roadmap.md`, `agents/working-context.md`,
-- `agents/plan/feat-bridge-socketcan.md`,
-  `docs/architecture/components/afs-ecu.md`,
-  `docs/architecture/data-flow.md`, `docs/architecture/overview.md`,
-  `docs/development.md`, `docs/hardware/hardware.md`,
-  `docs/temporary/desired_file_system.md`, `docs/temporary/linux_commands.md`,
-  `docs/verification/testing.md`, `firmware/README.md`,
-  `firmware/docs/hardware_check.md`, and `agents/prompt-tracking.md`.
-
-**Verification**
-
-- The user confirmed adapter controller loopback and bridge `0x100`–`0x400`
-  transmission through it. Physical bus exchange and diagnosis of the reported
-  `ENOBUFS` warning remain pending. This execution environment cannot access
-  the user's USB device or CAN netlink socket; no project test suites were run.

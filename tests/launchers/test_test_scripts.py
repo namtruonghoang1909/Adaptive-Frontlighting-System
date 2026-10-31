@@ -36,17 +36,25 @@ class TestScriptLauncherTests(unittest.TestCase):
                 self.assertIn("Usage:", result.stdout)
                 self.assertNotIn("==>", result.stdout)
 
-    def test_root_scripts_has_only_the_full_suite_test_entrypoint(self) -> None:
+    def test_full_suite_runner_lives_in_tests(self) -> None:
         root_test_scripts = sorted(
             path.name
             for path in (REPOSITORY / "scripts").glob("test_*")
             if path.is_file()
         )
-        self.assertEqual(root_test_scripts, ["test_all.sh"])
+        self.assertEqual(root_test_scripts, [])
+        self.assertTrue((REPOSITORY / "tests" / "test_all.sh").is_file())
+
+    def test_root_script_guide_replaces_readme_and_selector_guides(self) -> None:
+        scripts = REPOSITORY / "scripts"
+        self.assertTrue((scripts / "dialogue.md").is_file())
+        for obsolete in ("README.md", "start.md", "check.md"):
+            with self.subTest(file=obsolete):
+                self.assertFalse((scripts / obsolete).exists())
 
     def test_full_suite_entrypoint_has_help_without_running_a_suite(self) -> None:
         result = subprocess.run(
-            ["bash", "scripts/test_all.sh", "--help"],
+            ["bash", "tests/test_all.sh", "--help"],
             cwd=REPOSITORY,
             capture_output=True,
             check=False,
@@ -54,7 +62,7 @@ class TestScriptLauncherTests(unittest.TestCase):
             timeout=5,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Usage: bash scripts/test_all.sh", result.stdout)
+        self.assertIn("Usage: bash tests/test_all.sh", result.stdout)
         self.assertNotIn("==>", result.stdout)
 
     def test_component_entrypoints_route_unknown_modules_to_their_suite(self) -> None:
