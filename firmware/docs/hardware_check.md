@@ -1,8 +1,14 @@
 # Firmware Hardware Check
 
 This guide checks the ST-LINK/V2 connection from Ubuntu to the STM32F407VET6.
-It separates USB detection, OpenOCD access to the probe, SWD access to the
-target, and writing firmware.
+It verifies USB detection, OpenOCD access to the probe, and SWD access to the
+target. Build and flash steps are in the separate
+[ST-Link build and flash guide](stlink_build_flash.md).
+For recorded permission and target-halt failures, see the project
+[ST-Link error log](../../docs/errors/stlink_errors.md).
+The combined host check is `bash scripts/check.sh system --hardware`; it checks
+the CAN interface and then runs this ST-Link-to-target probe. OpenOCD resets,
+halts, and resumes the STM32, but does not flash it.
 
 ## Check The ST-LINK And Target
 
@@ -59,37 +65,10 @@ If OpenOCD opens the ST-LINK but cannot examine the MCU, verify:
   declare an external reset wire. Connecting NRST can still help recover a
   target that cannot be reached through normal SWD.
 
-## Flash The Blink Image
+## Next Steps
 
-After the reset/halt check succeeds, flash the already-built image from the
-repository root. The wrapper repeats the check and selects the same
-project-owned OpenOCD config before flashing:
-
-```bash
-bash firmware/scripts/flash_firmware.sh
-```
-
-This command erases and writes the STM32 flash. The earlier LED-blink app was
-flashed and its board LED was confirmed working. The current Zephyr image also
-contains the ECU CAN communication/status slice. After CAN2 is physically wired
-through the transceiver to the adapter, configure the host bus at 500 kbit/s
-and inspect traffic with:
-
-```bash
-ip -details link show can0
-candump -tz -x can0
-```
-
-Expect bridge-originated IDs `100`, `200`, `300`, and `400`, and the ECU's
-`500` status frame about every 50 ms. With the current firmware, `0x500`
-reports `Safe_Default` and unavailable beam/servo control paths. Seeing a
-frame proves CAN bus communication only; physical CANH/CANL exchange, ECU
-transceiver wiring, and lamp behavior must be verified separately. The firmware
-does not yet implement AFS actuation.
-
-To inspect ECU startup and error messages through the same four SWD wires,
-flash the current RTT-enabled image and run `bash firmware/scripts/read_rtt.sh`.
-Reset the board after the reader connects for startup messages. Stop the reader
-before flashing or attaching GDB; only one OpenOCD process can use the ST-Link
-at a time. See the [RTT setup guide](rtt_debugging.md) for the full sequence and
-troubleshooting steps.
+Once Linux can access the probe and OpenOCD can identify the target, follow the
+[STM32 build and flash guide](stlink_build_flash.md) to build the application,
+check the probe, and program the board. For startup output, see the
+[RTT debugging guide](rtt_debugging.md). For CAN adapter configuration and bus
+checks, use the repository's [CAN interface guide](../../docs/hardware/can_interface.md).

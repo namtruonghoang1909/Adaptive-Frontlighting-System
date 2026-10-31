@@ -7,6 +7,8 @@ freshness, and reports `0x500 AFS_Status`. Physical beam and servo control is
 not implemented; the application reports `Safe_Default` and unavailable
 control paths until those drivers are added. The board LED remains a 500 ms
 heartbeat for bring-up.
+For diagnosed firmware issues, see [ECU firmware errors](../docs/errors/firmware_errors.md)
+and [ST-Link/OpenOCD errors](../docs/errors/stlink_errors.md).
 
 ## Workspace Layout
 
@@ -22,6 +24,8 @@ heartbeat for bring-up.
 
 For each build, ST-Link, flash, and RTT script's expected result, see the
 [firmware script guide](scripts/guide.md).
+For the complete STM32 build and ST-Link flashing sequence, see
+[Build and flash with ST-Link](docs/stlink_build_flash.md).
 
 `requirements.txt` pins west to 1.2.0. The build uses Zephyr SDK 0.16.8 and the
 `black_f407ve` board target. Zephyr's board definition matches the STM32F407VET6,
@@ -144,7 +148,13 @@ bash firmware/scripts/read_rtt.sh
 The reader uses the SDK's OpenOCD and `nc` (netcat). Reset the STM32 after it
 connects to see startup messages; press Ctrl+C to stop it. Close an active flash
 or GDB session before starting the reader because OpenOCD needs exclusive
-access to the ST-Link. The current firmware does not print every CAN frame.
+access to the ST-Link. The current bench-test build enables
+`CONFIG_AFS_CAN_RX_LOGGING=y`, so RTT prints each received frame's ID, DLC, and
+payload before decoding it. This creates frequent output while CAN traffic is
+active. Set the option to `n` in `afs_ecu/prj.conf`, then rebuild pristine and
+flash to disable this temporary instrumentation. See the
+[firmware script guide](scripts/guide.md#read-ecu-messages-over-rtt) for an
+example log line.
 
 Other useful Zephyr commands, run from the repository root:
 
@@ -154,25 +164,18 @@ Other useful Zephyr commands, run from the repository root:
 (cd firmware && .venv/bin/west debug -d build)
 ```
 
-## Check And Flash The Board
+## Build And Flash The Board
 
-First run the non-flashing ST-Link/target check described in
-[docs/hardware_check.md](docs/hardware_check.md):
+Use the focused [STM32 build and ST-Link flashing guide](docs/stlink_build_flash.md)
+for prerequisites, build options, the non-flashing probe check, flash behavior,
+and expected results. The quick commands from the repository root are:
 
 ```bash
+bash firmware/scripts/build_firmware.sh
 bash firmware/scripts/check_stlink.sh
-```
-
-The check performs a software reset, confirms that OpenOCD halts the core, and
-resumes it. It does not erase or program flash. The flash wrapper repeats this
-check and selects the same project OpenOCD configuration:
-
-```bash
 bash firmware/scripts/flash_firmware.sh
 ```
 
-Flashing erases and writes the STM32. The wrapper also accepts West flash
-options after its name. The current image runs CAN RX/decode and `0x500` status
-transmission, with the `led0` devicetree-selected LED as a 500 ms heartbeat. The
-earlier LED-only image was flashed and confirmed on the physical board; flash
-and CAN-bus verification of this new image are still pending.
+The build creates the image; the probe check does not write flash; flashing
+erases and programs the STM32. CAN adapter setup and physical bus testing are
+documented separately in the [CAN interface guide](../docs/hardware/can_interface.md).

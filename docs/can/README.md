@@ -103,6 +103,13 @@ The Dashboard consumes decoded values and enums from gateway IPC. It does not lo
 
 Open and edit `bridge/can/afs.dbc` in Vector CANdb++. Use SavvyCAN to view CAN traffic and decode frames using that DBC. SavvyCAN can connect to a Linux SocketCAN interface such as `vcan0` for virtual traffic or `can0` for a physical adapter. A USB-CAN adapter for the Linux host must expose SocketCAN to work with the gateway and this monitoring setup.
 
+For Linux adapter enumeration, bitrate configuration, controller-loopback
+checks, and physical-bus verification, follow the [CAN interface hardware guide](../hardware/can_interface.md).
+For recorded failures such as `ENOBUFS`, `ERROR-PASSIVE`, local loopback echoes,
+or a blank SavvyCAN view, see [CAN errors](../errors/can_errors.md).
+
+Launch the optional monitor from the repository root with `bash scripts/start.sh savvycan`. It opens the GUI but does not select an interface or pass the DBC as a command-line argument. In SavvyCAN, create a **QT SerialBus Devices → SocketCAN** connection for the already configured interface, then use **DBC File Manager** to load `bridge/can/afs.dbc`. The interface bitrate is configured in Linux before opening SavvyCAN. The launcher remains separate from `scripts/start.sh system`; see the [project scripts guide](../../scripts/dialogue.md) and SavvyCAN's [connection](https://www.savvycan.com/docs/connectionwindow.html) and [DBC manager](https://www.savvycan.com/docs/dbc_manager.html) guides.
+
 The DBC only describes and decodes frames; it does not create CAN traffic or connect the PC to the bus. The production bridge sends `0x100`–`0x400` and receives `0x500` only when started with `--can-interface NAME`. The separate diagnostic logger checks live MetaDrive samples against the DBC without opening SocketCAN. Live physical monitoring needs a CAN adapter connected to the bus; virtual integration is available with the opt-in CTest `socketcan_vcan_end_to_end` on a prepared `vcan0`. `cantools` generates the C signal encoders and message pack/unpack functions from the DBC; it is separate from the DBC editor and live viewer.
 
 ## CAN Regression Tests

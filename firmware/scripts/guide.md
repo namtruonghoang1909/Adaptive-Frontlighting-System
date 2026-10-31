@@ -77,8 +77,20 @@ AFS: CAN communication started at 500 kbit/s
 AFS: reporting Safe_Default until beam and servo drivers are available
 ```
 
+For this bench-test build, `CONFIG_AFS_CAN_RX_LOGGING=y` prints each received
+frame before decoding it. For example:
+
+```text
+AFS: CAN RX 0x100 dlc=8 data=01 00 00 00 00 00 00 00
+```
+
+This includes standard frames the application does not decode. Logging runs
+through RTT and produces frequent output while the bridge is transmitting. To
+turn it off after bench testing, set `CONFIG_AFS_CAN_RX_LOGGING=n` in
+`firmware/afs_ecu/prj.conf`, then rebuild with `--pristine` and flash again.
+
 The firmware may also report CAN receive-queue, status-transmit, or LED errors.
-It does not print every CAN frame; use `candump` for bus traffic. Press
+Use `candump` on the Linux host to observe bus traffic independently. Press
 **Ctrl+C** to stop RTT and release the ST-Link. If port 9090 is busy, choose
 another local port:
 
@@ -110,6 +122,5 @@ being controlled.
 Seeing a frame echoed by the adapter itself in controller loopback does not
 verify the physical transceiver or CANH/CANL. For physical bus verification,
 restore normal CAN mode and use a second active node or ECU to acknowledge and
-exchange frames. Check the
-[host CAN bring-up guide](../../docs/hardware/hardware.md#host-can-bring-up)
+exchange frames. See the [CAN interface guide](../../docs/hardware/can_interface.md)
 for interface setup and bus checks.

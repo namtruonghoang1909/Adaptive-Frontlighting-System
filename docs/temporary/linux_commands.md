@@ -125,5 +125,5 @@ sudo ip link del vcan0
 ```
 
 For the project's CAN layouts and signal definitions, see the [CAN message
-contract](../can/README.md). The [hardware guide](../hardware/hardware.md#host-can-bring-up)
+contract](../can/README.md). The [CAN interface guide](../hardware/can_interface.md)
 contains the project-specific adapter bring-up steps.
