@@ -12,13 +12,18 @@ ROOT = TOOL.parent.parent.parent
 OUTPUT = TOOL / "code-index.js"
 COMPONENTS = [
     ("simulation_runner", ("simulation_runner/src", "simulation_runner/scripts"), "#73b8f4", "implemented"),
-    ("bridge", ("bridge/src", "bridge/include/afs_bridge", "bridge/scripts"), "#82c6a0", "implemented"),
+    ("bridge", ("bridge/src", "bridge/include/afs_bridge", "bridge/scripts",
+                 "tests/can/bridge/frame_smoke"), "#82c6a0", "implemented"),
     ("dashboard", ("dashboard/src/afs_dashboard", "dashboard/scripts"), "#b69bea", "implemented"),
-    ("firmware", ("firmware",), "#e7b877", "planned"),
+    ("firmware", ("firmware/afs_ecu",), "#e7b877", "implemented"),
     ("tools", ("tools",), "#dc93ae", "implemented"),
+    ("scripts", ("scripts",), "#dc93ae", "implemented"),
 ]
 EXTENSIONS = {".py", ".js", ".mjs", ".html", ".css", ".c", ".cpp", ".h", ".hpp", ".sh"}
-EXCLUDED = {"__pycache__", "node_modules", ".venv", "code-index.js"}
+EXCLUDED = {
+    "__pycache__", "node_modules", ".venv", "build", "code-index.js",
+    "edtt", "net-tools",
+}
 
 
 def build_index():
@@ -26,7 +31,7 @@ def build_index():
               "kind": "repository", "path": ".", "status": "implemented",
               "color": "#d6ddd9", "description": "Adaptive Front-lighting System"}]
 
-    def add(path, parent, color, status, kind, label=None, symbol=None, qualified=None):
+    def add(path, parent, color, status, kind, label=None, symbol=None, qualified=None, line=None):
         relative = path.relative_to(ROOT).as_posix()
         node_id = relative + (f"#{qualified or symbol.name}" if qualified or symbol else "")
         description = ""
@@ -37,6 +42,8 @@ def build_index():
                 "description": description}
         if symbol:
             node["line"] = symbol.lineno
+        elif line is not None:
+            node["line"] = line
         nodes.append(node)
         return node_id
 
@@ -86,6 +93,29 @@ def build_index():
                         name = match.group(1)
                         add(path, child, color, status, "class", name,
                             qualified=name)
+                    # These return types identify public free-function declarations
+                    # for the Linux frame conversion boundary, distinct from class
+                    # methods such as SocketCanTransport::receive().
+                    for match in re.finditer(
+                            r"^(can_frame|std::optional<CanFrame>)\s+(\w+)\s*\([^;]*\)\s*;",
+                            source, re.MULTILINE):
+                        name = match.group(2)
+                        line = source.count("\n", 0, match.start()) + 1
+                        add(path, child, color, status, "function", name,
+                            qualified=name, line=line)
+                elif path.suffix == ".c" and (ROOT / "firmware") in path.parents:
+                    source = path.read_text(encoding="utf-8")
+                    # Keep the first firmware call path navigable without
+                    # expanding generated C codecs into hundreds of nodes.
+                    for match in re.finditer(
+                            r"^(?:static\s+)?(?:void|int|bool|char|short|long|size_t|"
+                            r"uint\d+_t|struct\s+\w+\s*\*?)\s+(\w+)\s*"
+                            r"\([^;{}]*\)\s*\{",
+                            source, re.MULTILINE):
+                        name = match.group(1)
+                        line = source.count("\n", 0, match.start()) + 1
+                        add(path, child, color, status, "function", name,
+                            qualified=name, line=line)
 
     for name, sources, color, status in COMPONENTS:
         component = ROOT / name

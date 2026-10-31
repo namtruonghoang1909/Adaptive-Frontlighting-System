@@ -131,4 +131,32 @@ std::array<CanFrame, kCanFrameBatchSize> CanFrameEncoder::encode(
     }};
 }
 
+CanFrame CanFrameEncoder::encode_dashboard_command(
+    const DashboardCommandCanSignals& signals) const {
+    if (signals.mode > AFS_DASHBOARD_COMMAND_REQUESTED_HEADLIGHT_MODE_HIGH_BEAM_DIMMING_CHOICE) {
+        throw std::invalid_argument("Dashboard command mode is outside the DBC enum");
+    }
+
+    afs_dashboard_command_t message{};
+    message.alive_counter = afs_dashboard_command_alive_counter_encode(
+        signals.alive_counter);
+    message.command_valid = afs_dashboard_command_command_valid_encode(
+        signals.valid);
+    message.clear_fault_request = afs_dashboard_command_clear_fault_request_encode(
+        signals.clear_fault_request);
+    message.requested_headlight_power =
+        afs_dashboard_command_requested_headlight_power_encode(signals.power_on);
+    message.requested_headlight_mode =
+        afs_dashboard_command_requested_headlight_mode_encode(signals.mode);
+
+    auto frame = pack_frame(AFS_DASHBOARD_COMMAND_FRAME_ID,
+                            AFS_DASHBOARD_COMMAND_LENGTH,
+                            &afs_dashboard_command_pack, message);
+    message.checksum = afs_dashboard_command_checksum_encode(
+        static_cast<std::uint8_t>(frame.data[0] ^ frame.data[1]));
+    return pack_frame(AFS_DASHBOARD_COMMAND_FRAME_ID,
+                      AFS_DASHBOARD_COMMAND_LENGTH,
+                      &afs_dashboard_command_pack, message);
+}
+
 }  // namespace afs_bridge

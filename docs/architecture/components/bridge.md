@@ -1,6 +1,6 @@
 # C++ Bridge Component
 
-The bridge is the native Linux gateway between the Python simulation runner, Python Dashboard, and CAN network. Its runner-facing scene receiver, Dashboard command/status socket, and latest source-state retention are implemented. Standalone APIs validate/project CAN signal values and pack the `0x100`, `0x200`, and `0x300` payloads through DBC-generated C. A separate diagnostic logger exercises those APIs with live runner IPC; the production bridge executable does not call them. Runtime CAN transport remains planned.
+The bridge is the native Linux gateway between the Python simulation runner, Python Dashboard, and CAN network. Its runner-facing scene receiver, Dashboard command/status socket, production CAN scheduler, Linux SocketCAN transport, and `0x500 AFS_Status` decoder are implemented. CAN starts only when `--can-interface NAME` is provided; the selected interface must already exist and be up. The bridge sends `0x400` Dashboard commands and forwards retained ECU status through Dashboard IPC.
 
 ## Position In The System
 
@@ -23,19 +23,22 @@ All three host applications run on the same Linux system as separate processes. 
 | `bridge/src/app/` | Composition, configuration, startup, shutdown, and resource ownership |
 | `bridge/src/ipc/` | Unix-socket clients, framing, parsing, validation, and replies |
 | `bridge/src/state/` | Complete current input/status snapshots and synchronization |
-| `bridge/src/can/` | CAN signal validation/projection and DBC-generated in-memory frame packing; planned scheduling, raw SocketCAN TX/RX, and status decoding |
+| `bridge/src/can/` | CAN signal validation/projection, DBC-generated frame packing, SocketCAN transport, and ECU status decoding |
 | `bridge/src/diagnostics/` | Planned production freshness, communication health, counters, and logging |
-| `bridge/tests/` | Native unit and Linux IPC/SocketCAN integration tests |
+| `tests/unix_socket/` | Runner and Dashboard Unix socket integration tests |
+| `tests/can/bridge/` | Bridge CAN encoding, status, SocketCAN, and vcan tests |
 
-`afs_runner_bridge` accepts the Python runner's versioned scene stream. The
-standalone CAN encoder API accepts a validated scene and produces signal values
-for steering, speed, and the 10-sector vehicle grid. A separate frame encoder
-uses cantools-generated C signal encoders and message packers to create
-in-memory frame values. The separate `afs_can_frame_logger` diagnostic
-executable runs this path against live runner scenes, verifies batches with
-generated C unpackers, and checks captured frames independently with cantools.
-Production CAN integration, SocketCAN, and runtime CAN
-diagnostics remain future work.
+`afs_runner_bridge` accepts the Python runner's versioned scene stream. When
+CAN is enabled, its worker samples the latest scene on monotonic deadlines,
+sends `0x100 Vehicle_Speed` and `0x200 Vehicle_Steering` every 20 ms,
+`0x300 Vehicle_Object` every 100 ms, and the Dashboard's `0x400` command every
+50 ms, and receives filtered `0x500 AFS_Status` frames. Invalid or stale source
+data is encoded using the existing fail-closed signal policy. `CommandValid`
+follows the Dashboard connection lease and accepted request; clear-fault is a
+single successful SocketCAN-write pulse. Decoded status is mutex-protected, logged,
+and forwarded through Dashboard IPC with freshness metadata. The separate `afs_can_frame_logger` diagnostic executable
+continues to verify encoder batches against generated C and cantools without
+transmitting CAN.
 
 ## IPC Clients
 
@@ -46,25 +49,36 @@ The simulation runner and Dashboard connect on separate Unix Domain Sockets. Bot
   the receiver validates the angle against that limit and retains a missing
   limit as unavailable for CAN validity handling.
 - Dashboard sends persistent requested state and identified clear-fault actions.
-- Bridge stores accepted power/mode requests with IDs, rejects clear-fault while the ECU is unavailable, and reports current runner freshness, ego fields, and a bounded list of nearby vehicles.
-- Gateway acceptance and simulated ECU execution are different states in the UI. Decoded ECU status is not available yet.
+- Bridge stores accepted power/mode requests with IDs, rejects clear-fault while CAN is disabled, and reports runner data, command validity, CAN availability, and decoded ECU status.
+- Gateway acceptance and ECU execution remain separate states in the UI. The Dashboard shows simulated ECU fallback until a valid `0x500` sample arrives and marks retained status stale after 250 ms.
 
 The bridge never reads MetaDrive objects or UI widgets directly.
 
 ## Internal Concurrency
 
-The current bridge runs runner IPC in the main thread and Dashboard IPC in a second thread. The runner receiver copies its latest scene under a short mutex; socket I/O and JSON handling run outside that lock. A separate CAN worker is planned for runtime scheduling and transport.
+The current bridge runs runner IPC in the main thread and Dashboard IPC in a
+second thread. When enabled, a third thread runs the CAN worker. The runner
+receiver copies its latest scene under a short mutex; encoding and CAN I/O
+happen outside that lock. The worker uses monotonic 20 ms and 100 ms deadlines
+for vehicle inputs and the object grid, samples only the latest state, and
+receives ECU status through a `0x500` ID filter and forwards accepted snapshots
+to Dashboard IPC.
+Transient CAN I/O failures are rate-limited in logs and retried; they do not
+stop the runner or Dashboard IPC services.
 
 Continuous observations use latest-state replacement rather than a replay queue. Dashboard requests carry identifiers, and the client does not replay pending actions after disconnect.
 
 ## CAN And Control Ownership
 
-The bridge's standalone API validates and projects accepted source data into
-CAN signal values, then the DBC-generated C codec packs the three
-runner-derived messages into in-memory frames. A diagnostic executable calls
-these APIs to check live samples; the production bridge does not yet call them.
-Scheduling, SocketCAN, ECU-status reception, and runtime CAN communication
-diagnostics are not part of the current implementation.
+The bridge validates and projects accepted source data into CAN signal values,
+then the DBC-generated C codec packs runner-derived messages and Dashboard
+commands into frames for SocketCAN transmission. The receiver accepts standard `0x500`
+frames only after checksum, reserved-field, enum, mask, and alive-counter
+validation. Counter gaps up to half the four-bit range are tolerated; duplicate
+or backward values are rejected, and a quiet interval permits a new baseline.
+Accepted status is retained by `CanRuntime` and `DashboardIpcServer` for the
+Dashboard response. `tests/can/bridge/socketcan_vcan_end_to_end.py` exercises the
+command and status paths on a prepared virtual interface.
 
 For `0x300 Vehicle_Object`, the agreed design projects vehicle footprints from
 runner IPC into 10 horizontal sectors and four equal distance bands across

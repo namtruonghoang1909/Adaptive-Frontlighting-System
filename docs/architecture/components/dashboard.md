@@ -1,6 +1,6 @@
 # Dashboard Component
 
-The Dashboard is a separate Python application process for operator commands and system observation. `dashboard/` contains a native Tkinter window, a reconnecting bridge client, and a simulated ECU/fallback model. It opens directly in a graphical Linux session without a browser or localhost port. The client uses Unix socket IPC to the C++ bridge; it never accesses SocketCAN or bridge process memory directly.
+The Dashboard is a separate Python application process for operator commands and system observation. `dashboard/` contains a native Tkinter window, a reconnecting bridge client, and a simulated fallback model. It opens directly in a graphical Linux session without a browser or localhost port. The client uses Unix socket IPC to the C++ bridge; it never accesses SocketCAN or bridge process memory directly.
 
 ## Responsibilities
 
@@ -9,7 +9,7 @@ The Dashboard is a separate Python application process for operator commands and
 - Show requested state, executed ECU state, input freshness, faults, servo feedback, and applied output.
 - Remain usable when bridge or ECU data is stale or unavailable.
 
-The Dashboard requests behavior and the AFS ECU will decide what can actually execute. The bridge currently stores accepted requests; the window reflects them in a simulated ECU state only.
+The Dashboard requests behavior and the AFS ECU decides what can actually execute. The bridge stores accepted requests and, with CAN enabled, transmits them as `0x400` every 50 ms. The window shows decoded `0x500` ECU status when available, with labeled simulated fallbacks before the first valid status frame.
 
 ## Gateway Connection
 
@@ -20,11 +20,11 @@ Dashboard request -> Unix socket IPC -> C++ gateway -> CAN -> STM32
 Dashboard display <- Unix socket IPC <- C++ gateway <- CAN <- STM32 status
 ```
 
-Gateway acceptance confirms receipt/validation of a request, not physical execution. The UI distinguishes requested state, gateway acceptance, and simulated ECU execution. Clear-fault actions have request identities and receive an explicit `ecu_unavailable` rejection until ECU control exists.
+Gateway acceptance confirms receipt/validation of a request, not physical execution. The UI distinguishes requested state, gateway acceptance, and ECU-reported execution. Clear-fault actions have request identities and are queued as a one-frame CAN pulse when CAN is enabled; otherwise they receive an explicit rejection.
 
 The native window calls a Python gateway client on a worker thread. It polls bridge status and sends identified controls over local Unix socket IPC.
 
-Fresh runner speed, steering, position, heading, and nearby vehicle positions replace those demo fields when valid. The proximity grid and ECU execution remain simulated and labeled. On disconnect, pending actions are not replayed; a returned stored request ID can confirm that an in-flight command reached the bridge. The client falls back to demo values until a fresh runner sample returns.
+Fresh runner speed, steering, position, heading, and nearby vehicle positions replace those demo fields when valid. Accepted `0x500` status replaces simulated ECU output values and carries a stale flag after 250 ms. The proximity grid remains simulated and labeled. On disconnect, pending actions are not replayed; a returned stored request ID can confirm that an in-flight command reached the bridge. The client falls back to demo values until fresh runner or ECU samples return.
 
 ## Inputs And Outputs
 
@@ -32,8 +32,8 @@ Fresh runner speed, steering, position, heading, and nearby vehicle positions re
 |---|---|
 | User to Dashboard | Requested power, requested mode, clear-fault action |
 | Dashboard to C++ gateway | Structured command request through Unix socket IPC |
-| C++ gateway to Dashboard | Command results, runner ego fields and nearby vehicles with freshness, retained request ID/state, and ECU availability |
-| Dashboard to user | Requested state, bridge acceptance, simulated execution and ECU values, and data source |
+| C++ gateway to Dashboard | Command results, runner ego fields and nearby vehicles with freshness, retained request ID/state, CAN availability, and decoded ECU status with freshness |
+| Dashboard to user | Requested state, bridge acceptance, ECU-reported execution/faults when available, simulated fallbacks, and data source |
 
 The Dashboard does not create CAN IDs, DLC, alive counters, checksums, or packed payloads.
 
@@ -50,14 +50,15 @@ and disables the four mode buttons; turning it on restores the last selection.
 Mode and power actions request bridge changes when connected, with acceptance
 shown separately. A second native window contains position, proximity grid,
 faults, servo feedback,
-dim sectors, and clear-fault controls. Labels identify fresh runner fields,
-simulated fallback/ECU fields, and bridge connectivity. Mouse-wheel and
+dim sectors, and clear-fault controls. Labels identify fresh runner/ECU fields,
+stale status, simulated fallback values, and bridge connectivity. Mouse-wheel and
 trackpad events scroll the main window when its content exceeds the viewport.
 
 The UI preserves the distinction between operator request, gateway acceptance,
-and simulated ECU execution. Stale runner values fall back to labeled demo
-values. Persistent values use direct controls; clear-fault is a rejected
-momentary action until CAN/ECU integration.
+and ECU-reported execution. Stale runner values fall back to labeled demo
+values; retained ECU status is labeled stale after 250 ms. Persistent values use
+direct controls; clear-fault is a one-frame request when CAN is enabled and is
+rejected otherwise.
 
 ## Tools
 

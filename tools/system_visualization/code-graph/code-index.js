@@ -939,6 +939,16 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "bridge/src/app/can_runtime.cpp",
+    "label": "can_runtime.cpp",
+    "parent": "bridge/src/app",
+    "kind": "file",
+    "path": "bridge/src/app/can_runtime.cpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
     "id": "bridge/src/app/runner_bridge_main.cpp",
     "label": "runner_bridge_main.cpp",
     "parent": "bridge/src/app",
@@ -1039,6 +1049,16 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "bridge/src/can/afs_status.cpp",
+    "label": "afs_status.cpp",
+    "parent": "bridge/src/can",
+    "kind": "file",
+    "path": "bridge/src/can/afs_status.cpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
     "id": "bridge/src/can/can_encoder.cpp",
     "label": "can_encoder.cpp",
     "parent": "bridge/src/can",
@@ -1054,6 +1074,26 @@ globalThis.CODE_INDEX = [
     "parent": "bridge/src/can",
     "kind": "file",
     "path": "bridge/src/can/can_frame_encoder.cpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/socketcan_frame.cpp",
+    "label": "socketcan_frame.cpp",
+    "parent": "bridge/src/can",
+    "kind": "file",
+    "path": "bridge/src/can/socketcan_frame.cpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/src/can/socketcan_transport.cpp",
+    "label": "socketcan_transport.cpp",
+    "parent": "bridge/src/can",
+    "kind": "file",
+    "path": "bridge/src/can/socketcan_transport.cpp",
     "status": "implemented",
     "color": "#82c6a0",
     "description": ""
@@ -1094,6 +1134,36 @@ globalThis.CODE_INDEX = [
     "parent": "bridge",
     "kind": "module",
     "path": "bridge/src/state",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/afs_status.hpp",
+    "label": "afs_status.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/afs_status.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/afs_status.hpp#AfsStatus",
+    "label": "AfsStatus",
+    "parent": "bridge/include/afs_bridge/afs_status.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/afs_status.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/afs_status.hpp#AfsStatusDecoder",
+    "label": "AfsStatusDecoder",
+    "parent": "bridge/include/afs_bridge/afs_status.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/afs_status.hpp",
     "status": "implemented",
     "color": "#82c6a0",
     "description": ""
@@ -1189,6 +1259,16 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "bridge/include/afs_bridge/can_frame_encoder.hpp#DashboardCommandCanSignals",
+    "label": "DashboardCommandCanSignals",
+    "parent": "bridge/include/afs_bridge/can_frame_encoder.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_frame_encoder.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
     "id": "bridge/include/afs_bridge/can_frame_encoder.hpp#CanFrameEncoder",
     "label": "CanFrameEncoder",
     "parent": "bridge/include/afs_bridge/can_frame_encoder.hpp",
@@ -1219,10 +1299,40 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "bridge/include/afs_bridge/can_runtime.hpp",
+    "label": "can_runtime.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/can_runtime.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/can_runtime.hpp#CanRuntime",
+    "label": "CanRuntime",
+    "parent": "bridge/include/afs_bridge/can_runtime.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/can_runtime.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
     "id": "bridge/include/afs_bridge/dashboard_ipc.hpp",
     "label": "dashboard_ipc.hpp",
     "parent": "bridge",
     "kind": "file",
+    "path": "bridge/include/afs_bridge/dashboard_ipc.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/dashboard_ipc.hpp#DashboardCommandSnapshot",
+    "label": "DashboardCommandSnapshot",
+    "parent": "bridge/include/afs_bridge/dashboard_ipc.hpp",
+    "kind": "class",
     "path": "bridge/include/afs_bridge/dashboard_ipc.hpp",
     "status": "implemented",
     "color": "#82c6a0",
@@ -1279,11 +1389,53 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
-    "id": "bridge/scripts/run_can_frame_smoke.sh",
-    "label": "run_can_frame_smoke.sh",
+    "id": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "label": "socketcan_frame.hpp",
     "parent": "bridge",
     "kind": "file",
-    "path": "bridge/scripts/run_can_frame_smoke.sh",
+    "path": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/socketcan_frame.hpp#to_native_can_frame",
+    "label": "to_native_can_frame",
+    "parent": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "kind": "function",
+    "path": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": "",
+    "line": 13
+  },
+  {
+    "id": "bridge/include/afs_bridge/socketcan_frame.hpp#from_native_can_frame",
+    "label": "from_native_can_frame",
+    "parent": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "kind": "function",
+    "path": "bridge/include/afs_bridge/socketcan_frame.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": "",
+    "line": 14
+  },
+  {
+    "id": "bridge/include/afs_bridge/socketcan_transport.hpp",
+    "label": "socketcan_transport.hpp",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "bridge/include/afs_bridge/socketcan_transport.hpp",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "bridge/include/afs_bridge/socketcan_transport.hpp#SocketCanTransport",
+    "label": "SocketCanTransport",
+    "parent": "bridge/include/afs_bridge/socketcan_transport.hpp",
+    "kind": "class",
+    "path": "bridge/include/afs_bridge/socketcan_transport.hpp",
     "status": "implemented",
     "color": "#82c6a0",
     "description": ""
@@ -1299,21 +1451,31 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
-    "id": "bridge/scripts/verify_can_frame_capture.py",
-    "label": "verify_can_frame_capture.py",
+    "id": "tests/can/bridge/frame_smoke/run_can_frame_smoke.sh",
+    "label": "run_can_frame_smoke.sh",
     "parent": "bridge",
     "kind": "file",
-    "path": "bridge/scripts/verify_can_frame_capture.py",
+    "path": "tests/can/bridge/frame_smoke/run_can_frame_smoke.sh",
     "status": "implemented",
     "color": "#82c6a0",
     "description": ""
   },
   {
-    "id": "bridge/scripts/verify_can_frame_capture.py#main",
+    "id": "tests/can/bridge/frame_smoke/verify_can_frame_capture.py",
+    "label": "verify_can_frame_capture.py",
+    "parent": "bridge",
+    "kind": "file",
+    "path": "tests/can/bridge/frame_smoke/verify_can_frame_capture.py",
+    "status": "implemented",
+    "color": "#82c6a0",
+    "description": ""
+  },
+  {
+    "id": "tests/can/bridge/frame_smoke/verify_can_frame_capture.py#main",
     "label": "main",
-    "parent": "bridge/scripts/verify_can_frame_capture.py",
+    "parent": "tests/can/bridge/frame_smoke/verify_can_frame_capture.py",
     "kind": "function",
-    "path": "bridge/scripts/verify_can_frame_capture.py",
+    "path": "tests/can/bridge/frame_smoke/verify_can_frame_capture.py",
     "status": "implemented",
     "color": "#82c6a0",
     "description": "",
@@ -1379,7 +1541,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 599
+    "line": 649
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client",
@@ -1410,7 +1572,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 21
+    "line": 42
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState",
@@ -1421,7 +1583,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "Presents bridge requests and runner fields with explicit demo fallbacks.",
-    "line": 30
+    "line": 51
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.close",
@@ -1432,7 +1594,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 56
+    "line": 80
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.set_command",
@@ -1443,7 +1605,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 60
+    "line": 84
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.clear_fault",
@@ -1454,7 +1616,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 83
+    "line": 107
   },
   {
     "id": "dashboard/src/afs_dashboard/gateway_client/client.py#GatewayDashboardState.snapshot",
@@ -1465,7 +1627,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#b69bea",
     "description": "",
-    "line": 101
+    "line": 125
   },
   {
     "id": "dashboard/src/afs_dashboard/models",
@@ -1577,9 +1739,786 @@ globalThis.CODE_INDEX = [
     "parent": "repository",
     "kind": "component",
     "path": "firmware",
-    "status": "planned",
+    "status": "implemented",
     "color": "#e7b877",
     "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include",
+    "label": "include",
+    "parent": "firmware",
+    "kind": "module",
+    "path": "firmware/afs_ecu/include",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs",
+    "label": "afs",
+    "parent": "firmware/afs_ecu/include",
+    "kind": "module",
+    "path": "firmware/afs_ecu/include/afs",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/application",
+    "label": "application",
+    "parent": "firmware/afs_ecu/include/afs",
+    "kind": "module",
+    "path": "firmware/afs_ecu/include/afs/application",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/application/afs_controller.h",
+    "label": "afs_controller.h",
+    "parent": "firmware/afs_ecu/include/afs/application",
+    "kind": "file",
+    "path": "firmware/afs_ecu/include/afs/application/afs_controller.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/application/afs_ecu_application.h",
+    "label": "afs_ecu_application.h",
+    "parent": "firmware/afs_ecu/include/afs/application",
+    "kind": "file",
+    "path": "firmware/afs_ecu/include/afs/application/afs_ecu_application.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/bsw",
+    "label": "bsw",
+    "parent": "firmware/afs_ecu/include/afs",
+    "kind": "module",
+    "path": "firmware/afs_ecu/include/afs/bsw",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/bsw/ecu_abstraction",
+    "label": "ecu_abstraction",
+    "parent": "firmware/afs_ecu/include/afs/bsw",
+    "kind": "module",
+    "path": "firmware/afs_ecu/include/afs/bsw/ecu_abstraction",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/bsw/ecu_abstraction/board_led.h",
+    "label": "board_led.h",
+    "parent": "firmware/afs_ecu/include/afs/bsw/ecu_abstraction",
+    "kind": "file",
+    "path": "firmware/afs_ecu/include/afs/bsw/ecu_abstraction/board_led.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/bsw/ecu_abstraction/can_bus.h",
+    "label": "can_bus.h",
+    "parent": "firmware/afs_ecu/include/afs/bsw/ecu_abstraction",
+    "kind": "file",
+    "path": "firmware/afs_ecu/include/afs/bsw/ecu_abstraction/can_bus.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/bsw/ecu_abstraction/can_bus.h#afs_can_frame",
+    "label": "afs_can_frame",
+    "parent": "firmware/afs_ecu/include/afs/bsw/ecu_abstraction/can_bus.h",
+    "kind": "class",
+    "path": "firmware/afs_ecu/include/afs/bsw/ecu_abstraction/can_bus.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/bsw/services",
+    "label": "services",
+    "parent": "firmware/afs_ecu/include/afs/bsw",
+    "kind": "module",
+    "path": "firmware/afs_ecu/include/afs/bsw/services",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/bsw/services/communication",
+    "label": "communication",
+    "parent": "firmware/afs_ecu/include/afs/bsw/services",
+    "kind": "module",
+    "path": "firmware/afs_ecu/include/afs/bsw/services/communication",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/bsw/services/communication/can_message_service.h",
+    "label": "can_message_service.h",
+    "parent": "firmware/afs_ecu/include/afs/bsw/services/communication",
+    "kind": "file",
+    "path": "firmware/afs_ecu/include/afs/bsw/services/communication/can_message_service.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/bsw/services/communication/can_rx_log.h",
+    "label": "can_rx_log.h",
+    "parent": "firmware/afs_ecu/include/afs/bsw/services/communication",
+    "kind": "file",
+    "path": "firmware/afs_ecu/include/afs/bsw/services/communication/can_rx_log.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/rte",
+    "label": "rte",
+    "parent": "firmware/afs_ecu/include/afs",
+    "kind": "module",
+    "path": "firmware/afs_ecu/include/afs/rte",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "label": "afs_rte.h",
+    "parent": "firmware/afs_ecu/include/afs/rte",
+    "kind": "file",
+    "path": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/rte/afs_rte.h#afs_rte_speed_input",
+    "label": "afs_rte_speed_input",
+    "parent": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "kind": "class",
+    "path": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/rte/afs_rte.h#afs_rte_steering_input",
+    "label": "afs_rte_steering_input",
+    "parent": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "kind": "class",
+    "path": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/rte/afs_rte.h#afs_rte_object_grid_input",
+    "label": "afs_rte_object_grid_input",
+    "parent": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "kind": "class",
+    "path": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/rte/afs_rte.h#afs_rte_dashboard_input",
+    "label": "afs_rte_dashboard_input",
+    "parent": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "kind": "class",
+    "path": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/rte/afs_rte.h#afs_rte_inputs",
+    "label": "afs_rte_inputs",
+    "parent": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "kind": "class",
+    "path": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/include/afs/rte/afs_rte.h#afs_rte_status",
+    "label": "afs_rte_status",
+    "parent": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "kind": "class",
+    "path": "firmware/afs_ecu/include/afs/rte/afs_rte.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src",
+    "label": "src",
+    "parent": "firmware",
+    "kind": "module",
+    "path": "firmware/afs_ecu/src",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/application",
+    "label": "application",
+    "parent": "firmware/afs_ecu/src",
+    "kind": "module",
+    "path": "firmware/afs_ecu/src/application",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/application/afs_controller.c",
+    "label": "afs_controller.c",
+    "parent": "firmware/afs_ecu/src/application",
+    "kind": "file",
+    "path": "firmware/afs_ecu/src/application/afs_controller.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/application/afs_controller.c#input_is_fresh",
+    "label": "input_is_fresh",
+    "parent": "firmware/afs_ecu/src/application/afs_controller.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/application/afs_controller.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 11
+  },
+  {
+    "id": "firmware/afs_ecu/src/application/afs_controller.c#requested_inputs_are_fresh",
+    "label": "requested_inputs_are_fresh",
+    "parent": "firmware/afs_ecu/src/application/afs_controller.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/application/afs_controller.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 18
+  },
+  {
+    "id": "firmware/afs_ecu/src/application/afs_controller.c#afs_controller_update",
+    "label": "afs_controller_update",
+    "parent": "firmware/afs_ecu/src/application/afs_controller.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/application/afs_controller.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 45
+  },
+  {
+    "id": "firmware/afs_ecu/src/application/afs_ecu_application.c",
+    "label": "afs_ecu_application.c",
+    "parent": "firmware/afs_ecu/src/application",
+    "kind": "file",
+    "path": "firmware/afs_ecu/src/application/afs_ecu_application.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/application/afs_ecu_application.c#log_can_rx_frame",
+    "label": "log_can_rx_frame",
+    "parent": "firmware/afs_ecu/src/application/afs_ecu_application.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/application/afs_ecu_application.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 23
+  },
+  {
+    "id": "firmware/afs_ecu/src/application/afs_ecu_application.c#afs_ecu_application_run",
+    "label": "afs_ecu_application_run",
+    "parent": "firmware/afs_ecu/src/application/afs_ecu_application.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/application/afs_ecu_application.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 52
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw",
+    "label": "bsw",
+    "parent": "firmware/afs_ecu/src",
+    "kind": "module",
+    "path": "firmware/afs_ecu/src/bsw",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/ecu_abstraction",
+    "label": "ecu_abstraction",
+    "parent": "firmware/afs_ecu/src/bsw",
+    "kind": "module",
+    "path": "firmware/afs_ecu/src/bsw/ecu_abstraction",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/ecu_abstraction/board_led.c",
+    "label": "board_led.c",
+    "parent": "firmware/afs_ecu/src/bsw/ecu_abstraction",
+    "kind": "file",
+    "path": "firmware/afs_ecu/src/bsw/ecu_abstraction/board_led.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/ecu_abstraction/board_led.c#afs_board_led_init",
+    "label": "afs_board_led_init",
+    "parent": "firmware/afs_ecu/src/bsw/ecu_abstraction/board_led.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/ecu_abstraction/board_led.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 15
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/ecu_abstraction/board_led.c#afs_board_led_toggle",
+    "label": "afs_board_led_toggle",
+    "parent": "firmware/afs_ecu/src/bsw/ecu_abstraction/board_led.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/ecu_abstraction/board_led.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 24
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "label": "can_bus.c",
+    "parent": "firmware/afs_ecu/src/bsw/ecu_abstraction",
+    "kind": "file",
+    "path": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c#can_bus_rx_callback",
+    "label": "can_bus_rx_callback",
+    "parent": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 35
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c#afs_can_bus_init",
+    "label": "afs_can_bus_init",
+    "parent": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 49
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c#afs_can_bus_receive",
+    "label": "afs_can_bus_receive",
+    "parent": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 82
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c#afs_can_bus_discard_queued_rx",
+    "label": "afs_can_bus_discard_queued_rx",
+    "parent": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 107
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c#afs_can_bus_send",
+    "label": "afs_can_bus_send",
+    "parent": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 112
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c#afs_can_bus_rx_overruns",
+    "label": "afs_can_bus_rx_overruns",
+    "parent": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/ecu_abstraction/can_bus.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 135
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services",
+    "label": "services",
+    "parent": "firmware/afs_ecu/src/bsw",
+    "kind": "module",
+    "path": "firmware/afs_ecu/src/bsw/services",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication",
+    "label": "communication",
+    "parent": "firmware/afs_ecu/src/bsw/services",
+    "kind": "module",
+    "path": "firmware/afs_ecu/src/bsw/services/communication",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "label": "can_message_service.c",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication",
+    "kind": "file",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#set_decode_fault",
+    "label": "set_decode_fault",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 33
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#invalidate_input",
+    "label": "invalidate_input",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 39
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#invalidate_all_inputs",
+    "label": "invalidate_all_inputs",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 80
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#counter_is_acceptable",
+    "label": "counter_is_acceptable",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 88
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#legal_subsector_mask",
+    "label": "legal_subsector_mask",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 122
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#decode_vehicle_speed",
+    "label": "decode_vehicle_speed",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 128
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#decode_vehicle_steering",
+    "label": "decode_vehicle_steering",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 159
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#decode_vehicle_object",
+    "label": "decode_vehicle_object",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 190
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#decode_dashboard_command",
+    "label": "decode_dashboard_command",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 257
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#afs_can_message_service_init",
+    "label": "afs_can_message_service_init",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 306
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#afs_can_message_service_process",
+    "label": "afs_can_message_service_process",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 314
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#afs_can_message_service_note_rx_overrun",
+    "label": "afs_can_message_service_note_rx_overrun",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 353
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c#afs_can_message_service_send_status",
+    "label": "afs_can_message_service_send_status",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_message_service.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 361
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_rx_log.c",
+    "label": "can_rx_log.c",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication",
+    "kind": "file",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_rx_log.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_rx_log.c#afs_can_rx_log_format",
+    "label": "afs_can_rx_log_format",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_rx_log.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_rx_log.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 7
+  },
+  {
+    "id": "firmware/afs_ecu/src/rte",
+    "label": "rte",
+    "parent": "firmware/afs_ecu/src",
+    "kind": "module",
+    "path": "firmware/afs_ecu/src/rte",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "label": "afs_rte.c",
+    "parent": "firmware/afs_ecu/src/rte",
+    "kind": "file",
+    "path": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/rte/afs_rte.c#afs_rte_init",
+    "label": "afs_rte_init",
+    "parent": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 9
+  },
+  {
+    "id": "firmware/afs_ecu/src/rte/afs_rte.c#afs_rte_write_speed",
+    "label": "afs_rte_write_speed",
+    "parent": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 15
+  },
+  {
+    "id": "firmware/afs_ecu/src/rte/afs_rte.c#afs_rte_write_steering",
+    "label": "afs_rte_write_steering",
+    "parent": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 22
+  },
+  {
+    "id": "firmware/afs_ecu/src/rte/afs_rte.c#afs_rte_write_object_grid",
+    "label": "afs_rte_write_object_grid",
+    "parent": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 29
+  },
+  {
+    "id": "firmware/afs_ecu/src/rte/afs_rte.c#afs_rte_write_dashboard",
+    "label": "afs_rte_write_dashboard",
+    "parent": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 36
+  },
+  {
+    "id": "firmware/afs_ecu/src/rte/afs_rte.c#afs_rte_write_can_decode_fault",
+    "label": "afs_rte_write_can_decode_fault",
+    "parent": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 43
+  },
+  {
+    "id": "firmware/afs_ecu/src/rte/afs_rte.c#afs_rte_read_inputs",
+    "label": "afs_rte_read_inputs",
+    "parent": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 48
+  },
+  {
+    "id": "firmware/afs_ecu/src/rte/afs_rte.c#afs_rte_write_status",
+    "label": "afs_rte_write_status",
+    "parent": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 55
+  },
+  {
+    "id": "firmware/afs_ecu/src/rte/afs_rte.c#afs_rte_read_status",
+    "label": "afs_rte_read_status",
+    "parent": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/rte/afs_rte.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 62
+  },
+  {
+    "id": "firmware/afs_ecu/src/main.c",
+    "label": "main.c",
+    "parent": "firmware/afs_ecu/src",
+    "kind": "file",
+    "path": "firmware/afs_ecu/src/main.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/main.c#main",
+    "label": "main",
+    "parent": "firmware/afs_ecu/src/main.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/main.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 4
   },
   {
     "id": "tools",
@@ -1720,7 +2659,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#dc93ae",
     "description": "",
-    "line": 24
+    "line": 29
   },
   {
     "id": "tools/system_visualization/code-graph/build_index.py#main",
@@ -1731,7 +2670,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#dc93ae",
     "description": "",
-    "line": 99
+    "line": 129
   },
   {
     "id": "tools/system_visualization/code-graph/functionality-data.js",
@@ -1789,6 +2728,46 @@ globalThis.CODE_INDEX = [
     "parent": "tools/system_visualization/code-graph",
     "kind": "file",
     "path": "tools/system_visualization/code-graph/viewer.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/hardware-wiring",
+    "label": "hardware-wiring",
+    "parent": "tools/system_visualization",
+    "kind": "module",
+    "path": "tools/system_visualization/hardware-wiring",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/hardware-wiring/hardware-wiring.css",
+    "label": "hardware-wiring.css",
+    "parent": "tools/system_visualization/hardware-wiring",
+    "kind": "file",
+    "path": "tools/system_visualization/hardware-wiring/hardware-wiring.css",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/hardware-wiring/hardware-wiring.js",
+    "label": "hardware-wiring.js",
+    "parent": "tools/system_visualization/hardware-wiring",
+    "kind": "file",
+    "path": "tools/system_visualization/hardware-wiring/hardware-wiring.js",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "tools/system_visualization/hardware-wiring/index.html",
+    "label": "index.html",
+    "parent": "tools/system_visualization/hardware-wiring",
+    "kind": "file",
+    "path": "tools/system_visualization/hardware-wiring/index.html",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
@@ -1899,6 +2878,156 @@ globalThis.CODE_INDEX = [
     "parent": "tools/system_visualization",
     "kind": "file",
     "path": "tools/system_visualization/system-in-action.html",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts",
+    "label": "scripts",
+    "parent": "repository",
+    "kind": "component",
+    "path": "scripts",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/boot_scripts",
+    "label": "boot_scripts",
+    "parent": "scripts",
+    "kind": "module",
+    "path": "scripts/boot_scripts",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/boot_scripts/start_bridge.sh",
+    "label": "start_bridge.sh",
+    "parent": "scripts/boot_scripts",
+    "kind": "file",
+    "path": "scripts/boot_scripts/start_bridge.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/boot_scripts/start_dashboard.sh",
+    "label": "start_dashboard.sh",
+    "parent": "scripts/boot_scripts",
+    "kind": "file",
+    "path": "scripts/boot_scripts/start_dashboard.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/boot_scripts/start_runner.sh",
+    "label": "start_runner.sh",
+    "parent": "scripts/boot_scripts",
+    "kind": "file",
+    "path": "scripts/boot_scripts/start_runner.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/boot_scripts/start_savvycan.sh",
+    "label": "start_savvycan.sh",
+    "parent": "scripts/boot_scripts",
+    "kind": "file",
+    "path": "scripts/boot_scripts/start_savvycan.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/boot_scripts/start_system.sh",
+    "label": "start_system.sh",
+    "parent": "scripts/boot_scripts",
+    "kind": "file",
+    "path": "scripts/boot_scripts/start_system.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/boot_scripts/start_visualization.sh",
+    "label": "start_visualization.sh",
+    "parent": "scripts/boot_scripts",
+    "kind": "file",
+    "path": "scripts/boot_scripts/start_visualization.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/check_scripts",
+    "label": "check_scripts",
+    "parent": "scripts",
+    "kind": "module",
+    "path": "scripts/check_scripts",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/check_scripts/can_interface_check.sh",
+    "label": "can_interface_check.sh",
+    "parent": "scripts/check_scripts",
+    "kind": "file",
+    "path": "scripts/check_scripts/can_interface_check.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/check_scripts/check_can.sh",
+    "label": "check_can.sh",
+    "parent": "scripts/check_scripts",
+    "kind": "file",
+    "path": "scripts/check_scripts/check_can.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/check_scripts/check_system.sh",
+    "label": "check_system.sh",
+    "parent": "scripts/check_scripts",
+    "kind": "file",
+    "path": "scripts/check_scripts/check_system.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/check.sh",
+    "label": "check.sh",
+    "parent": "scripts",
+    "kind": "file",
+    "path": "scripts/check.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/setup_system.sh",
+    "label": "setup_system.sh",
+    "parent": "scripts",
+    "kind": "file",
+    "path": "scripts/setup_system.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/start.sh",
+    "label": "start.sh",
+    "parent": "scripts",
+    "kind": "file",
+    "path": "scripts/start.sh",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""

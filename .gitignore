@@ -12,7 +12,18 @@ __pycache__/
 # Native out-of-source build trees.
 /bridge/build/
 /build/
+/firmware/.venv/
+/firmware/.sdk/
+/firmware/.downloads/
+/firmware/build/
+/firmware/.west/
+/firmware/zephyr/
+/firmware/modules/
+/firmware/bootloader/mcuboot/
+/firmware/tools/edtt/
+/firmware/tools/net-tools/
 
 # Workstation-specific editor settings and optional external MCP integrations.
 /.vscode/
 /.mcp.json
+/.tools/savvycan/

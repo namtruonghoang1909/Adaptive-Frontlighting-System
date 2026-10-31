@@ -1,6 +1,6 @@
 # 0x500 AFS_Status
 
-`AFS_Status` is transmitted by the STM32F407VE AFS ECU to the C++ bridge CAN module. The CAN interface decodes it and stores a status snapshot that the Dashboard interface and log tools can expose. It reports what the ECU is actually executing, whether required inputs are fresh enough, which faults are active, the measured servo positions, and the beam dimming pattern actually applied by the ECU.
+`AFS_Status` is transmitted by the STM32F407VET6 AFS ECU to the C++ bridge CAN module. The CAN interface decodes it and stores a status snapshot that the Dashboard interface and log tools can expose. It reports what the ECU is actually executing, whether required inputs are fresh enough, which faults are active, the measured servo positions, and the beam dimming pattern actually applied by the ECU.
 
 ## Frame
 
@@ -10,12 +10,39 @@
 | Name | `AFS_Status` |
 | Producer | AFS ECU |
 | Bus consumer | C++ bridge CAN module |
-| Display consumers | Dashboard, logging tools, and verification tools through the C++ bridge IPC interface |
+| Display consumers | Bridge CAN runtime/logs and native Dashboard |
 | Direction | ECU to host |
 | DLC | 8 |
-| Suggested period | 20 ms |
+| Suggested ECU transmit period | 50 ms |
 
 `DLC = 8` means this Classical CAN frame carries eight data bytes, byte `0` through byte `7`.
+
+## Host Implementation Status
+
+The suggested 50 ms period is an ECU reporting cadence, not a bridge transmit
+setting. The bridge retains the latest accepted status and reports its receive
+age to the Dashboard. The Dashboard marks it stale after 250 ms without a new
+accepted frame; this is a display freshness threshold, not ECU safety logic.
+
+The current firmware implements CAN communication and status reporting, but
+does not yet drive the servo or beam hardware. During this bring-up stage it
+reports `ExecutedMode = Safe_Default`, `SafeFallback = 1`,
+`ServoControlLost = 1`, and `BeamControlLost = 1`, with a zero applied dim mask
+and placeholder zero feedback. These values explicitly report that the output
+drivers are unavailable; they do not confirm that a physical fallback pattern
+has been applied. The output behavior in the later **Safe Fallback Lighting**
+section remains the intended hardware behavior once those drivers exist.
+
+The C++ bridge includes a receiver-side decoder for this frame. It accepts only
+standard `0x500` frames with DLC 8, validates the XOR checksum, reserved fields,
+enum ranges, the applied-sector mask, and the four-bit alive counter, then
+retains an accepted snapshot with its host monotonic receive time. Forward gaps
+of 1–8 are accepted; duplicates are always rejected, while a backward counter
+is accepted as a restart only after a quiet interval longer than 500 ms.
+Rejected frames do not refresh the retained status timestamp. Dashboard IPC
+forwards all decoded status fields, including fault flags, executed mode, health,
+servo feedback, and the applied dim-sector mask. `available` remains true for a
+retained sample after it becomes stale; `fresh` and `age_ms` indicate its age.
 
 ## Status Intent
 
@@ -52,7 +79,7 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 | 1 | 4..7 | `HealthState` | enum | Overall ECU health summary derived from flags and faults |
 | 2 | 0 | `SteeringStale` | bool | Steering is unusable (`SteeringValid=0`) or no accepted `0x200 Vehicle_Steering` frame arrived within 100 ms |
 | 2 | 1 | `SpeedStale` | bool | Speed is unusable (`SpeedValid=0`) or no accepted `0x100 Vehicle_Speed` frame arrived within 100 ms |
-| 2 | 2 | `ObjectStale` | bool | Grid is unusable (`GridValid=0`) or no accepted `0x300 Vehicle_Object` frame arrived within 100 ms |
+| 2 | 2 | `ObjectStale` | bool | Grid is unusable (`GridValid=0`) or no accepted `0x300 Vehicle_Object` frame arrived within 250 ms |
 | 2 | 3 | `DashboardStale` | bool | No fresh accepted `0x400 Dashboard_Command` inside the timeout |
 | 2 | 4 | `ServoControlLost` | bool | ECU cannot command the servo control path |
 | 2 | 5 | `ServoMismatch` | bool | Servo feedback does not match the ECU target within tolerance |
@@ -61,7 +88,7 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 | 3 | 0..7 | `LeftServoFeedbackDeg` | int8, `0.5 deg/bit` | Left lamp measured/estimated swivel angle |
 | 4 | 0..7 | `RightServoFeedbackDeg` | int8, `0.5 deg/bit` | Right lamp measured/estimated swivel angle |
 | 5..6 | 0..15 | `AppliedDimSectorMask` | uint16 LE | Bits `0..9` report logical sectors whose mapped high-beam matrix pixels were switched off; bits `10..15` are zero |
-| 7 | 0..7 | `Checksum` | uint8 | XOR of bytes `0..6`; `0` until implemented |
+| 7 | 0..7 | `Checksum` | uint8 | XOR of bytes `0..6` |
 
 ## Enums
 

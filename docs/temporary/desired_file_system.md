@@ -1,6 +1,13 @@
 # Target Project File System
 
-The component-level structure below is now established. Implemented Python simulation code was moved from the former all-Python `bridge/` into `simulation_runner/`. The C++ bridge and Python Dashboard have organized scaffolds; their runtime behavior remains future work.
+This is a target directory sketch, not a complete source inventory. The
+simulation code moved from the former all-Python `bridge/` into
+`simulation_runner/`; the C++ bridge and Python Dashboard now have runtime
+implementations. The firmware workspace and ECU CAN communication slice now
+exist under `firmware/`; actuator and feedback layers remain planned. The root
+`scripts/` directory uses shared `start.sh` and `check.sh` dispatchers with
+focused helpers grouped under `boot_scripts/` and `check_scripts/`. See the
+[working context](../../agents/working-context.md) for current status.
 
 ```text
 Adaptive-Frontlighting-System/
@@ -14,6 +21,15 @@ Adaptive-Frontlighting-System/
 |   |-- prompt-tracking.md            # recent context-changing requests
 |   |-- roadmap.md                    # proposed order and open decisions
 |   `-- plans/                         # component plans
+|-- scripts/                           # per-component and whole-host launchers
+|   |-- start.sh                       # start system or component by argument
+|   |-- check.sh                       # check dependencies/hardware by argument
+|   |-- dialogue.md                   # scripts and selector documentation
+|   |-- boot_scripts/                  # focused startup implementations
+|   |-- check_scripts/                 # focused readiness implementations
+|   `-- setup_system.sh                # project-local dependency setup
+|-- tests/
+|   `-- test_all.sh                    # full software regression suite
 |-- simulation_runner/
 |   |-- README.md
 |   |-- runner.md                     # requirements, scripts, arguments, run examples
@@ -28,8 +44,7 @@ Adaptive-Frontlighting-System/
 |   |   |   |-- surrounding/        # implemented registry extraction
 |   |   |   `-- scene.py            # matching ego/surrounding datatype
 |   |   |-- scene_display/          # optional development browser observer
-|   |   `-- ipc_adapter/             # planned simulation-to-bridge client
-|   `-- tests/                       # implemented runner/control/extractor tests
+|   |   `-- ipc_adapter/             # implemented simulation-to-bridge client
 |-- bridge/
 |   |-- README.md
 |   |-- CMakeLists.txt               # C++17 baseline
@@ -42,7 +57,6 @@ Adaptive-Frontlighting-System/
 |   |   |-- state/                   # synchronized current snapshots
 |   |   |-- can/                     # codec, scheduler, SocketCAN TX/RX
 |   |   `-- diagnostics/             # freshness, health, and logging
-|   `-- tests/                       # future native and Linux integration tests
 |-- dashboard/
 |   |-- README.md
 |   |-- pyproject.toml
@@ -50,23 +64,42 @@ Adaptive-Frontlighting-System/
 |   |   |-- app/                     # future UI composition
 |   |   |-- gateway_client/          # future Unix-socket client
 |   |   `-- models/                  # future UI-facing values
-|   `-- tests/
-|-- firmware/
-|   `-- afs_ecu/                     # future STM32F407VE Zephyr firmware (C)
-|       |-- Core/                    # Cube-generated application code, if used
-|       |-- Drivers/                 # HAL/CMSIS, if used
-|       `-- afs/
-|           |-- can/                 # CAN reception/transmission and validation
-|           |-- control/             # mode logic, swivel, and ADB decisions
-|           |-- diagnostics/         # stale inputs, feedback, and fault flags
-|           |-- hardware/            # PWM, ADC, I2C, and board pins
-|           `-- calibration/         # servo and LED-zone calibration
+|-- firmware/                        # STM32F407VET6 Zephyr application (C)
+|   |-- README.md                    # Zephyr setup, build, and flash instructions
+|   |-- requirements.txt             # pinned west version
+|   |-- .west/                       # ignored west workspace configuration
+|   |-- zephyr/                      # ignored Zephyr v3.7.0 checkout
+|   |-- modules/                     # ignored Zephyr-imported dependencies
+|   |-- bootloader/mcuboot/          # ignored west project
+|   |-- tools/edtt, net-tools/       # ignored west tools
+|   |-- docs/
+|   |   `-- hardware_check.md        # ST-Link and target bring-up checks
+|   |-- scripts/
+|   |   |-- build_firmware.sh        # Zephyr application build wrapper
+|   |   |-- check_stlink.sh          # non-flashing OpenOCD probe
+|   |   `-- flash_firmware.sh        # probe, then program with west
+|   `-- afs_ecu/                     # application and local west manifest
+|       |-- CMakeLists.txt           # Zephyr application build
+|       |-- west.yml                 # manifest for Zephyr and its modules
+|       |-- prj.conf                 # enabled software features
+|       |-- boards/                  # overlay for the confirmed physical board
+|       |-- include/afs/
+|       |   |-- application/         # ECU app and controller APIs
+|       |   |-- bsw/                 # CAN service and bus abstraction APIs
+|       |   `-- rte/                 # typed inputs/status boundary
+|       `-- src/
+|           |-- main.c               # Zephyr startup entry point
+|           |-- application/         # CAN loop, freshness controller, LED heartbeat
+|           |-- rte/                 # typed input/status storage
+|           `-- bsw/
+|               |-- services/communication/ # CAN decoding and 0x500 packing
+|               `-- ecu_abstraction/        # Zephyr CAN and GPIO adapters
 |-- simulation/
 |   `-- metadrive/                   # ignored upstream/local dependency
 |-- contracts/
 |   `-- ipc/                         # future Python/C++ message specification
 |-- docs/
-|-- tests/                           # cross-component SIL/HIL integration
+|-- tests/                           # all project-owned component and cross-component tests
 |-- tools/                           # development helpers and detailed tool guidance
 |   `-- system_visualization/        # interactive class interaction graph
 |-- hardware/                        # wiring, parts, mechanics, and calibration
@@ -84,7 +117,13 @@ Adaptive-Frontlighting-System/
 | CAN conversion, scheduling, and SocketCAN | `bridge/src/can/` |
 | CAN signal packing, units, scaling, and enums | `bridge/can/afs.dbc` |
 | Operator requests and presentation | `dashboard/` |
-| Final lighting decision and hardware control | `firmware/afs_ecu/` |
+| Final lighting decision and hardware control | `firmware/` |
 | Development helper implementations | `tools/` |
 
 Do not place project code in the ignored `simulation/metadrive/` dependency. Add deeper implementation files only with their milestone instead of creating empty source trees in advance.
+The firmware folders mirror AUTOSAR application, RTE, and BSW boundaries;
+Zephyr supplies the kernel and STM32 peripheral drivers. The ECU CAN
+communication/status slice builds for the upstream `black_f407ve` target and
+the `led0` alias remains a 500 ms heartbeat. The earlier LED image was flashed
+and the board LED was confirmed. Physical CAN verification and servo/matrix
+drivers will be added with their milestones.

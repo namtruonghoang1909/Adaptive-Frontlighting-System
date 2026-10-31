@@ -1,6 +1,6 @@
 # Data Flow
 
-The target runtime has three Linux application processes. Runner observation and Dashboard command/status IPC use separate local Unix sockets. The native Dashboard consumes fresh runner ego fields and nearby vehicle positions from the bridge and labels the proximity grid and ECU values as simulated. CAN gateway runtime remains planned. Only the C++ gateway will open SocketCAN for production AFS traffic. See [overview.md](overview.md) for the whole-system flowchart.
+The runtime has three Linux application processes. Runner observation and Dashboard command/status IPC use separate local Unix sockets. The C++ gateway can open SocketCAN when started with `--can-interface NAME`; it is the only host process that owns production AFS CAN traffic. It sends accepted Dashboard requests in `0x400` and forwards decoded `0x500` ECU status to the Dashboard with age and freshness. See [overview.md](overview.md) for the whole-system flowchart.
 
 ## Inside The Gateway
 
@@ -10,26 +10,31 @@ flowchart LR
     DASH["Python Dashboard process<br/>Commands + status display"]
 
     subgraph CPP["C++ gateway process - shared address space"]
-        IPC["Thread A: main / IPC<br/>Accept clients, validate messages<br/>Reply with status, coordinate shutdown"]
+        RUNNER_IPC["Thread A: runner IPC<br/>Accept publisher, validate scenes<br/>Replace latest source state"]
+        DASHBOARD_IPC["Thread B: Dashboard IPC<br/>Accept commands, serve gateway status"]
         INPUT["Latest input snapshots<br/>Vehicle, objects, requested command"]
-        STATUS["Latest output snapshots<br/>Decoded ECU status + gateway health"]
-        CAN["Thread B: CAN worker<br/>Schedule TX, receive RX<br/>Check source freshness"]
+        STATUS["Latest accepted ECU status<br/>Forwarded through Dashboard IPC"]
+        CAN["Optional Thread C: CAN worker<br/>Schedule TX, receive RX<br/>Check source freshness"]
 
-        IPC -->|"Replace under mutex"| INPUT
+        RUNNER_IPC -->|"Replace under mutex"| INPUT
+        DASHBOARD_IPC -->|"Replace requested command"| INPUT
         INPUT -->|"Copy under mutex"| CAN
         CAN -->|"Replace under mutex"| STATUS
-        STATUS -->|"Copy under mutex"| IPC
+        STATUS -->|"Include freshness in status response"| DASHBOARD_IPC
     end
 
-    SIM -->|"Unix socket IPC: observations"| IPC
-    DASH -->|"Unix socket IPC: requests"| IPC
-    IPC -->|"Unix socket IPC: results + status"| DASH
+    SIM -->|"Unix socket IPC: observations"| RUNNER_IPC
+    DASH -->|"Unix socket IPC: requests"| DASHBOARD_IPC
+DASHBOARD_IPC -->|"Unix socket IPC: acceptance + runner + ECU status"| DASH
     CAN <-->|"SocketCAN: TX / RX"| BUS["can0: physical CAN<br/>or vcan0: virtual test bus"]
 ```
 
-The diagram shows the target CAN runtime. Today the bridge handles runner IPC in its main thread and Dashboard IPC in a second thread. There is no CAN worker or decoded ECU status yet. The Python processes never share the C++ state object.
+The bridge handles runner IPC in its main thread and Dashboard IPC in a second thread. When `--can-interface NAME` is provided, a third worker schedules transmit and receive and stores decoded ECU status. The Python processes never share the C++ state object.
 
-A single event loop could handle the initial traffic; the proposed two-thread split isolates IPC parsing and Dashboard activity from scheduled CAN work. It is not a hard real-time guarantee. Use `poll()` and monotonic deadlines for the CAN worker; a separate RX thread or condition variable is not required by this design.
+The implemented split keeps runner IPC, Dashboard IPC, and CAN scheduling in
+separate threads. It is not a hard real-time guarantee. The CAN worker uses
+`poll()` and monotonic deadlines; a separate RX thread or condition variable
+is not required by this design.
 
 ## Python Simulation Loop
 
@@ -57,11 +62,11 @@ Runner and Dashboard use separate gateway-owned Unix Domain Sockets, `SOCK_SEQPA
 | Object state | Python adapter | C++ gateway | Ego-relative observed geometry, dimensions, validity, and sample identity |
 | Dashboard command | Python Dashboard | C++ gateway | Requested power/mode or an identified clear-fault action |
 | Command result | C++ gateway | Python Dashboard | Gateway accepted or rejected a request |
-| System status | C++ gateway | Python Dashboard | Current runner ego fields/nearby vehicles and freshness, retained request ID/state, and ECU unavailable flag; decoded ECU status planned |
+| System status | C++ gateway | Python Dashboard | Current runner ego fields/nearby vehicles and freshness, retained request ID/state and command validity, CAN availability, and decoded ECU status with freshness |
 
 Gateway acceptance is not confirmation of physical execution. The Dashboard distinguishes the operator's request, gateway acceptance, and simulated ECU state; ECU-reported execution awaits CAN reception.
 
-Current runner observations use latest-state replacement. Dashboard mode/power commands store the latest request; identified clear-fault actions receive an explicit rejection while the ECU path is absent. The client does not replay pending actions after disconnect.
+Current runner observations use latest-state replacement. Dashboard mode/power commands store the latest request; `CommandValid` follows the Dashboard connection lease and an accepted request. Clear-fault is rejected when CAN is disabled and otherwise pulses for one successful `0x400` transmission. The client does not replay pending actions after disconnect.
 
 ## CAN Transfer
 
@@ -77,7 +82,7 @@ The existing IDs below remain provisional design values, not new constraints int
 
 Python converts simulator-specific state into observations. C++ converts observations into the CAN representation, including the 10-sector `0x300` grid with one occupancy bit and a cumulative four-bit subsector mask per sector. One `0x300` frame carries the complete grid; the STM32 performs the final swivel/dimming calculations and physical output selection.
 
-The [CAN DBC](../../bridge/can/afs.dbc) defines CAN packing and signal meaning. Cantools-generated C pack/unpack functions are checked in and used by a standalone C++ frame encoder for `0x100`–`0x300`. A separate diagnostic logger exercises the encoders against live runner scenes, round-trips each batch with generated C unpackers, and cross-checks captured payloads with cantools; the production bridge executable does not yet call the encoder APIs. Runtime transport is planned with native SocketCAN. Counter handling, checksums, and timeouts require explicit application behavior alongside the DBC. The agreed single-frame `0x300` format does not require multi-frame assembly.
+The [CAN DBC](../../bridge/can/afs.dbc) defines CAN packing and signal meaning. Cantools-generated C pack/unpack functions are checked in and compiled into the C++ bridge and Zephyr application. When CAN is enabled, the bridge sends `0x100`/`0x200` every 20 ms, the complete `0x300` grid every 100 ms, and Dashboard commands every 50 ms. The ECU validates DLC, reserved fields, validity and mode ranges, and the `0x400` XOR checksum. For `0x100`, `0x200`, and `0x400`, it accepts modulo-16 forward counter deltas of 1–8, rejects duplicates and deltas 9–15, and establishes a new baseline after 500 ms without an accepted frame. The ECU expires speed and steering after 100 ms, the object grid after 250 ms, and a valid dashboard command after 200 ms. It updates the input store and reports the current safe fallback status as `0x500` every 50 ms. The bridge filters for `0x500`, validates it, and forwards accepted status to Dashboard IPC; the Dashboard marks retained status stale after 250 ms without an accepted frame. Since physical control drivers are not implemented, current `0x500` output flags indicate unavailable beam and servo control, and do not verify a physical lamp fallback. A separate diagnostic logger checks encoded payloads against generated C and cantools without bus I/O. The opt-in `socketcan_vcan_end_to_end` test covers `0x400` transmit, one-frame clear-fault pulse, Dashboard disconnect invalidation, and `0x500` forwarding on a prepared virtual CAN interface. The agreed single-frame `0x300` format does not require multi-frame assembly.
 
 ## State, Timing, And Failures
 
@@ -86,8 +91,8 @@ The [CAN DBC](../../bridge/can/afs.dbc) defines CAN packing and signal meaning. 
 - Keep source age distinct from CAN alive counters and IPC connection liveness. Receiving or transmitting another copy of an old sample must not make the observation fresh again.
 - Track sample/session identity and simulation time separately from host monotonic time. Define restart, reset, pause, backlog, and unpaced-simulation behavior before HIL integration.
 - Use bounded buffering; avoid replaying a queue of outdated vehicle states. Define queue-age checks as part of detailed IPC design.
-- Missing simulation updates invalidate source data. Dashboard disconnects fail pending actions locally, with no replay. ECU status remains marked simulated until reception exists.
+- Missing simulation updates invalidate source data. Dashboard disconnects fail pending actions locally, with no replay. The Dashboard uses simulated ECU fallback values until the bridge receives and forwards a valid CAN status snapshot.
 - STM32 independently validates incoming CAN and handles stale/invalid data even if the gateway crashes.
 - Waking and joining the CAN worker, closing sockets, and releasing owned resources belong to coordinated gateway shutdown.
 
-Runner and Dashboard IPC are implemented. Standalone CAN validation, projection, and DBC frame packing are implemented; CAN scheduling and transport, decoded ECU status, and firmware behavior remain planned.
+Runner and Dashboard IPC, opt-in CAN scheduling/transport, `0x400` command transmission, and `0x500` decoding/forwarding are implemented. Zephyr CAN receive/decode, input timeout checks, and periodic status encoding build for the STM32F407VET6 target; physical ECU flashing and CAN bus validation remain pending. The prior LED app was flashed and its LED operation confirmed. Linux detects the USB-CAN adapter as `can0`; bridge controller-loopback frames are verified, while physical bus exchange remains unverified. Servo/matrix drivers and lighting decisions remain future work. Virtual CAN integration is available through the optional test.

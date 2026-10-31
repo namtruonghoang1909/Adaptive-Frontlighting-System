@@ -1,6 +1,6 @@
 # Hardware Overview
 
-This page is a short orientation to the planned Adaptive Front-lighting System bench hardware. The hardware demonstrates two lighting behaviors: low-beam AFS swivel and high-beam ADB beam dodging. See [visual.md](visual.md) for the intended physical layout, headlight design, CAN wiring, and component wiring.
+This page is a short orientation to the planned Adaptive Front-lighting System bench hardware. The hardware demonstrates two lighting behaviors: low-beam AFS swivel and high-beam ADB beam dodging. See the [hardware wiring view](../../tools/system_visualization/hardware-wiring/index.html) for a Proteus-style pin-level schematic, [visual.md](visual.md) for the intended physical layout and headlight design, [wiring-draft.md](wiring-draft.md) for candidate signal and power connections, and the [hardware datasheet index](datasheets/README.md) for downloaded vendor documents and unresolved model-specific references.
 
 ## Bench Shape
 
@@ -13,7 +13,7 @@ MCP2551 CAN transceiver
         |
         | STM32 CAN TX / RX
         v
-STM32F407VE AFS ECU
+STM32F407VET6 AFS ECU
         |                         ^
         | I2C                     | servo position feedback
         v                         |
@@ -29,11 +29,15 @@ rotating headlight platforms
         `-- SPI -> right 8x8 MAX7219 matrix
 ```
 
-The STM32F407VE provides the CAN controller. The MCP2551 provides the electrical interface
+The STM32F407VET6 provides the CAN controller. The MCP2551 provides the electrical interface
 between STM32 CAN TX/RX and the physical CAN bus. The rig uses two feedback servos for
 horizontal swivel; cover and tilt servos are intentionally out of scope for the first build.
-The planned firmware platform is Zephyr RTOS. Confirm the exact development board before
-choosing its Zephyr target and configuring CAN, ADC, I2C, and SPI pins.
+The firmware platform is Zephyr 3.7 RTOS. The earlier LED image was flashed to
+the `black_f407ve` target over ST-Link, and the board LED blink was confirmed.
+The current CAN receive/status image builds, but has not yet been flashed or
+tested against a physical CAN bus. Peripheral pin routing and draft assignments
+still need verification before connecting AFS hardware.
+See the [firmware setup guide](../../firmware/README.md).
 
 ## One Headlight Module
 
@@ -63,18 +67,18 @@ values and row optics need bench calibration.
 
 | Part | Purpose |
 |---|---|
-| STM32F407VE board | AFS ECU controller |
-| MCP2551 CAN transceiver | CAN physical layer transceiver |
-| CAN-to-USB adapter | Linux host connection to the real CAN bus; select one that exposes SocketCAN for the planned gateway and SavvyCAN monitoring |
-| Servo PCA9685 board | Shared servo PWM driver over I2C at servo frequency |
-| Left 8x8 MAX7219 matrix module | Left low/high beam pixel output and ADB masking |
+| STM32F407VET6 board (`STM32F4VE ver 36C SN:2024C`) | AFS ECU controller; candidate Zephyr target `black_f407ve`; see the [MCU datasheet and revision note](datasheets/README.md#downloaded-documents) |
+| MCP2551 CAN transceiver | CAN physical layer transceiver; see its [datasheet](datasheets/mcp2551-datasheet-rev-g.pdf) |
+| CAN-to-USB adapter | Linux host connection to the real CAN bus; select one that exposes SocketCAN for the bridge and SavvyCAN monitoring |
+| Servo PCA9685 board | Shared servo PWM driver over I2C at servo frequency; see the [PCA9685 datasheet](datasheets/pca9685-datasheet.pdf) |
+| Left 8x8 MAX7219 matrix module | Left low/high beam pixel output and ADB masking; see the [MAX7219/MAX7221 datasheet](datasheets/max7219-max7221-datasheet-rev-6.pdf) |
 | Right 8x8 MAX7219 matrix module | Right low/high beam pixel output and ADB masking |
 | Matrix LED modules | Small-signal display LEDs and their MAX7219 drivers for a bench demonstration |
 | Two feedback-capable servos | Left/right horizontal swivel with measured position |
 | Two rotating headlight platforms | Lightweight mechanical headlight bodies |
 | Two 8x8 LED matrices | One proposed matrix per headlight; 128 pixels total |
 | 5-6 V servo supply | Dedicated servo power |
-| LED supply | Dedicated LED power sized to the selected LED modules |
+| Board USB-C 5 V rail | Proposed source for both matrix modules; verify source and board/header current capacity |
 | Projection surface | White board or wall for visual beam behavior |
 
 The provisional CAN ADB input is a 10-sector horizontal grid. Firmware maps
@@ -87,17 +91,35 @@ object bounds and optical calibration.
 ## Important Constraints
 
 - Servo power should not come from the STM32 board.
-- LED power should not come from the STM32 board.
+- In this wiring draft, matrix VCC uses the board's USB-C-fed 5 V rail. Verify
+  the USB-C source and board/header path can carry the combined load; use a
+  separate 5 V supply if that path is insufficient.
 - Logic, servo, lighting, and CAN grounds need a common reference.
 - CANH/CANL need proper termination on the physical bench bus.
 - MCP2551 wiring and STM32 logic-level compatibility should be checked during hardware bring-up.
 - Servo position feedback needs to return directly to STM32 ADC inputs.
 - Analog feedback must stay within STM32 ADC limits; 0-3.3 V feedback servos are preferred.
-- The servo PCA9685 remains on I2C at servo frequency. The two MAX7219 modules use the STM32 SPI interface, with shared clock/data and separate chip-select/load signals or a supported daisy chain.
+- The servo PCA9685 remains on I2C at servo frequency. The two MAX7219 modules
+  share SPI2 clock/data and use separate GPIO LOAD lines so each matrix can
+  latch updates independently.
 - A MAX7219 provides on/off pixels plus a global 16-step matrix brightness setting. It cannot set a separate brightness level for each pixel. [Check the MAX7219 datasheet](https://www.analog.com/media/en/technical-documentation/data-sheets/MAX7219-MAX7221.pdf).
-- The MAX7219 operates from 4.0–5.5 V and specifies a 3.5 V logic-high input at a 5 V supply. STM32 3.3 V SPI outputs may need level shifting; confirm the exact module before wiring it directly.
+- The MAX7219 operates from 4.0–5.5 V and specifies a 3.5 V minimum
+  logic-high input at a 5 V supply. The selected prototype connects STM32
+  3.3 V SCK, MOSI, and separate LOAD GPIOs directly to the modules for bench
+  validation; this is below the specified threshold and is not guaranteed.
+  If direct signaling is unreliable, add a compatible one-way buffer. Matrix
+  VCC remains on the board's USB-C-fed 5 V rail. See the local
+  [MAX7219/MAX7221 datasheet](datasheets/max7219-max7221-datasheet-rev-6.pdf).
 - The matrix modules are display hardware for a bench demonstration. Their brightness and optics need evaluation before treating them as headlight emitters.
 - Moving-platform wiring needs strain relief and bounded yaw travel to avoid twisting wires.
 - Servo calibration, mechanical limits, matrix pixel angles, low-beam cutoff, high-beam reach, and ADB shadow margins require hardware bring-up calibration.
 
-For the planned host-side CAN workflow, Vector CANdb++ edits the DBC and SavvyCAN displays decoded traffic. See [CAN DBC editing and monitoring](../can/README.md#dbc-editing-and-live-monitoring) for the DBC, SocketCAN, and live-traffic requirements.
+## Host CAN Bring-Up
+
+The Ubuntu VM enumerates the USB-CAN adapter as `can0` with the `gs_usb`
+driver. The adapter has passed controller loopback and the bridge's
+`0x100`–`0x400` frames were observed through that local path; this does not
+confirm physical CANH/CANL communication. Follow the focused
+[CAN interface setup and hardware tests](can_interface.md) for bitrate setup,
+the `sudo ip link set can0 up` command, loopback checks, SavvyCAN, and physical
+bus verification. Use the [CAN contract](../can/README.md) for message details.

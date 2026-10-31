@@ -10,4 +10,4 @@ selection updates the preview immediately; mode, power, and clear-fault
 controls also call `GatewayDashboardState` to request bridge actions. A second
 native window shows detailed ego and ECU values. Mouse wheels and trackpads
 scroll the Dashboard when its contents exceed the window height. Source labels
-distinguish simulated ECU/fallback values from fresh runner data.
+distinguish decoded ECU status and freshness from simulated fallback values.

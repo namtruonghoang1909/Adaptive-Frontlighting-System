@@ -25,10 +25,11 @@ focuses on the three runner-derived transmit frames.
   the source-grid freshness/validity gate, and the ECU's CAN receive timeout
   detects a missing frame stream. The ECU acts on the latest grid without
   comparing it to a previous grid.
-- [x] Set a 100 ms ECU timeout for `0x100`, `0x200`, and `0x300` at the
-  20 ms transmit period (five expected periods). Low validity flags make their
-  source inputs unusable immediately; a missing accepted frame stream reaches
-  timeout after 100 ms. A received `GridValid=0` frame clears the grid immediately.
+- [x] Set 100 ms ECU timeouts for `0x100` and `0x200` at the 20 ms transmit
+  period (five expected periods). Set the later-agreed `0x300` grid period to
+  100 ms and its ECU receive timeout to 250 ms, allowing one missed frame plus
+  timing margin. Low validity flags make received source inputs unusable
+  immediately; a received `GridValid=0` frame clears the grid immediately.
 - [x] Do not add application XOR checksums to `0x100` or `0x200`; reserve byte
   7 and rely on Classical CAN CRC. `0x300` also has no application checksum;
   `0x500` and `0x400` retain their documented XOR checksums.

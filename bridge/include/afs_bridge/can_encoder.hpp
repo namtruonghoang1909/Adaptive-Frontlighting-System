@@ -46,7 +46,7 @@ struct CanSignalValues {
 
 class CanEncoder {
 public:
-    // Call once per scheduled output cycle. Each invocation advances both
+    // Call on each 20 ms vehicle-input cycle. Each invocation advances both
     // alive counters, including when the input scene is absent or invalid.
     CanSignalValues encode(const std::optional<RunnerScene>& scene,
                            std::uint64_t now_monotonic_ns);

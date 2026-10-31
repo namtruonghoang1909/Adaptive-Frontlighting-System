@@ -64,11 +64,22 @@ For each implementation or fix:
 
 ## Verification
 
-Run commands from the repository root on Linux. Use the configured MetaDrive interpreter when available:
+Run the changed component's suite from the repository root on Linux. Use the
+root full-suite command for cross-component changes:
+
+```bash
+bash tests/scripts/test_runner.sh
+bash tests/test_all.sh
+```
+
+The shorter `tests/scripts/test_*.sh` component entrypoints and their module examples
+are indexed in [the test script guide](../tests/scripts/test_guide.md).
+
+The runner suite uses the configured MetaDrive interpreter when available:
 
 ```bash
 PYTHONPATH=simulation_runner/src \
-simulation/metadrive/metadrive_venv/bin/python -m pytest simulation_runner/tests -v
+simulation/metadrive/metadrive_venv/bin/python -m pytest tests/runner -v
 ```
 
 If pytest is unavailable, use the dependency-free test procedure documented in [docs/verification/testing.md](../docs/verification/testing.md). Report checks run for the current change separately from historical results.

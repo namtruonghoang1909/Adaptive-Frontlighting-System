@@ -2,7 +2,7 @@
 
 Simulated driving and operator requests feed a physical STM32 controller. In low-beam swivel mode, only matrix rows 5–8 shine and both platforms follow steering. In high-beam modes, both platforms return to center, rows 5–8 stay on, and rows 1–4 add the longer beam with optional pixel masking around vehicles. The Dashboard displays the ECU's reported output and faults.
 
-This flowchart shows the target runtime after the component reorganization. The Python runner, controls, ego/surrounding extraction, in-process latest-scene interface, optional development display, and runner-to-bridge IPC are implemented. The native Tkinter Dashboard also exchanges requests and status with the bridge. Standalone CAN signal validation/projection and DBC frame packing APIs are implemented, but are not connected to runtime scheduling or transport. Decoded ECU status and Zephyr-based STM32 firmware remain planned.
+This flowchart shows the target runtime after the component reorganization. The Python runner, controls, ego/surrounding extraction, in-process latest-scene interface, optional development display, runner-to-bridge IPC, and native Dashboard IPC are implemented. The bridge has an opt-in SocketCAN worker that transmits `0x100`–`0x400`, decodes `0x500`, and forwards ECU status to Dashboard IPC. Zephyr firmware now receives and validates `0x100`–`0x400`, checks freshness, and builds periodic `0x500` status reporting; it reports `Safe_Default` because servo and beam drivers are not implemented. The earlier LED image was flashed and confirmed. The Ubuntu VM detects the USB-CAN adapter as `can0` with `gs_usb`; 500 kbit/s setup and bridge ID loopback have passed. A reported `ENOBUFS` warning is under investigation, and physical bus exchange with the ECU remains unverified. Virtual CAN integration coverage is available.
 
 Use the [interactive code map](../../tools/system_visualization/code-graph/index.html) to
 explore implemented classes and their interactions. Nodes are clustered by
@@ -44,7 +44,7 @@ flowchart LR
     end
 
     BUS["CAN adapter<br/>Physical CAN bus"]
-    ECU["STM32 AFS ECU - Zephyr RTOS (C)<br/>Low-beam swivel + high-beam pixel masking<br/>Timeouts, faults, safe fallback"]
+    ECU["STM32 AFS ECU - Zephyr RTOS (C)<br/>CAN input validation + 0x500 status implemented<br/>AFS actuation planned; Safe_Default reported meanwhile"]
     RIG["Physical headlight rig<br/>Swivel servos + two 8x8 matrix modules"]
 
     GW <-->|"SocketCAN / can0<br/>Input frames and ECU status"| BUS
@@ -69,8 +69,8 @@ A process is a separately running program with its own memory. Threads are execu
 | Application process | Application work | Communication |
 |---|---|---|
 | Python simulation + adapter | Run MetaDrive, extract and retain the latest scene, automatically publish it to the gateway, optionally serve the development display | Lock-protected local scene access; local HTTP for the optional observer; Unix socket IPC to the gateway |
-| C++ gateway | Runner receiver, Dashboard command/status server, standalone CAN validation/projection and DBC frame packing APIs; future CAN TX/RX worker | Mutex-protected latest scene; separate runner and Dashboard Unix sockets; SocketCAN planned |
-| Python Dashboard | Native window for command entry, fresh runner ego fields/nearby vehicles, and simulated ECU status | Reconnecting Unix socket client to gateway; local simulated ECU and fallback model |
+| C++ gateway | Runner receiver, Dashboard command/status server, opt-in SocketCAN worker (`0x100`/`0x200` every 20 ms; `0x300` every 100 ms; `0x400` every 50 ms), and `0x500` status decoder | Mutex-protected latest scene/status; separate runner and Dashboard Unix sockets; SocketCAN opens only with `--can-interface NAME` |
+| Python Dashboard | Native window for command entry, fresh runner ego fields/nearby vehicles, and live ECU status with simulated fallback | Reconnecting Unix socket client to gateway; local demo state supplies fallback values until a valid ECU status arrives |
 
 The process numbers identify applications, not startup order or dedicated CPU cores. MetaDrive and UI libraries may use additional internal threads. The Dashboard window and its Unix socket client belong to the same Python process. A future combined launcher can start the simulation and Dashboard windows together.
 
@@ -91,9 +91,9 @@ proposed logical sector and physical lamp data types.
 ## Current Implementation And Design Status
 
 - The Python implementation is under `simulation_runner/`. Its runner constructs a matching ego and ground-truth surrounding `SceneSnapshot` after every reset and step, atomically replaces a process-local latest value, preserves the existing ego-only callback, and can serve the read-only `scene_display` development observer.
-- `bridge/` contains the C++17/CMake runner socket receiver and latest source-state retention, plus standalone CAN validation/projection and DBC-generated frame packing APIs.
-- `dashboard/` contains a native Tkinter window and reconnecting gateway client. Mode/power requests reach the bridge; fresh runner ego fields and nearby vehicle positions replace demo values. ECU status and the proximity grid are simulated and labeled.
-- The runner publisher and C++ receiver implement versioned local socket IPC and latest source-state retention. The bridge also serves Dashboard request/status IPC. Generated payload packing is available as a standalone API; runtime bus transport and Zephyr-based STM32 firmware are not implemented.
+- `bridge/` contains the C++17/CMake runner and Dashboard socket servers, standalone CAN validation/projection, DBC-generated frame packing, optional SocketCAN scheduling and transport, and ECU status decoding/forwarding.
+- `dashboard/` contains a native Tkinter window and reconnecting gateway client. Mode/power requests reach the bridge; fresh runner ego fields, nearby vehicle positions, and accepted ECU status replace demo values where available. The proximity grid remains simulated and labeled.
+- The runner publisher and C++ receiver implement versioned local socket IPC and latest source-state retention. The bridge also serves Dashboard request/status IPC, sends `0x400`, and forwards decoded `0x500` status. Zephyr firmware validates all four bridge-to-ECU frames, enforces input freshness, and sends `0x500` every 50 ms. Its current output state is `Safe_Default` because hardware drivers are not implemented. The earlier LED image was flashed and observed on the board; ECU CAN and physical CANH/CANL have not yet been tested on hardware.
 - The runner observation boundary uses C++17/CMake and Unix Domain Sockets with `SOCK_SEQPACKET` carrying versioned JSON. The [runner–bridge communication contract](runner-bridge-communication.md) documents the implemented fields, limits, and recovery policy.
 - The established component layout and future deeper structure are documented in [desired_file_system.md](../temporary/desired_file_system.md).
 
@@ -101,4 +101,4 @@ proposed logical sector and physical lamp data types.
 
 Use `vcan0` for gateway integration tests with CAN inspection tools or a software ECU. It is a virtual bus and has no physical STM32 connection. A full SIL control test also needs software ECU logic; virtual CAN alone does not exercise AFS control.
 
-The flowchart above shows physical HIL through `can0`, a CAN adapter, the bus, and the ECU transceiver. The STM32F407VE owns the CAN controller; transceiver selection, logic levels, termination, and wiring remain hardware bring-up work.
+The flowchart above shows physical HIL through `can0`, a CAN adapter, the bus, and the ECU transceiver. The adapter is configured at 500 kbit/s, and bridge frames `0x100`–`0x400` were observed through controller loopback. A transmit queue warning remains under investigation; physical bus exchange and firmware receive/status tests are still pending. The STM32F407VET6 owns the CAN controller; candidate board pins and unresolved power/logic-level checks are recorded in the [wiring draft](../hardware/wiring-draft.md).

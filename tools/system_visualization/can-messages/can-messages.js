@@ -5,7 +5,7 @@
   const faultBits = [
     ["SteeringStale", "No fresh accepted 0x200 steering message arrived before timeout."],
     ["SpeedStale", "No fresh accepted 0x100 speed message arrived before timeout."],
-    ["ObjectStale", "No fresh accepted 0x300 vehicle grid arrived before timeout."],
+    ["ObjectStale", "Grid invalid or no accepted 0x300 vehicle grid arrived within the 250 ms ECU timeout."],
     ["DashboardStale", "No fresh accepted 0x400 dashboard command arrived before timeout."],
     ["ServoControlLost", "The ECU cannot command the servo control path."],
     ["ServoMismatch", "Servo feedback differs from the requested angle beyond tolerance."],

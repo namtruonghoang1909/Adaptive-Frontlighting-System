@@ -1,4 +1,4 @@
-"""Native AFS instrument cluster with bridge IPC and simulated ECU values."""
+"""Native AFS instrument cluster with bridge IPC and freshness-aware ECU status."""
 
 from __future__ import annotations
 
@@ -54,6 +54,7 @@ class DashboardWindow:
         self._selection_touched = False
         self.details_window: Any = None
         self.detail_values: dict[str, Any] = {}
+        self.detail_titles: dict[str, Any] = {}
         root.title("AFS Vehicle Dashboard")
         root.configure(bg=BG)
         root.geometry("1240x980")
@@ -80,7 +81,7 @@ class DashboardWindow:
         brand.pack(side="left")
         _label(brand, "AFS", 13, TEXT, True).pack(anchor="w")
         _label(brand, "ADAPTIVE FRONT LIGHTING", 8, DIM, True).pack(anchor="w")
-        self.header_status = _label(topbar, "DEMO ECU  ·  BRIDGE OFFLINE", 9, AMBER, True)
+        self.header_status = _label(topbar, "SIMULATED ECU  ·  BRIDGE OFFLINE", 9, AMBER, True)
         self.header_status.pack(side="right")
 
         surround = tk.Frame(body, bg=PANEL, padx=18, pady=13,
@@ -140,8 +141,9 @@ class DashboardWindow:
         for column in range(3):
             status.grid_columnconfigure(column, weight=1, uniform="status")
         self.status_labels: dict[str, Any] = {}
+        self.status_captions: dict[str, Any] = {}
         cards = (
-            ("health", "ECU HEALTH · SIMULATED"),
+            ("health", "ECU HEALTH · SIMULATED UNTIL CAN STATUS ARRIVES"),
             ("requested", "SELECTED MODE · PREVIEW"),
             ("bridge", "BRIDGE LINK"),
         )
@@ -150,7 +152,9 @@ class DashboardWindow:
                             highlightbackground=BORDER, highlightthickness=1)
             card.grid(row=0, column=column, sticky="nsew", padx=(0 if column == 0 else 5,
                                                                    0 if column == 2 else 5))
-            _label(card, caption, 8, DIM, True, PANEL).pack(anchor="w")
+            caption_widget = _label(card, caption, 8, DIM, True, PANEL)
+            caption_widget.pack(anchor="w")
+            self.status_captions[name] = caption_widget
             self.status_labels[name] = _label(card, "", 14, TEXT, True, PANEL)
             self.status_labels[name].pack(anchor="w", pady=(5, 3))
             footer_text = {
@@ -167,7 +171,7 @@ class DashboardWindow:
                   bg=PANEL_LIGHT, fg=CYAN, activebackground="#284354",
                   activeforeground=TEXT, relief="flat", bd=0, padx=13, pady=9,
                   font=("DejaVu Sans", 9, "bold"), cursor="hand2").pack(side="left")
-        _label(footer, "Mode requests use bridge IPC when connected; no CAN traffic.",
+        _label(footer, "Bridge IPC carries commands; enable CAN with --can-interface NAME.",
                9, DIM, False, PANEL).pack(side="right")
         root.protocol("WM_DELETE_WINDOW", self._close)
         self._refresh()
@@ -241,15 +245,38 @@ class DashboardWindow:
         self.result_label.configure(text=f'{title}  ·  {result["message"]}')
         self.request_id_label.configure(text=f'REQUEST  {result["id"]}')
         self.status_labels["health"].configure(
-            text=ecu["health_label"], fg=GREEN if ecu["health"] == "ok" else AMBER)
+            text=ecu["health_label"],
+            fg=GREEN if ecu["health"] == "ok" else
+               RED if ecu["health"] == "faulted" else AMBER)
         self.status_labels["requested"].configure(
             text=f'{"On" if self.selected_power else "Off"} · {MODE_LABELS[self.selected_mode]}')
         connected = self.snapshot["bridge"]["connected"]
+        can_enabled = self.snapshot["bridge"].get("can_enabled", False)
+        status_available = ecu.get("status_available", False)
+        self.status_captions["health"].configure(
+            text=("ECU HEALTH · LIVE 0x500" if status_available else
+                  "ECU HEALTH · WAITING FOR 0x500" if connected and can_enabled else
+                  "ECU HEALTH · SIMULATED FALLBACK"))
+        if not connected:
+            header = "BRIDGE OFFLINE"
+        elif not can_enabled:
+            header = "SIMULATED ECU  ·  CAN DISABLED"
+        elif not status_available:
+            header = "ECU 0x500  ·  WAITING"
+        else:
+            header = "ECU 0x500  ·  FRESH" if ecu["status_fresh"] else "ECU 0x500  ·  STALE"
         self.status_labels["bridge"].configure(
-            text="Connected" if connected else "Offline", fg=GREEN if connected else AMBER)
+            text=("ECU status fresh" if status_available and ecu["status_fresh"] else
+                  "ECU status stale" if status_available else
+                  "CAN enabled; waiting" if connected and can_enabled else
+                  "Connected" if connected else "Offline"),
+            fg=GREEN if connected and (not status_available or ecu["status_fresh"])
+               else AMBER)
         self.header_status.configure(
-            text="DEMO ECU  ·  BRIDGE CONNECTED" if connected else "DEMO ECU  ·  BRIDGE OFFLINE",
-            fg=GREEN if connected else AMBER)
+            text=header,
+            fg=GREEN if connected and status_available and ecu["status_fresh"] else
+               CYAN if connected and can_enabled and not status_available else
+               AMBER)
         self.surround_source_label.configure(
             text=f'Top-down proximity view · {self.snapshot["ego"]["surround_source"]}')
         self._draw_surround()
@@ -458,7 +485,7 @@ class DashboardWindow:
         }[mode]
         canvas.create_text(cx, 294, text=mode_label, fill=TEXT,
                            font=("DejaVu Sans", 14, "bold"))
-        canvas.create_text(cx, 313, text="Selection preview · ECU state simulated", fill=AMBER,
+        canvas.create_text(cx, 313, text="Selection preview · ECU execution reported separately", fill=AMBER,
                            font=("DejaVu Sans", 9))
 
     def _draw_steering_gauge(self, cx: float, cy: float, radius: float) -> None:
@@ -499,7 +526,7 @@ class DashboardWindow:
         header.pack(fill="x")
         _label(header, "VEHICLE & ECU DATA", 9, DIM, True).pack(anchor="w")
         _label(header, "Detailed status", 19, TEXT, True).pack(anchor="w")
-        _label(header, "Fresh runner fields may be live; ECU and proximity-grid values are simulated.",
+        _label(header, "Runner and ECU values are live when fresh; the proximity grid is simulated.",
                10, MUTED).pack(anchor="w")
         content = tk.Frame(window, bg=BG, padx=24)
         content.pack(fill="both", expand=True)
@@ -507,7 +534,7 @@ class DashboardWindow:
             content.grid_columnconfigure(column, weight=1, uniform="details")
         for row in range(2):
             content.grid_rowconfigure(row, weight=1)
-        vehicle = self._detail_card(content, 0, 0, "EGO VEHICLE · MIXED SOURCES")
+        vehicle = self._detail_card(content, 0, 0, "vehicle_title", "EGO VEHICLE · MIXED SOURCES")
         self.detail_values["ego_source"] = _label(vehicle, "", 8, AMBER, False, PANEL,
                                                    wraplength=330, justify="left")
         self.detail_values["ego_source"].pack(anchor="w", pady=(0, 8))
@@ -518,19 +545,23 @@ class DashboardWindow:
             _label(line, caption, 10, MUTED, False, PANEL).pack(side="left")
             self.detail_values[key] = _label(line, "", 11, TEXT, True, PANEL)
             self.detail_values[key].pack(side="right")
-        output = self._detail_card(content, 0, 1, "LAMP OUTPUT · SIMULATED ECU")
-        for key, caption in (("left_servo", "Left servo"),
+        output = self._detail_card(content, 0, 1, "output_title", "LAMP OUTPUT · SIMULATED ECU")
+        for key, caption in (("executed_mode", "Executed mode"),
+                             ("status_age", "Status age"),
+                             ("required_inputs", "Required inputs"),
+                             ("safe_fallback", "Safe fallback"),
+                             ("left_servo", "Left servo"),
                              ("right_servo", "Right servo"), ("dim_mask", "Applied dim mask")):
             line = tk.Frame(output, bg=PANEL, pady=5)
             line.pack(fill="x")
             _label(line, caption, 10, MUTED, False, PANEL).pack(side="left")
             self.detail_values[key] = _label(line, "", 11, TEXT, True, PANEL)
             self.detail_values[key].pack(side="right")
-        grid_card = self._detail_card(content, 1, 0, "OBJECT PROXIMITY · 10 SECTORS")
+        grid_card = self._detail_card(content, 1, 0, "grid_title", "OBJECT PROXIMITY · 10 SECTORS")
         self.grid_canvas = tk.Canvas(grid_card, height=155, bg=PANEL, bd=0,
                                      highlightthickness=0)
         self.grid_canvas.pack(fill="x")
-        fault = self._detail_card(content, 1, 1, "ECU FAULTS · SIMULATED ECU")
+        fault = self._detail_card(content, 1, 1, "fault_title", "ECU FAULTS · SIMULATED ECU")
         self.detail_values["fault"] = _label(fault, "", 11, AMBER, True, PANEL,
                                               wraplength=330, justify="left")
         self.detail_values["fault"].pack(anchor="w", pady=10)
@@ -543,13 +574,15 @@ class DashboardWindow:
         self.detail_values["action"].pack(anchor="w", pady=(10, 0))
         self._update_details()
 
-    def _detail_card(self, parent: Any, row: int, column: int, title: str) -> Any:
+    def _detail_card(self, parent: Any, row: int, column: int, key: str, title: str) -> Any:
         card = tk.Frame(parent, bg=PANEL, padx=15, pady=14,
                         highlightbackground=BORDER, highlightthickness=1)
         card.grid(row=row, column=column, sticky="nsew",
                   padx=(0 if column == 0 else 6, 0 if column == 1 else 6),
                   pady=(0 if row == 0 else 6, 0 if row == 1 else 6))
-        _label(card, title, 9, DIM, True, PANEL).pack(anchor="w", pady=(0, 10))
+        heading = _label(card, title, 9, DIM, True, PANEL)
+        heading.pack(anchor="w", pady=(0, 10))
+        self.detail_titles[key] = heading
         return card
 
     def _clear_fault(self) -> None:
@@ -561,12 +594,29 @@ class DashboardWindow:
             return
         ego = self.snapshot["ego"]
         ecu = self.snapshot["ecu"]
+        live_status = ecu.get("status_available", False)
+        source_label = "LIVE ECU STATUS" if live_status else "SIMULATED ECU STATUS"
+        self.detail_titles["output_title"].configure(text=f"LAMP OUTPUT · {source_label}")
+        self.detail_titles["fault_title"].configure(text=f"ECU FAULTS · {source_label}")
         self.detail_values["speed"].configure(text=f'{ego["speed_kmh"]:.1f} km/h')
         self.detail_values["ego_source"].configure(text=ego["source"])
         self.detail_values["steering"].configure(text=f'{ego["steering_deg"]:+.1f}°')
         self.detail_values["heading"].configure(text=f'{ego["heading_deg"]:+.1f}°')
         self.detail_values["position"].configure(
             text=f'{ego["position_x_m"]:.1f}, {ego["position_y_m"]:.1f} m')
+        self.detail_values["executed_mode"].configure(text=ecu["executed_mode_label"])
+        if ecu.get("status_available"):
+            age = ecu.get("status_age_ms")
+            age_text = f'{age:.0f} ms · {"fresh" if ecu["status_fresh"] else "stale"}' if age is not None else "Age unavailable"
+            inputs_text = "Valid" if ecu["required_inputs_valid"] else "Invalid"
+        else:
+            age_text = "No CAN status"
+            inputs_text = "Simulated"
+        self.detail_values["status_age"].configure(text=age_text)
+        self.detail_values["required_inputs"].configure(text=inputs_text)
+        self.detail_values["safe_fallback"].configure(
+            text=("Active" if ecu["safe_fallback"] else "Inactive")
+                 if live_status else "Simulated")
         self.detail_values["left_servo"].configure(
             text=f'{ecu["left_servo_feedback_deg"]:+.1f}°')
         self.detail_values["right_servo"].configure(
@@ -575,9 +625,9 @@ class DashboardWindow:
             text=f'0x{ecu["applied_dim_sector_mask"]:03X}')
         faults = ecu["faults"]
         self.detail_values["fault"].configure(
-            text="No active demo faults" if not faults else
+            text=("No active ECU faults" if live_status else "No active demo faults") if not faults else
                  "\n".join(f'{fault["name"]}: {fault["detail"]}' for fault in faults),
-            fg=GREEN if not faults else AMBER)
+            fg=GREEN if not faults else RED if ecu["health"] == "faulted" else AMBER)
         self.detail_values["action"].configure(
             text=self.snapshot["request"]["last_action"]["message"])
         canvas = self.grid_canvas

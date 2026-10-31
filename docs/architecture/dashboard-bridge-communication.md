@@ -3,8 +3,8 @@
 The native Dashboard and C++ bridge communicate over a local Unix Domain Socket
 with `SOCK_SEQPACKET`. This channel is separate from the runner scene socket.
 The bridge owns both socket endpoints; the Dashboard reconnects when the bridge
-is absent or restarted. This is implemented on `feat/dashboard` without
-SocketCAN or ECU reception.
+is absent or restarted. Optional SocketCAN command transmission and ECU status
+forwarding are enabled when the bridge starts with `--can-interface NAME`.
 
 ## Socket And Lifecycle
 
@@ -41,24 +41,34 @@ request ID:
 Modes are `low_beam_no_swivel`, `low_beam_swivel`,
 `high_beam_no_dimming`, and `high_beam_dimming`. Request IDs contain 1–64
 ASCII letters, digits, hyphens, or underscores. A successful result means the
-bridge stored the operator request. It does **not** mean a CAN frame was sent or
-an ECU executed the mode. The bridge retains the last accepted power and mode
-across Dashboard disconnects until the bridge process exits. The Dashboard
-does not replay pending actions after reconnecting.
+bridge stored the operator request. With CAN enabled, it is sent in `0x400
+Dashboard_Command` at 50 ms intervals; the result does **not** confirm ECU
+execution. The bridge retains the last accepted power and mode across Dashboard
+disconnects until the bridge process exits, while `CommandValid` is cleared on
+disconnect. A reconnect reasserts the retained command. The Dashboard does not
+replay pending actions after reconnecting.
 
-A clear-fault action has its own ID. Until CAN/ECU control is implemented, the
-bridge rejects it explicitly:
+A clear-fault action has its own ID. When CAN is enabled, the bridge queues it
+for one successful SocketCAN write for a `0x400` frame and reports that ECU
+execution is unconfirmed:
 
 ```json
 {"protocol_version":1,"type":"clear_fault","request_id":"c3d4"}
-{"protocol_version":1,"type":"command_result","request_id":"c3d4","accepted":false,"reason":"ecu_unavailable"}
+{"protocol_version":1,"type":"command_result","request_id":"c3d4","accepted":true,"reason":"queued_for_can"}
+```
+
+With CAN disabled, it rejects the action:
+
+```json
+{"protocol_version":1,"type":"clear_fault","request_id":"c3d4"}
+{"protocol_version":1,"type":"command_result","request_id":"c3d4","accepted":false,"reason":"can_disabled"}
 ```
 
 The client requests a current status snapshot:
 
 ```json
 {"protocol_version":1,"type":"get_status"}
-{"protocol_version":1,"type":"status","runner":{"connected":true,"fresh":true,"age_ms":42,"speed_kmh":36.0,"steering_deg":7.5,"position_x_m":128.6,"position_y_m":44.2,"heading_deg":2.1,"objects_valid":true,"objects_limited":false,"objects":[{"x_forward_m":39.0,"y_left_m":0.2}]},"request":{"present":true,"request_id":"a1b2","power_on":true,"mode":"high_beam_dimming"},"ecu":{"available":false}}
+{"protocol_version":1,"type":"status","runner":{"connected":true,"fresh":true,"age_ms":42,"speed_kmh":36.0,"steering_deg":7.5,"position_x_m":128.6,"position_y_m":44.2,"heading_deg":2.1,"objects_valid":true,"objects_limited":false,"objects":[{"x_forward_m":39.0,"y_left_m":0.2}]},"request":{"present":true,"valid":true,"request_id":"a1b2","power_on":true,"mode":"high_beam_dimming"},"can":{"enabled":true},"ecu":{"available":true,"fresh":true,"age_ms":18,"alive_counter":7,"required_inputs_valid":true,"fault_present":false,"safe_fallback":false,"executed_mode":5,"health_state":0,"steering_stale":false,"speed_stale":false,"object_stale":false,"dashboard_stale":false,"servo_control_lost":false,"servo_mismatch":false,"beam_control_lost":false,"can_decode_fault":false,"left_servo_feedback_deg":-1.5,"right_servo_feedback_deg":0.5,"applied_dim_sector_mask":24}}
 ```
 
 `runner.connected` means the bridge currently holds a scene from the active
@@ -73,29 +83,35 @@ marks a list cut to 24. Invalid or stale scans return an empty array and the
 Dashboard uses labeled simulated positions. A fresh valid empty array means
 there are no nearby vehicles in the supported region. The top Dashboard view
 shows the 0–80 m, ±6.5 m subset. These positions are not a projected sector
-grid. The bridge does not send sector masks, servo feedback, fault registers,
-or executed mode yet. The Dashboard labels its fallback
-values for those fields as simulated.
+grid. Sector masks, servo feedback, fault registers, and executed mode come
+from a valid `0x500` ECU status frame; until one arrives, the Dashboard labels
+those fields as simulated fallback values.
 
 `request.request_id` is the identifier of the bridge's latest stored command,
 or `null` when no command has been stored. The Dashboard can reconcile an
 in-flight command after reconnect by matching this ID. It never replays the
-command merely because the connection broke.
+command merely because the connection broke. `can.enabled` reports whether
+SocketCAN is active. `request.valid` is true while the Dashboard is connected
+and an accepted command is available, or while a clear-fault pulse is pending;
+it becomes false after disconnect.
 
 Unknown or malformed request packets get an `error` packet and do not change
 bridge state. A broken connection fails any in-flight Dashboard action; the
-client does not queue it for replay. The bridge's request is separate from
-simulated ECU execution shown in the current Dashboard.
+client does not queue it for replay. `ecu.available` indicates a valid `0x500`
+sample has been received. The status includes decoded fault flags, executed
+mode, health, servo feedback, and applied dim-sector mask. `ecu.fresh` becomes
+false after 250 ms without another accepted frame. The Dashboard marks retained
+stale values and shows labeled simulated fallback values before the first valid
+ECU sample.
 
 ## Current Process Boundary
 
 ```text
 MetaDrive runner -- runner scene socket --> C++ bridge
 Native Dashboard <-- Dashboard status socket --> C++ bridge
-ECU status / CAN path: unavailable
+Optional SocketCAN: bridge sends 0x400 and receives 0x500
 ```
 
-The next CAN integration will send accepted requests as `0x400` commands and
-replace simulated ECU display values with decoded `0x500` status. That work
-must retain separate requested, accepted, and executed states and explicit
-freshness.
+Requested mode, bridge acceptance, and ECU-reported execution remain separate
+states. The bridge sends accepted requests and forwards decoded status; the
+Dashboard shows simulated fallback values until a valid ECU sample arrives.

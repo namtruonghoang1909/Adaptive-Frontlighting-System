@@ -19,6 +19,7 @@ Protocol projection, packet-size enforcement, and object truncation live in
 state, or AFS control.
 
 Dependency-free projection and packet-boundary cases are in
-`simulation_runner/tests/test_ipc_publisher.py`. The C++ bridge's process-level
-test runs the real publisher against the receiver; see
-[`bridge/tests/README.md`](../../../bridge/tests/README.md).
+[`tests/runner/ipc_publisher/`](../../../tests/runner/ipc_publisher/). The C++
+bridge's process-level socket tests are in
+[`tests/unix_socket/runner_bridge/`](../../../tests/unix_socket/runner_bridge/);
+the shared suite index is [`tests/README.md`](../../../tests/README.md).

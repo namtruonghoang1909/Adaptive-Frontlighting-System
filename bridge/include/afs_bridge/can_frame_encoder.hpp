@@ -18,13 +18,23 @@ struct CanFrame {
     std::array<std::uint8_t, kCanPayloadCapacity> data{};
 };
 
-// Packs runner-derived signal values using the C codec generated from
-// bridge/can/afs.dbc. The returned order is speed, steering, vehicle object.
-// This class does not schedule or transmit frames.
+struct DashboardCommandCanSignals {
+    std::uint8_t alive_counter{};
+    bool valid{};
+    bool clear_fault_request{};
+    bool power_on{};
+    std::uint8_t mode{};
+};
+
+// Packs signal values using the C codec generated from bridge/can/afs.dbc.
+// The batch contains speed, steering, and vehicle object. Dashboard commands
+// are packed separately because they have an independent 50 ms schedule.
 class CanFrameEncoder {
 public:
     std::array<CanFrame, kCanFrameBatchSize> encode(
         const CanSignalValues& signals) const;
+    CanFrame encode_dashboard_command(
+        const DashboardCommandCanSignals& signals) const;
 };
 
 }  // namespace afs_bridge

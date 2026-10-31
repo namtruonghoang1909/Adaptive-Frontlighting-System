@@ -31,7 +31,7 @@ The alive counter is placed in byte `0` bits `0..3` for consistency with all pro
 
 | Byte | Bits | Signal | Type / Scale | Meaning |
 |---:|---|---|---|---|
-| 0 | 0..3 | `AliveCounter` | uint4 | Increment for every transmitted `0x100` frame, even when speed is invalid or repeated; wrap `15` to `0` |
+| 0 | 0..3 | `AliveCounter` | uint4 | Advances once per scheduled encoding cycle, even when speed is invalid or repeated; wrap `15` to `0`. ECU accepts modulo-16 forward deltas 1–8; duplicate and deltas 9–15 are rejected. A new baseline is allowed after 500 ms without an accepted frame. |
 | 0 | 4 | `SpeedValid` | bool | Speed sample is no older than 250 ms and usable; cleared on detected runner input faults |
 | 0 | 5 | `SpeedSaturated` | bool | Speed exceeded the CAN field range and was clamped for encoding; `SpeedValid` is also `0` |
 | 0 | 6 | `Reserved` | bool | Transmit `0`; reverse is represented by a negative speed value |
@@ -94,6 +94,6 @@ BIN:  00011000 11101000 00000011 00000000 00000000 00000000 00000000 00000000
 ## Receiver Behavior
 
 - If `SpeedValid = 0`, the ECU should immediately ignore `LongitudinalSpeedMps` and mark speed unusable.
-- If no accepted `0x100` frame arrives for 100 ms, or this message fails alive-counter checks, the ECU should disable or reject behaviors that require speed and set `SpeedStale` in `0x500 AFS_Status`. This is five expected 20 ms periods. A frame with `SpeedValid = 0` is received but does not make the speed input usable.
+- If no accepted `0x100` frame arrives for 100 ms, or a received frame fails validation/alive-counter checks, the ECU should immediately mark speed unusable, disable or reject behaviors that require speed, and set `SpeedStale` in `0x500 AFS_Status`. This is five expected 20 ms periods. A frame with `SpeedValid = 0` is received but does not make the speed input usable.
 - If `SpeedSaturated = 1`, the ECU must ignore `LongitudinalSpeedMps`; reject the inconsistent combination where `SpeedValid = 1`.
 - Low-beam swivel gain may depend on speed, but the speed message should not directly command a servo angle. Acceleration is not required by the agreed swivel behavior.
