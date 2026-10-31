@@ -26,3 +26,4 @@ __pycache__/
 # Workstation-specific editor settings and optional external MCP integrations.
 /.vscode/
 /.mcp.json
+/.tools/savvycan/

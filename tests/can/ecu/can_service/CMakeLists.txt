@@ -9,6 +9,7 @@ set(AFS_DBC_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../../bridge/src/can/generated"
 add_executable(afs_ecu_logic_test
     afs_ecu_logic_test.c
     ${AFS_APP_DIR}/src/application/afs_controller.c
+    ${AFS_APP_DIR}/src/bsw/services/communication/can_rx_log.c
     ${AFS_APP_DIR}/src/bsw/services/communication/can_message_service.c
     ${AFS_APP_DIR}/src/rte/afs_rte.c
     ${AFS_DBC_DIR}/afs.c
@@ -23,6 +24,7 @@ target_compile_options(afs_ecu_logic_test PRIVATE -Wall -Wextra -Wpedantic -Werr
 target_link_libraries(afs_ecu_logic_test PRIVATE m)
 
 foreach(case_name IN ITEMS counter_policy freshness_and_fallback frame_validation
-                           command_lease_and_clear_fault_edge status_encoding)
+                           command_lease_and_clear_fault_edge status_encoding
+                           rx_log_format)
     add_test(NAME ecu_${case_name} COMMAND afs_ecu_logic_test ${case_name})
 endforeach()

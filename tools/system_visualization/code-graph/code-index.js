@@ -1874,6 +1874,16 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "firmware/afs_ecu/include/afs/bsw/services/communication/can_rx_log.h",
+    "label": "can_rx_log.h",
+    "parent": "firmware/afs_ecu/include/afs/bsw/services/communication",
+    "kind": "file",
+    "path": "firmware/afs_ecu/include/afs/bsw/services/communication/can_rx_log.h",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
     "id": "firmware/afs_ecu/include/afs/rte",
     "label": "rte",
     "parent": "firmware/afs_ecu/include/afs",
@@ -2027,6 +2037,17 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
+    "id": "firmware/afs_ecu/src/application/afs_ecu_application.c#log_can_rx_frame",
+    "label": "log_can_rx_frame",
+    "parent": "firmware/afs_ecu/src/application/afs_ecu_application.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/application/afs_ecu_application.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 23
+  },
+  {
     "id": "firmware/afs_ecu/src/application/afs_ecu_application.c#afs_ecu_application_run",
     "label": "afs_ecu_application_run",
     "parent": "firmware/afs_ecu/src/application/afs_ecu_application.c",
@@ -2035,7 +2056,7 @@ globalThis.CODE_INDEX = [
     "status": "implemented",
     "color": "#e7b877",
     "description": "",
-    "line": 36
+    "line": 52
   },
   {
     "id": "firmware/afs_ecu/src/bsw",
@@ -2337,6 +2358,27 @@ globalThis.CODE_INDEX = [
     "color": "#e7b877",
     "description": "",
     "line": 361
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_rx_log.c",
+    "label": "can_rx_log.c",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication",
+    "kind": "file",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_rx_log.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": ""
+  },
+  {
+    "id": "firmware/afs_ecu/src/bsw/services/communication/can_rx_log.c#afs_can_rx_log_format",
+    "label": "afs_can_rx_log_format",
+    "parent": "firmware/afs_ecu/src/bsw/services/communication/can_rx_log.c",
+    "kind": "function",
+    "path": "firmware/afs_ecu/src/bsw/services/communication/can_rx_log.c",
+    "status": "implemented",
+    "color": "#e7b877",
+    "description": "",
+    "line": 7
   },
   {
     "id": "firmware/afs_ecu/src/rte",
@@ -2851,61 +2893,141 @@ globalThis.CODE_INDEX = [
     "description": ""
   },
   {
-    "id": "scripts/start_bridge.sh",
+    "id": "scripts/boot_scripts",
+    "label": "boot_scripts",
+    "parent": "scripts",
+    "kind": "module",
+    "path": "scripts/boot_scripts",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/boot_scripts/start_bridge.sh",
     "label": "start_bridge.sh",
-    "parent": "scripts",
+    "parent": "scripts/boot_scripts",
     "kind": "file",
-    "path": "scripts/start_bridge.sh",
+    "path": "scripts/boot_scripts/start_bridge.sh",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
   },
   {
-    "id": "scripts/start_dashboard.sh",
+    "id": "scripts/boot_scripts/start_dashboard.sh",
     "label": "start_dashboard.sh",
-    "parent": "scripts",
+    "parent": "scripts/boot_scripts",
     "kind": "file",
-    "path": "scripts/start_dashboard.sh",
+    "path": "scripts/boot_scripts/start_dashboard.sh",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
   },
   {
-    "id": "scripts/start_runner.sh",
+    "id": "scripts/boot_scripts/start_runner.sh",
     "label": "start_runner.sh",
-    "parent": "scripts",
+    "parent": "scripts/boot_scripts",
     "kind": "file",
-    "path": "scripts/start_runner.sh",
+    "path": "scripts/boot_scripts/start_runner.sh",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
   },
   {
-    "id": "scripts/start_system.sh",
+    "id": "scripts/boot_scripts/start_savvycan.sh",
+    "label": "start_savvycan.sh",
+    "parent": "scripts/boot_scripts",
+    "kind": "file",
+    "path": "scripts/boot_scripts/start_savvycan.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/boot_scripts/start_system.sh",
     "label": "start_system.sh",
-    "parent": "scripts",
+    "parent": "scripts/boot_scripts",
     "kind": "file",
-    "path": "scripts/start_system.sh",
+    "path": "scripts/boot_scripts/start_system.sh",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
   },
   {
-    "id": "scripts/start_visualization.sh",
+    "id": "scripts/boot_scripts/start_visualization.sh",
     "label": "start_visualization.sh",
-    "parent": "scripts",
+    "parent": "scripts/boot_scripts",
     "kind": "file",
-    "path": "scripts/start_visualization.sh",
+    "path": "scripts/boot_scripts/start_visualization.sh",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""
   },
   {
-    "id": "scripts/test_all.sh",
-    "label": "test_all.sh",
+    "id": "scripts/check_scripts",
+    "label": "check_scripts",
+    "parent": "scripts",
+    "kind": "module",
+    "path": "scripts/check_scripts",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/check_scripts/can_interface_check.sh",
+    "label": "can_interface_check.sh",
+    "parent": "scripts/check_scripts",
+    "kind": "file",
+    "path": "scripts/check_scripts/can_interface_check.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/check_scripts/check_can.sh",
+    "label": "check_can.sh",
+    "parent": "scripts/check_scripts",
+    "kind": "file",
+    "path": "scripts/check_scripts/check_can.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/check_scripts/check_system.sh",
+    "label": "check_system.sh",
+    "parent": "scripts/check_scripts",
+    "kind": "file",
+    "path": "scripts/check_scripts/check_system.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/check.sh",
+    "label": "check.sh",
     "parent": "scripts",
     "kind": "file",
-    "path": "scripts/test_all.sh",
+    "path": "scripts/check.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/setup_system.sh",
+    "label": "setup_system.sh",
+    "parent": "scripts",
+    "kind": "file",
+    "path": "scripts/setup_system.sh",
+    "status": "implemented",
+    "color": "#dc93ae",
+    "description": ""
+  },
+  {
+    "id": "scripts/start.sh",
+    "label": "start.sh",
+    "parent": "scripts",
+    "kind": "file",
+    "path": "scripts/start.sh",
     "status": "implemented",
     "color": "#dc93ae",
     "description": ""

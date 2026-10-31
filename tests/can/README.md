@@ -29,7 +29,7 @@ The optional virtual-bus integration test is
 
 | Folder | What it tests |
 |---|---|
-| [`ecu/can_service/`](ecu/can_service/) | Host compilation of the firmware CAN service and its real decode, RTE, safe-fallback, freshness, and `0x500` status behavior. `stubs/` supplies the small Zephyr API surface needed by the host test build. |
+| [`ecu/can_service/`](ecu/can_service/) | Host compilation of firmware CAN decoding, RTE, safe fallback, freshness, `0x500` status behavior, and the temporary raw-frame RTT log formatter. `stubs/` supplies the small Zephyr API surface needed by the host test build. |
 
 Run only the ECU CAN-service host tests with
 `bash tests/scripts/test_firmware.sh can_service` or

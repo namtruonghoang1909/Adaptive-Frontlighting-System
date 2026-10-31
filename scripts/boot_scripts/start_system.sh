@@ -2,23 +2,23 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 CAN_INTERFACE="${AFS_SYSTEM_CAN_INTERFACE:-}"
 RUNNER_ARGS=()
 CHILD_PIDS=()
 
 usage() {
   cat <<'USAGE'
-Usage: bash scripts/start_system.sh [--can-interface NAME] [-- RUNNER_OPTIONS...]
+Usage: bash scripts/start.sh system [--can-interface NAME] [-- RUNNER_OPTIONS...]
 
 Starts the C++ bridge, native Dashboard, and MetaDrive runner. The bridge starts
 without SocketCAN unless --can-interface NAME is provided. Runner options after
 -- are forwarded to the MetaDrive launcher.
 
 Examples:
-  bash scripts/start_system.sh
-  bash scripts/start_system.sh --can-interface can0
-  bash scripts/start_system.sh -- --headless --max-steps 100
+  bash scripts/start.sh system
+  bash scripts/start.sh system --can-interface can0
+  bash scripts/start.sh system -- --headless --max-steps 100
 
 The STM32 firmware must already be flashed and powered; this script never
 builds or flashes firmware. Press Ctrl+C to stop all host processes.

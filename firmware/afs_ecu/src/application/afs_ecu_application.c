@@ -3,6 +3,7 @@
 #include <afs/application/afs_ecu_application.h>
 #include <afs/bsw/ecu_abstraction/board_led.h>
 #include <afs/bsw/ecu_abstraction/can_bus.h>
+#include <afs/bsw/services/communication/can_rx_log.h>
 #include <afs/bsw/services/communication/can_message_service.h>
 #include <afs/rte/afs_rte.h>
 
@@ -17,6 +18,21 @@
 #define AFS_LED_HEARTBEAT_PERIOD_MS 500
 #define AFS_RX_POLL_MAX_MS 10
 #define AFS_ERROR_LOG_INTERVAL_MS 1000
+
+#if defined(CONFIG_AFS_CAN_RX_LOGGING)
+static void log_can_rx_frame(const struct afs_can_frame *frame)
+{
+	char line[AFS_CAN_RX_LOG_BUFFER_SIZE];
+	int length = afs_can_rx_log_format(frame, line, sizeof(line));
+
+	if (length < 0) {
+		printk("AFS: failed to format received CAN frame (%d)\n", length);
+		return;
+	}
+
+	printk("%s\n", line);
+}
+#endif
 
 static int32_t next_wait_ms(int64_t now_ms, int64_t next_status_ms,
 			    int64_t next_led_ms)
@@ -110,6 +126,9 @@ int afs_ecu_application_run(void)
 					  next_wait_ms(now_ms, next_status_ms,
 						       next_led_ms));
 		if (err == 0) {
+#if defined(CONFIG_AFS_CAN_RX_LOGGING)
+			log_can_rx_frame(&rx_frame);
+#endif
 			afs_can_message_service_process(&rx_frame, k_uptime_get());
 		} else if (err != -EAGAIN) {
 			printk("AFS: CAN receive failed (%d)\n", err);

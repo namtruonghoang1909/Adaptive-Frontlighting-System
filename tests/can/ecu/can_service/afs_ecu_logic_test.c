@@ -1,10 +1,12 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 #include <afs/application/afs_controller.h>
+#include <afs/bsw/services/communication/can_rx_log.h>
 #include <afs/bsw/services/communication/can_message_service.h>
 #include <afs/rte/afs_rte.h>
 
 #include <afs.h>
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -287,6 +289,36 @@ static bool status_encoding(void)
 	return true;
 }
 
+static bool rx_log_format(void)
+{
+	struct afs_can_frame frame = {
+		.id = AFS_VEHICLE_SPEED_FRAME_ID,
+		.dlc = 3U,
+		.data = {0x12U, 0x34U, 0xABU},
+	};
+	char line[AFS_CAN_RX_LOG_BUFFER_SIZE];
+	const char *expected = "AFS: CAN RX 0x100 dlc=3 data=12 34 AB";
+
+	CHECK(afs_can_rx_log_format(&frame, line, sizeof(line)) ==
+	      (int)strlen(expected));
+	CHECK(strcmp(line, expected) == 0);
+
+	frame.is_remote_frame = 1U;
+	expected = "AFS: CAN RX 0x100 dlc=3 RTR";
+	CHECK(afs_can_rx_log_format(&frame, line, sizeof(line)) ==
+	      (int)strlen(expected));
+	CHECK(strcmp(line, expected) == 0);
+
+	CHECK(afs_can_rx_log_format(&frame, line, 8U) == -ENOSPC);
+	frame.id = 0x800U;
+	CHECK(afs_can_rx_log_format(&frame, line, sizeof(line)) == -EINVAL);
+	frame.id = AFS_VEHICLE_SPEED_FRAME_ID;
+	frame.dlc = AFS_CAN_BUS_MAX_DLEN + 1U;
+	CHECK(afs_can_rx_log_format(&frame, line, sizeof(line)) == -EINVAL);
+	CHECK(afs_can_rx_log_format(NULL, line, sizeof(line)) == -EINVAL);
+	return true;
+}
+
 int main(int argc, char **argv)
 {
 	struct {
@@ -298,6 +330,7 @@ int main(int argc, char **argv)
 		{"frame_validation", frame_validation},
 		{"command_lease_and_clear_fault_edge", command_lease_and_clear_fault_edge},
 		{"status_encoding", status_encoding},
+		{"rx_log_format", rx_log_format},
 	};
 
 	if (argc != 2) {

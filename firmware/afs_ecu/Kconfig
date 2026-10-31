@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config AFS_CAN_RX_LOGGING
+	bool "Log received CAN frames for bench testing"
+	default n
+	help
+	  Print each received CAN frame's identifier, DLC, and payload through the
+	  configured console. This is high-volume test instrumentation; disable it
+	  after bench testing.
